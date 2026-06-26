@@ -70,6 +70,25 @@ the sensitivity rather than hiding it.
 
 ![t-RSI sensitivity to belief precision (left) and parameter freshness (right). Left: as Dirichlet concentration increases, perturbations tighten and the standardized distance changes. Right: as the Theta-freshness prior moves from stale to fresh, the create-rate and decay-rate means shift, and the t-RSI tracks their separation. Computed by `sensitivity.sweep_concentration` and `sensitivity.sweep_theta_freshness`.](../output/figures/trsi_sensitivity.png){#fig:sensitivity}
 
+[@fig:regimecomparison] provides the key statistical summary: bootstrap 95%
+confidence intervals for the create and decay rates at both operating points,
+plus Cohen's d effect sizes for the between-regime differences. The CIs
+overlap zero at the IMPROVING point (create CI [{{CREATE_CI_LOWER}},
+{{CREATE_CI_UPPER}}]; decay CI [{{DECAY_CI_LOWER}}, {{DECAY_CI_UPPER}}]),
+confirming the reduced model cannot *robustly* certify improvement — the
+honest finding. Cohen's d for the create-rate difference between regimes is
+{{COHEN_D_CREATE}}, and for the decay-rate difference is {{COHEN_D_DECAY}}.
+
+![Regime comparison: bootstrap 95% confidence intervals for create and decay rates at the Improving and Coasting operating points (left), and EFE decomposition of the funded channel (right). CIs overlapping zero show the reduced model's inability to robustly certify improvement. Computed by `statistics.compare_regimes`.](../output/figures/regime_comparison.png){#fig:regimecomparison}
+
+[@fig:scatter] shows the same data as a create-vs-decay scatter: each point is
+one Dirichlet-perturbed belief, and the diagonal is the break-even line. The
+Improving cloud (red) straddles the diagonal — some perturbations self-improve,
+others bleed — while the Coasting cloud (green) sits consistently above it. The
+standardized distance of each cloud from the diagonal is its t-RSI.
+
+![Bootstrap create-rate vs decay-rate scatter at two operating points. Each point is one Dirichlet-perturbed belief; the diagonal is the break-even line (create = decay). ✗ marks the mean. Computed by `t_rsi.create_rate` / `t_rsi.decay_rate` with `n=200` bootstrap perturbations.](../output/figures/create_vs_decay_scatter.png){#fig:scatter}
+
 ## Trajectory analysis
 
 [@fig:trajectory] shows the firm running for {{PLANNING_HORIZON}} cycles under

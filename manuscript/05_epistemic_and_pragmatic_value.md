@@ -41,6 +41,16 @@ as beliefs move from weak to strong.
 
 ![Marginal-return vector (negative EFE = pragmatic + epistemic) across all six actions and all cycles of the greedy trajectory from the self-improving point. The starred action is the greedy selection. Computed by `simulation.simulate_trajectory` and `free_energy.marginal_return_vector`.](../output/figures/marginal_return_heatmap.png){#fig:heatmap}
 
+[@fig:waterfall] decomposes the EFE itself — the objective the controller
+minimizes — into its pragmatic and epistemic components for all six actions at
+the IMPROVING operating point. The greedy action (lowest G, highest value) is
+highlighted; the diamond markers show total G = -(pragmatic + epistemic) for
+each action. The waterfall makes visible why the greedy policy funds
+$\Theta$ when it is stale: the epistemic value of that funding is small in
+absolute terms, but the pragmatic cost is the least negative of any action.
+
+![Expected Free Energy decomposition per action at the IMPROVING operating point. G (◆) = -(pragmatic + epistemic); the greedy policy selects the lowest G. Computed by `free_energy.expected_free_energy`.](../output/figures/efe_waterfall.png){#fig:waterfall}
+
 ## Why the explore/exploit comparison stops being hard
 
 AlphaFund's whole apparatus exists to make "a researcher hire, a data feed, a GPU,

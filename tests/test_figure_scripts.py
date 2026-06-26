@@ -57,4 +57,4 @@ def test_figure_script_produces_png(script: Path) -> None:
 
 def test_all_figure_scripts_discovered() -> None:
     """Ensure we are actually testing a non-empty set of scripts."""
-    assert len(FIGURE_SCRIPTS) >= 10, f"Expected >=10 figure scripts, found {len(FIGURE_SCRIPTS)}"
+    assert len(FIGURE_SCRIPTS) >= 14, f"Expected >=14 figure scripts, found {len(FIGURE_SCRIPTS)}"

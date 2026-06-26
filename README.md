@@ -46,7 +46,7 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   sensitivity.py             # t-RSI sweep over belief precision and Theta freshness
 manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variable generation, figures)
-  figures/                    # 11 engine-generated figures
+  figures/                    # 15 engine-generated figures
     fig_aif_dictionary.py     # AlphaFund ↔ Active Inference dictionary
     fig_certificate_sign_flip.py  # not-green-by-construction comparator
     fig_gnn_factor_graph.py    # EWM-as-GNN factor graph
@@ -58,6 +58,9 @@ scripts/                      # thin orchestrators (demo, variable generation, f
     fig_marginal_return_heatmap.py  # value landscape over actions × cycles
     fig_policy_posterior.py    # explore→exploit transition
     fig_trsi_sensitivity.py    # t-RSI vs belief precision and Theta freshness
+    fig_regime_comparison.py   # bootstrap CIs + EFE decomposition per regime
+    fig_efe_waterfall.py       # EFE decomposition waterfall per action
+    fig_create_vs_decay_scatter.py  # bootstrap scatter with break-even line
 ```
 
 ## Quick start

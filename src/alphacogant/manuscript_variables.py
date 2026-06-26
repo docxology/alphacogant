@@ -82,6 +82,7 @@ def _count_figures() -> int:
 def generate_variables() -> dict[str, str]:
     """Generate every manuscript token from the live deterministic model."""
     from alphacogant.simulation import simulate_trajectory, summarize_trajectory
+    from alphacogant.statistics import compare_regimes, compute_regime_statistics
 
     model = default_model()
 
@@ -95,6 +96,12 @@ def generate_variables() -> dict[str, str]:
         model, COASTING, np.random.default_rng(BOOTSTRAP_SEED), n=BOOTSTRAP_N,
         concentration=BOOTSTRAP_CONCENTRATION,
     )
+
+    # Full regime statistics (bootstrap CIs + effect sizes)
+    stats_improving = compute_regime_statistics(
+        model, IMPROVING, "Improving", n=BOOTSTRAP_N,
+    )
+    comparison = compare_regimes(model, n=BOOTSTRAP_N)
 
     # The funded channel is reported at the neutral prior operating point. It comes
     # out epistemic (Sensors) with negative immediate pragmatic value — the firm
@@ -136,6 +143,13 @@ def generate_variables() -> dict[str, str]:
         ),
         "TRAJ_EXPLORATION_RATIO": traj_summary["exploration_ratio"],
         "TRAJ_DOMINANT_ACTION": traj_summary["dominant_action"],
+        # Statistics tokens (bootstrap CIs + effect sizes)
+        "CREATE_CI_LOWER": _format_float(stats_improving.create_ci.ci_lower),
+        "CREATE_CI_UPPER": _format_float(stats_improving.create_ci.ci_upper),
+        "DECAY_CI_LOWER": _format_float(stats_improving.decay_ci.ci_lower),
+        "DECAY_CI_UPPER": _format_float(stats_improving.decay_ci.ci_upper),
+        "COHEN_D_CREATE": _format_float(comparison.cohen_d_create),
+        "COHEN_D_DECAY": _format_float(comparison.cohen_d_decay),
     }
 
 

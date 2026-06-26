@@ -56,16 +56,15 @@ def _roll_p_fresh(B_theta: np.ndarray, action: int, start: np.ndarray, horizon: 
 
 def main() -> int:
     import matplotlib
-
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from alphacogant.plot_style import apply_style
 
+    apply_style()
     out_fig = PROJECT_ROOT / "output" / "figures"
     out_fig.mkdir(parents=True, exist_ok=True)
 
-    # All transition data comes from the engine's generative model.
     model = default_model()
-    # channel_index validates Theta against the fixed factor order; B is keyed by name.
     _ = channel_index("Theta")
     B_theta = model.B["Theta"]
 
@@ -76,50 +75,46 @@ def main() -> int:
     p_fresh_hold = _roll_p_fresh(B_theta, hold, THETA_FRESH, HORIZON)
     p_fresh_fund = _roll_p_fresh(B_theta, fund, THETA_FRESH, HORIZON)
 
-    fig, ax = plt.subplots(figsize=(7.2, 4.6))
-    ax.plot(
-        cycles,
-        p_fresh_fund,
-        marker="o",
-        color="#0f766e",
-        linewidth=2.0,
-        label="fund_Theta (refresh): stays fresh",
-    )
-    ax.plot(
-        cycles,
-        p_fresh_hold,
-        marker="s",
-        color="#b91c1c",
-        linewidth=2.0,
-        label="hold (neglect): alpha-decay",
-    )
-    ax.axhline(
-        THETA_FRESH[FRESH_INDEX],
-        color="#94a3b8",
-        linestyle=":",
-        linewidth=1.0,
-        label="initial freshness",
-    )
+    fig, ax = plt.subplots(figsize=(7.5, 5.0))
+
+    # Fill the gap between the two trajectories
+    ax.fill_between(cycles, p_fresh_hold, p_fresh_fund, alpha=0.12, color="#7c3aed",
+                    label="freshness gap (alpha-decay cost)")
+
+    ax.plot(cycles, p_fresh_fund, marker="o", color="#0f766e", linewidth=2.5,
+            markersize=6, label="fund_Theta (refresh)", zorder=3)
+    ax.plot(cycles, p_fresh_hold, marker="s", color="#b91c1c", linewidth=2.5,
+            markersize=6, label="hold (neglect)", zorder=3)
+    ax.axhline(THETA_FRESH[FRESH_INDEX], color="#94a3b8", linestyle=":",
+               linewidth=1.2, label="initial freshness", zorder=2)
+
+    # Half-life annotation for the decay trajectory
+    half_level = THETA_FRESH[FRESH_INDEX] / 2.0
+    crossing = np.where(p_fresh_hold <= half_level)[0]
+    if len(crossing) > 0:
+        hl = crossing[0]
+        ax.axvline(hl, color="#b91c1c", linestyle="--", linewidth=0.8, alpha=0.5)
+        ax.text(hl + 0.2, 0.05, f"half-life\n≈ cycle {hl}", fontsize=7,
+                color="#b91c1c", va="bottom")
 
     gap = p_fresh_fund[-1] - p_fresh_hold[-1]
     ax.annotate(
-        f"freshness gap at H={HORIZON}: {gap:.3f}",
+        f"gap at H={HORIZON}: {gap:.3f}",
         xy=(HORIZON, (p_fresh_fund[-1] + p_fresh_hold[-1]) / 2.0),
-        xytext=(HORIZON - 5.4, (p_fresh_fund[-1] + p_fresh_hold[-1]) / 2.0),
-        fontsize=9,
-        color="#334155",
-        arrowprops={"arrowstyle": "->", "color": "#334155", "linewidth": 1.0},
+        xytext=(HORIZON - 5.5, (p_fresh_fund[-1] + p_fresh_hold[-1]) / 2.0),
+        fontsize=9, color="#334155", fontweight="bold",
+        arrowprops={"arrowstyle": "->", "color": "#334155", "linewidth": 1.2},
         va="center",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="#334155", alpha=0.9),
     )
 
     ax.set_xlabel("Cycle")
     ax.set_ylabel(r"$P(\Theta = \mathrm{fresh})$")
-    ax.set_title("Alpha-decay vs refresh of the EWM-parameter belief $\\Theta$")
+    ax.set_title("Alpha-decay vs refresh of the EWM-parameter belief $\Theta$")
     ax.set_xlim(0, HORIZON)
-    ax.set_ylim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.05)
     ax.set_xticks(cycles)
-    ax.grid(True, alpha=0.3)
-    ax.legend(loc="center right", framealpha=0.95)
+    ax.legend(loc="center right", framealpha=0.95, fontsize=8)
     fig.tight_layout()
 
     out_path = out_fig / "theta_decay.png"

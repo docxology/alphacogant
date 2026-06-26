@@ -25,6 +25,14 @@ from alphacogant.generative_model import (
 from alphacogant.operating_points import COASTING, COASTING_RAW, IMPROVING, IMPROVING_RAW, as_belief
 from alphacogant.sensitivity import sweep_concentration, sweep_theta_freshness
 from alphacogant.simulation import CycleRecord, TrajectoryResult, simulate_trajectory, summarize_trajectory
+from alphacogant.statistics import (
+    BootstrapCI,
+    RegimeComparison,
+    RegimeStatistics,
+    bootstrap_ci,
+    compare_regimes,
+    compute_regime_statistics,
+)
 from alphacogant.t_rsi import (
     DEFAULT_HORIZON,
     bootstrap_t_rsi,
@@ -34,7 +42,7 @@ from alphacogant.t_rsi import (
     t_rsi,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # channels
@@ -81,6 +89,13 @@ __all__ = [
     # sensitivity
     "sweep_concentration",
     "sweep_theta_freshness",
+    # statistics
+    "BootstrapCI",
+    "RegimeComparison",
+    "RegimeStatistics",
+    "bootstrap_ci",
+    "compare_regimes",
+    "compute_regime_statistics",
     # metadata
     "__version__",
 ]
