@@ -69,8 +69,14 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   five channel prior beliefs `D` (more feeds → stronger `S` prior, etc.). Pure,
   deterministic, documented mapping. This is the COGANT translation step in
   miniature: structure → generative-model priors.
-- `model_to_gnn_summary(model) -> str`: emit a short GNN-style block (factor list,
-  ontology annotation) from an `EconomicWorldModel`, proving the round-trip.
+- `model_to_gnn_summary(model) -> str`: emit a **full** GNN-style block
+  (StateSpaceBlock, Connections, InitialParameterization,
+  ActInfOntologyAnnotation) from an `EconomicWorldModel`, proving the round-trip
+  from NumPy arrays back to GNN text. Every section a GNN processor needs is
+  present.
+- `parse_gnn_summary(text) -> dict`: the inverse direction — parse a GNN
+  summary block back into structured data (factors, connections, ontology).
+  Used to verify round-trip fidelity in tests.
 
 ### `operating_points.py`
 - `IMPROVING` / `COASTING`: the two canonical operating-point belief maps (weak
@@ -90,6 +96,29 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   demo trajectory (headline t-RSI, create_mean, decay_mean, epistemic/pragmatic of
   the funded policy, channel count, action count, planning horizon, etc.). Used by
   `scripts/z_generate_manuscript_variables.py`.
+
+### `simulation.py`
+- `simulate_trajectory(model, initial_belief, horizon, *, policy, seed) -> TrajectoryResult`:
+  run the firm for `horizon` cycles under a greedy, hold, fund_theta, or stochastic
+  policy. Each cycle records the full belief map, the selected action, the EFE
+  decomposition, and the marginal-return vector. This is the engine's most direct
+  evidence of self-improvement: beliefs move from weak to strong, the funded
+  channel shifts from exploration to exploitation.
+- `TrajectoryResult`: frozen dataclass with `cycles` (list of `CycleRecord`),
+  `belief_history` (channel→[p_strong per cycle]), `action_history`, and
+  `cumulative_pragmatic`. `action_counts()` returns how many times each action
+  was selected.
+- `summarize_trajectory(trajectory) -> dict`: compact summary for the manuscript
+  (first/last funded channel, belief deltas, total pragmatic/epistemic value,
+  exploration ratio, dominant action).
+
+### `sensitivity.py`
+- `sweep_concentration(model, belief, *, concentrations, seed, n) -> dict`: bootstrap
+  t-RSI across a range of Dirichlet concentrations, showing how robust the headline
+  number is to the firm's belief precision.
+- `sweep_theta_freshness(model, base_belief, *, theta_values, seed, n, concentration) -> dict`:
+  bootstrap t-RSI as the Theta-freshness prior is swept from stale to fresh, showing
+  how the certificate responds to the firm's belief about its own parameter quality.
 
 ## Tests (`tests/`, no mocks, fixed seeds)
 - `test_generative_model.py`: matrices valid distributions; `infer_states` moves

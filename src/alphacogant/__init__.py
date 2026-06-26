@@ -13,6 +13,7 @@ specification this package realizes.
 """
 
 from alphacogant.channels import ACTIONS, CHANNELS, CHANNEL_ROLES, Channel, action_index, channel_index
+from alphacogant.cogant_bridge import firm_structure_to_channels, model_to_gnn_summary, parse_gnn_summary
 from alphacogant.free_energy import EFEResult, expected_free_energy, marginal_return_vector, policy_posterior, static_pragmatic_value
 from alphacogant.generative_model import (
     EconomicWorldModel,
@@ -22,6 +23,8 @@ from alphacogant.generative_model import (
     validate_belief_map,
 )
 from alphacogant.operating_points import COASTING, COASTING_RAW, IMPROVING, IMPROVING_RAW, as_belief
+from alphacogant.sensitivity import sweep_concentration, sweep_theta_freshness
+from alphacogant.simulation import CycleRecord, TrajectoryResult, simulate_trajectory, summarize_trajectory
 from alphacogant.t_rsi import (
     DEFAULT_HORIZON,
     bootstrap_t_rsi,
@@ -31,7 +34,7 @@ from alphacogant.t_rsi import (
     t_rsi,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     # channels
@@ -47,6 +50,10 @@ __all__ = [
     "default_model",
     "infer_states",
     "validate_belief_map",
+    # cogant_bridge
+    "firm_structure_to_channels",
+    "model_to_gnn_summary",
+    "parse_gnn_summary",
     # free_energy
     "EFEResult",
     "expected_free_energy",
@@ -66,6 +73,14 @@ __all__ = [
     "IMPROVING",
     "IMPROVING_RAW",
     "as_belief",
+    # simulation
+    "CycleRecord",
+    "TrajectoryResult",
+    "simulate_trajectory",
+    "summarize_trajectory",
+    # sensitivity
+    "sweep_concentration",
+    "sweep_theta_freshness",
     # metadata
     "__version__",
 ]

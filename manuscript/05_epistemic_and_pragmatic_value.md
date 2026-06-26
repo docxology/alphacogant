@@ -35,7 +35,11 @@ capital — AlphaFund's equimarginal identity $\hat g^k_t/\sigma^k_t =
 \lambda^*_{S,t}$ — which is the precision-weighting Active Inference applies to
 policy selection. `free_energy.marginal_return_vector` computes this vector across
 the {{NUM_ACTIONS}} actions; its argmax is the channel the portfolio optimizer
-funds this cycle.
+funds this cycle. [@fig:heatmap] shows the full vector as a heatmap over all
+cycles of the greedy trajectory, making visible how the value landscape shifts
+as beliefs move from weak to strong.
+
+![Marginal-return vector (negative EFE = pragmatic + epistemic) across all six actions and all cycles of the greedy trajectory from the self-improving point. The starred action is the greedy selection. Computed by `simulation.simulate_trajectory` and `free_energy.marginal_return_vector`.](../output/figures/marginal_return_heatmap.png){#fig:heatmap}
 
 ## Why the explore/exploit comparison stops being hard
 
@@ -56,7 +60,10 @@ funding $\Theta$ or $S$ is large (there is much to learn), so the controller
 explores; once the model is **fresh**, epistemic value falls and pragmatic value
 dominates, so the controller exploits the now-accurate forecasts. The firm's
 explore/exploit schedule is not a hand-tuned heuristic — it falls out of the EFE
-decomposition as the belief over $\Theta$ tightens.
+decomposition as the belief over $\Theta$ tightens. [@fig:trajectory] shows this
+directly: from the self-improving point (stale $\Theta$), the greedy policy
+funds $\Theta$ until it converges to fresh, then holds — the firm repairs its
+most critical deficiency first, then switches to exploitation.
 
 ## t-RSI is the thresholded EFE-improvement certificate
 
@@ -105,6 +112,13 @@ density centered at {{CREATE_RATE_MEAN}} and the residual-decay density centered
 {{HEADLINE_T_RSI}} — a modestly negative separation, not a manufactured win.
 
 ![Bootstrap posteriors of the create-rate (mean {{CREATE_RATE_MEAN}}) and residual decay-rate (mean {{DECAY_RATE_MEAN}}) at the self-improving operating point; their standardized separation is the headline t-RSI {{HEADLINE_T_RSI}}, computed by `t_rsi.bootstrap_t_rsi`.](../output/figures/trsi_densities.png){#fig:trsi}
+
+The sensitivity of this headline to the firm's belief precision is documented
+in [@fig:sensitivity] (§9). At low Dirichlet concentration the bootstrap
+perturbations are wide and the standardized distance shrinks; at high
+concentration they collapse and the distance inflates. The choice
+$\alpha = 12$ is a modelling decision, not a tuned knob; the engine reports
+the sensitivity rather than hiding it.
 
 The **certificate of monotone improvement** is the thresholded form:
 `t_rsi.certificate(value, delta)` admits a candidate self-improvement commit iff

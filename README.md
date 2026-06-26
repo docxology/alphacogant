@@ -28,7 +28,7 @@ It is built from three pieces of the template monorepo:
 - **GNN** (Generalized Notation Notation) — the text language for Active Inference
   generative models. `models/alphafund_ewm.md` encodes the five-channel EWM.
 - **COGANT** — the codebase-to-GNN translation pattern; `src/alphacogant/cogant_bridge.py`
-  maps firm structure → generative-model priors and re-emits a GNN summary.
+  maps firm structure → generative-model priors and re-emits a GNN summary (round-trip).
 
 ## Layout
 
@@ -39,11 +39,25 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   generative_model.py         # A/B/C/D matrices, state inference
   free_energy.py              # EFE = epistemic + pragmatic; marginal-return vector
   t_rsi.py                    # create/decay rates, t-RSI, certificate
-  cogant_bridge.py            # firm structure -> priors -> GNN summary
+  cogant_bridge.py            # firm structure -> priors -> GNN summary (round-trip)
   operating_points.py         # canonical IMPROVING/COASTING beliefs + bootstrap constants
   manuscript_variables.py     # every prose {{TOKEN}} is generated here
-manuscript/                   # the concept, fully written out (00–07 + refs)
+  simulation.py              # multi-cycle trajectory recorder
+  sensitivity.py             # t-RSI sweep over belief precision and Theta freshness
+manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variable generation, figures)
+  figures/                    # 11 engine-generated figures
+    fig_aif_dictionary.py     # AlphaFund ↔ Active Inference dictionary
+    fig_certificate_sign_flip.py  # not-green-by-construction comparator
+    fig_gnn_factor_graph.py    # EWM-as-GNN factor graph
+    fig_self_forecasting_loop.py  # whitepaper Figure 1 schematic
+    fig_theta_decay.py         # alpha-decay vs refresh of Theta
+    fig_trsi_densities.py      # bootstrap posteriors of create/decay rates
+    fig_value_by_regime.py     # EFE decomposition per channel × regime
+    fig_belief_trajectory.py   # multi-cycle belief trajectory
+    fig_marginal_return_heatmap.py  # value landscape over actions × cycles
+    fig_policy_posterior.py    # explore→exploit transition
+    fig_trsi_sensitivity.py    # t-RSI vs belief precision and Theta freshness
 ```
 
 ## Quick start
@@ -61,7 +75,8 @@ uv run --no-project python scripts/z_generate_manuscript_variables.py
 The manuscript writes the idea out in full: the AlphaFund↔Active Inference dictionary
 (§2), the GNN-via-COGANT realization (§3), filtration-safe inference (§4), the
 epistemic/pragmatic value split and t-RSI as the EFE certificate (§5), and the
-functionality + integrity case (§6).
+functionality + integrity case (§6), numbered formalisms (§8), limitations and
+sensitivity analysis (§9).
 
 > **Not financial advice.** AlphaCOGANT is a modeling and integrity instrument. The
 > GNN model is an illustrative reduced encoding; every numeric in the manuscript is a

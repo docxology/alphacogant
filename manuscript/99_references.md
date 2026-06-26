@@ -38,3 +38,45 @@
 
 12. Schmidhuber, J. *Gödel Machines: Fully Self-Referential Optimal Universal
     Self-Improvers.* In Artificial General Intelligence, 199–226, 2007.
+
+13. Yudkowsky, E. *Artificial Intelligence as a Positive and Negative Factor in
+    Global Risk.* In Global Catastrophic Risks, 185–232, 2008.
+
+14. Milgrom, P., Roberts, J. *The Economics of Modern Manufacturing: Technology,
+    Strategy, and Organization.* American Economic Review, 80(3):511–528, 1990.
+    (Supermodularity and complementarity in firm coordination.)
+
+15. Hinton, G. E., van Camp, D. *Keeping the Neural Networks Simple by Minimizing
+    the Description Length of the Weights.* COLT, 5–13, 1993. (The minimum
+    description length principle and variational inference.)
+
+16. Beal, M. J. *Variational Algorithms for Approximate Bayesian Inference.*
+    PhD thesis, University of London, 2003. (Mean-field variational inference
+    and the evidence lower bound.)
+
+17. Shannon, C. E. *A Mathematical Theory of Communication.* Bell System
+    Technical Journal, 27(3):379–423, 1948. (Information-theoretic foundations
+    of the epistemic value term.)
+
+18. Coase, R. H. *The Nature of the Firm.* Economica, 4(16):386–405, 1937.
+    (The theory of the firm and vertical integration — the "depth axis" of
+    AlphaFund's differentiable corporation.)
+
+19. Heek, J. et al. *Flax: A Neural Network Library and Ecosystem for JAX.*
+    <https://github.com/google/flax>, 2023. (JAX-based differentiable simulation
+    for the future continuous-state extension.)
+
+20. van de Meent, J.-W., Paige, B., Yang, H., Wood, F. *An Introduction to
+    Probabilistic Programming.* arXiv:1809.10756, 2021. (Variational inference
+    in structured generative models.)
+
+21. Da Costa, L. *A Active Inference Approach to the Structure of Intelligence.*
+    PhD thesis, University of London, 2025. (Unifying Active Inference with
+    information geometry and the free energy principle.)
+
+22. Kaplan, J. et al. *Scaling Laws for Neural Language Models.* arXiv:2001.08361,
+    2020. (Empirical scaling laws underlying AlphaFund's Parameters channel
+    row — the Chinchilla surface.)
+
+23. Lattimore, T., Szepesvári, C. *Bandit Algorithms.* Cambridge University
+    Press, 2020. (The explore/exploit framework the EFE decomposition resolves.)

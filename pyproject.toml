@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alphacogant"
-version = "0.1.0"
+version = "0.2.0"
 description = "GNN-via-COGANT Active Inference model of recursive corporate self-improvement (AlphaFund)"
 authors = [
     {name = "AlphaCOGANT Author", email = "author@research-template.org"}

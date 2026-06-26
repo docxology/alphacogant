@@ -5,7 +5,7 @@
 paper:
   title: "AlphaCOGANT: Recursive Corporate Self-Improvement as Active Inference"
   subtitle: "Rendering the AlphaFund Economic World Model as a GNN generative model via COGANT"
-  version: "0.1.0"
+  version: "0.2.0"
   date: ""
 
 authors:
@@ -21,6 +21,7 @@ authors:
     corresponding: false
 
 publication:
+  doi: ""
   github_repository: "docxology/alphacogant"
   journal: ""
   year: "2026"

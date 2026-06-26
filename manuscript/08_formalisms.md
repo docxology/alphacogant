@@ -146,7 +146,11 @@ $$
 
 realized by `free_energy.policy_posterior(model, belief, gamma)`, which returns a
 distribution over the {{NUM_ACTIONS}} actions summing to one. The $\arg\max$ of $J_t$
-is the $\arg\max$ of $q(\pi)$.
+is the $\arg\max$ of $q(\pi)$. [@fig:policyposterior] shows how this posterior
+evolves across the greedy trajectory: probability mass shifts from epistemic
+actions (Sensors, R&D, Theta) to pragmatic ones (Investments, Actuators) as the
+model freshens — the explore→exploit transition as a redistribution of
+probability mass, not a hard switch.
 
 **Definition D13 (Marginal-return vector ↔ $-\partial G/\partial a$).** *AlphaFund
 Def 13, marginal-return vector $g_t = \partial J_t/\partial a_t$.* The counterpart is
@@ -160,6 +164,8 @@ $$
 computed by `free_energy.marginal_return_vector`. Its $\arg\max$ over the funding
 actions is the channel the optimizer funds this cycle; at the neutral prior operating
 point that channel is {{FUNDED_CHANNEL}}.
+
+![Policy posterior evolution across the greedy trajectory. Probability mass shifts from epistemic actions (Sensors, R&D, Theta) to pragmatic actions (Investments, Actuators) as the model freshens. Computed by `free_energy.policy_posterior` and `simulation.simulate_trajectory`.](../output/figures/policy_posterior.png){#fig:policyposterior}
 
 **Definition D14 (Per-channel chain rule ↔ path integral).** *AlphaFund Def 14,
 per-channel marginal return as a chain rule over the horizon, with equimarginal

@@ -1,7 +1,8 @@
 <!-- AlphaCOGANT manuscript preamble. Section order for the combined render:
 00_abstract, 01_introduction, 02_active_inference_mapping, 03_gnn_via_cogant,
 04_generative_model_inference, 05_epistemic_and_pragmatic_value,
-06_integrity_and_functionality, 07_conclusion, 08_formalisms, 99_references.
+06_integrity_and_functionality, 07_conclusion, 08_formalisms, 09_limitations,
+99_references.
 Margins + base font size are set in config.yaml (metadata.geometry / fontsize /
 documentclass), NOT here, so geometry is loaded exactly once by pandoc. -->
 

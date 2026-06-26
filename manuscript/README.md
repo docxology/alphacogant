@@ -13,6 +13,7 @@ Writes out the AlphaCOGANT concept in full. Section order:
 | `06_integrity_and_functionality.md` | What AlphaCOGANT brings: integrity properties |
 | `07_conclusion.md` | Conclusion |
 | `08_formalisms.md` | Numbered formalisms: AlphaFund definitions as Active Inference objects |
+| `09_limitations.md` | Limitations, sensitivity analysis, and future directions |
 | `99_references.md` | References |
 
 ## Token discipline

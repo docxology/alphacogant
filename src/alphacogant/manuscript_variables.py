@@ -81,6 +81,8 @@ def _count_figures() -> int:
 
 def generate_variables() -> dict[str, str]:
     """Generate every manuscript token from the live deterministic model."""
+    from alphacogant.simulation import simulate_trajectory, summarize_trajectory
+
     model = default_model()
 
     # Exactly two bootstraps (improving + coasting); results reused for every
@@ -103,6 +105,11 @@ def generate_variables() -> dict[str, str]:
     funded_action = max(range(5), key=lambda action: returns[action])
     funded_result = expected_free_energy(model, prior, funded_action)
 
+    # Trajectory summary: the firm running greedily from the self-improving
+    # operating point for the full planning horizon.
+    trajectory = simulate_trajectory(model, IMPROVING, horizon=PLANNING_HORIZON, policy="greedy")
+    traj_summary = summarize_trajectory(trajectory)
+
     return {
         "TOKEN": "AlphaCOGANT",
         "NUM_CHANNELS": str(len(CHANNELS)),
@@ -120,6 +127,15 @@ def generate_variables() -> dict[str, str]:
         "B_THETA_LEAK_PROB": _format_float(_theta_decay_leak_probability(model)),
         "NUM_DEFINITIONS": str(_count_definitions()),
         "NUM_FIGURES": str(_count_figures()),
+        # Trajectory tokens
+        "TRAJ_FIRST_FUNDED": traj_summary["first_funded"],
+        "TRAJ_LAST_FUNDED": traj_summary["last_funded"],
+        "TRAJ_THETA_DELTA": _format_float(
+            float(traj_summary["last_p_strong_theta"])
+            - float(traj_summary["first_p_strong_theta"])
+        ),
+        "TRAJ_EXPLORATION_RATIO": traj_summary["exploration_ratio"],
+        "TRAJ_DOMINANT_ACTION": traj_summary["dominant_action"],
     }
 
 
