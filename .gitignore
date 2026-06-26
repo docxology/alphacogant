@@ -1,0 +1,16 @@
+# AlphaCOGANT — disposable outputs and caches (everything in output/ is regeneratable)
+output/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.DS_Store
+.codegraph/
+coverage_project.json
+.benchmarks/
