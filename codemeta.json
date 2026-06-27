@@ -4,6 +4,7 @@
   "name": "AlphaCOGANT: Recursive Corporate Self-Improvement as Active Inference",
   "description": "An executable Active Inference rendering of the AlphaFund recursive-self-improvement whitepaper: the firm's Economic World Model becomes a generative model written in Generalized Notation Notation (via the COGANT translation pattern), capital allocation becomes Expected Free Energy minimization, and the t-RSI certificate becomes a thresholded EFE-improvement gate, with every manuscript number gated against a tested NumPy engine.",
   "version": "1.0.0",
+  "identifier": "https://doi.org/10.5281/zenodo.20976824",
   "license": "https://spdx.org/licenses/MIT",
   "codeRepository": "https://github.com/docxology/alphacogant",
   "programmingLanguage": "Python",
