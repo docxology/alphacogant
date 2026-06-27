@@ -200,5 +200,11 @@ the determinism test called it twice, and there was no pytest timeout.
   contract (dropped a dead producer-fallback, made `--check` gate on issues, made the manifest timestamp
   SOURCE_DATE_EPOCH-aware). All HIGH/MEDIUM findings fixed and verified in the re-rendered PDF.
 - **Standalone-release scaffolding** (target = public `docxology/alphacogant` + Zenodo DOI): added LICENSE
-  (MIT), CITATION.cff, codemeta.json, .zenodo.json. DOI reservation + public push + Zenodo mint gated on
-  explicit go-ahead (irreversible). See [[gotcha-crippled-comparator-authored-artifact]], [[gotcha-doc-claim-must-be-backed-by-shipped-code]].
+  (MIT), CITATION.cff, codemeta.json, .zenodo.json.
+- **PUBLISHED v1.0.0 (2026-06-27, user-authorized).** Bumped all version strings to 1.0.0, fixed the
+  placeholder pyproject author. Minted via `scripts/publish_project_release.py --project working/alphacogant
+  --tag v1.0.0 --repo docxology/alphacogant --reserve-doi-first --production --skip-github` (reserve-first →
+  config stamp → render-with-DOI → Zenodo publish), then manual push → DOI-stamp CITATION/codemeta/README →
+  tag → `gh release create` (PDF) → `gh repo edit --visibility public`. **Concept DOI 10.5281/zenodo.20976824;
+  v1.0.0 DOI 10.5281/zenodo.20976825** (record state `done`, PDF attached). Repo now PUBLIC; release v1.0.0
+  live with PDF. See [[gotcha-crippled-comparator-authored-artifact]], [[gotcha-doc-claim-must-be-backed-by-shipped-code]].
