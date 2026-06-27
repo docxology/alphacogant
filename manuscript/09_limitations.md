@@ -3,9 +3,9 @@
 ## The two-level reduction
 
 AlphaCOGANT's GNN model carries each channel at two capability levels
-$\{\text{weak}, \text{strong}\}$. This is a deliberate legibility choice [1] — it makes
+$\{\text{weak}, \text{strong}\}$. This is a deliberate legibility choice [@westenhaver2026rsi] — it makes
 the factor graph readable, the inference exact, and the EFE decomposition
-transparent — but it pays a measurable cost consistent with coarse-state Bayesian approximations [20, 24, 25]: the reduced model lacks the dynamic
+transparent — but it pays a measurable cost consistent with coarse-state Bayesian approximations [@vandemeent2021ppl; @kaelbling1998pomdp; @friston2017process]: the reduced model lacks the dynamic
 range to *robustly* certify net self-improvement under belief uncertainty. The
 headline t-RSI of {{HEADLINE_T_RSI}} standardised units is robustly negative in
 *sign* at the self-improving operating point — a modest raw alpha gap whose
@@ -21,7 +21,7 @@ full continuous marginal-return formalism is for; the reduced model delivers the
 The control vector is discrete: one of six actions (fund one of five channels, or
 hold). AlphaFund's actual allocation is a continuous dollar-vector across
 channels. The discrete reduction captures the explore/exploit logic and the
-equimarginal identity in principle [14, 23], but it cannot represent a portfolio that
+equimarginal identity in principle [@milgrom1990; @lattimore2020bandits], but it cannot represent a portfolio that
 simultaneously funds Sensors and Investments at different intensities. A
 continuous-action extension (e.g. via a Gumbel-softmax or a normalizing-flow
 policy) would close this gap and is the natural next step.
@@ -30,10 +30,10 @@ policy) would close this gap and is the natural next step.
 
 The model matrices $A, B, C, D$ are fixed. The EWM does not learn from
 observations within a simulation run; only the *posterior over hidden state*
-updates. In the real corporation [1], the EWM itself (the $\Theta$ factor's
+updates. In the real corporation [@westenhaver2026rsi], the EWM itself (the $\Theta$ factor's
 parameters) is refit as new data arrives. A Bayesian model-learning extension —
 where $B_\Theta$ is itself updated via a Dirichlet or Beta posterior over
-transition probabilities — would make the self-forecasting loop endogenous [20, 24, 25].
+transition probabilities — would make the self-forecasting loop endogenous [@vandemeent2021ppl; @kaelbling1998pomdp; @friston2017process].
 The current model captures the *incentive* to refit (epistemic value of funding
 $\Theta$) but not the *result* of refitting (sharper transition probabilities).
 
@@ -45,8 +45,8 @@ in the *likelihood* (reward depends on $I, U, \Theta$ jointly) but not in the
 *transition* (funding Sensors does not directly make Investments more
 productive). A coupled transition — $B(s_{t+1} \mid s_t, a_t)$ rather than
 \prod_k B_k$ would model supermodularity in the state dynamics, not just the
-observation model [14, 24, 25]. The mean-field approximation is exact for the current factor
-graph but would become variational under coupling [20, 24].
+observation model [@milgrom1990; @kaelbling1998pomdp; @friston2017process]. The mean-field approximation is exact for the current factor
+graph but would become variational under coupling [@vandemeent2021ppl; @kaelbling1998pomdp].
 
 ## No external capital amplification
 
@@ -55,7 +55,7 @@ K^{\text{int}}_{t+1}$) is described in the manuscript but not modelled in the
 engine. External capital widens the filtration (more observations per cycle),
 which sharpens the posterior and raises the policy precision $\gamma$. A model
 that endogenises capital growth — where the number of observations per cycle is
-a function of cumulative pragmatic value — would close this loop [1, 18].
+a function of cumulative pragmatic value — would close this loop [@westenhaver2026rsi; @coase1937].
 
 ## Sensitivity to belief precision
 
@@ -68,7 +68,7 @@ inflates. The choice $\alpha = 12$ (used throughout) is the firm's *belief
 precision* — a modelling choice, not a tuned knob. A full Bayesian treatment
 would place a hyperprior over $\alpha$ and marginalise; the current model reports
 the sensitivity rather than hiding it.
-This is a principled robustness check on the epistemic term [17].
+This is a principled robustness check on the epistemic term [@shannon1948].
 
 ![t-RSI sensitivity to belief precision (left) and parameter freshness (right). Left: as Dirichlet concentration increases, perturbations tighten and the standardized distance changes. Right: as the Theta-freshness prior moves from stale to fresh, the create-rate and decay-rate means shift, and the t-RSI tracks their separation. Computed by `sensitivity.sweep_concentration` and `sensitivity.sweep_theta_freshness`.](../output/figures/trsi_sensitivity.png){#fig:sensitivity}
 
@@ -144,7 +144,7 @@ falls below the cost.
 4. **Multi-horizon planning.** The current engine plans one step ahead
    (greedy). A tree search or dynamic programming extension over the
    {{PLANNING_HORIZON}}-cycle horizon would compute the true optimal policy,
-   not just the myopic one [25].
+   not just the myopic one [@friston2017process].
 
 5. **Empirical calibration.** Fit the model matrices to a real (or realistic
    synthetic) corporate trajectory and compare the engine's t-RSI to

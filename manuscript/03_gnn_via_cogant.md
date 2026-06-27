@@ -6,7 +6,7 @@ Generalized Notation Notation (GNN) is a text-based specification language for
 Active Inference generative models, with a processing pipeline that transforms a
 GNN `.md` file into executable simulations (PyMDP, RxInfer.jl, JAX, Active
 Inference.jl, and others), visualizations, type-checked validations, and reports.
-This pipeline and model contract are the source of our representation [5].
+This pipeline and model contract are the source of our representation [@friedman2026gnn].
 A GNN model is a Markdown document with structured sections: a `StateSpaceBlock`
 declaring tensors (the $A$ likelihood, $B$ transitions, $C$ preferences, $D$
 priors, hidden states $s$, observations $o$, policy $\pi$, Expected Free Energy
@@ -25,7 +25,7 @@ free-form narrative.
 
 ## What COGANT is, and the translation step
 
-COGANT is a **codebase-to-GNN translator** [6]: it scans a system's structure
+COGANT is a **codebase-to-GNN translator** [@friedman2026cogant]: it scans a system's structure
 (program graph, modules, call edges), builds a state-space factor graph, and
 exports a GNN generative model of the system, which it then renders, visualizes,
 and validates against the GNN package. The conceptual claim of AlphaCOGANT is that
@@ -44,7 +44,7 @@ The translation has three stages, mirrored by the engine in `src/alphacogant/`:
    channel factors and their prior beliefs $D_k$. More feeds strengthen the
    Sensors prior; a larger validated book strengthens Investments; a fresher
    model strengthens Parameters. This is `cogant_bridge.firm_structure_to_channels`.
-   It is the COGANT scan in miniature [6]: system structure becomes generative-model
+   It is the COGANT scan in miniature [@friedman2026cogant]: system structure becomes generative-model
    priors.
 
 2. **Channels → GNN model.** The five factors, their likelihood matrices ($A_R$
@@ -88,7 +88,7 @@ observation conditioning a past belief is an edge one can see is absent.
 
 The reduced two-level encoding keeps the GNN file legible and type-checkable; the
 continuous marginal-return formalism of [@sec:value] is what the engine and the whitepaper
-uses in production [1]. The point of the file is not numerical fidelity to AlphaFund's
+uses in production [@westenhaver2026rsi]. The point of the file is not numerical fidelity to AlphaFund's
 proprietary surfaces (which are not public); it is to demonstrate that the firm's
 control problem has a well-formed reduced Active Inference representation with an
 Expected-Free-Energy objective, expressible in a language intended to compile to

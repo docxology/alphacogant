@@ -8,8 +8,9 @@ MANUSCRIPT_DIR = PROJECT_ROOT / "manuscript"
 SECTION_RE = re.compile(r"^#\s+.+\{#sec:[a-z0-9_-]+\}\s*$")
 DISPLAY_MATH_RE = re.compile(r"\$\$\s*\n(.*?)\n\$\$(?:\s*\{#eq:[a-z0-9_-]+\})?", re.DOTALL)
 LABELED_EQUATION_RE = re.compile(r"\$\$\s*\n.*?\n\$\$\s*\{#eq:[a-z0-9_-]+\}", re.DOTALL)
-CITATION_RE = re.compile(r"\[(\d+(?:,\s*\d+)*)\]")
-REFERENCE_ENTRY_RE = re.compile(r"^(\d+)\.\s", re.MULTILINE)
+CITATION_KEY_RE = re.compile(r"@(\w+)")
+BIB_KEY_RE = re.compile(r"^@\w+\{([^,]+),", re.MULTILINE)
+REFERENCES_BIB = MANUSCRIPT_DIR / "references.bib"
 
 
 def manuscript_markdown() -> list[Path]:
@@ -70,25 +71,36 @@ def test_bootstrap_caption_values_are_token_injected() -> None:
     assert "n=200" not in limitations
 
 
-def _defined_reference_ids() -> set[int]:
-    refs = (MANUSCRIPT_DIR / "99_references.md").read_text(encoding="utf-8")
-    return {int(match.group(1)) for match in REFERENCE_ENTRY_RE.finditer(refs)}
+def _defined_bib_keys() -> set[str]:
+    """Citation keys defined in references.bib."""
+    return set(BIB_KEY_RE.findall(REFERENCES_BIB.read_text(encoding="utf-8")))
 
 
-def _used_reference_ids() -> set[int]:
-    used: set[int] = set()
+def _cited_keys() -> set[str]:
+    """Citation keys used in prose: ``[@key]`` markers, excluding pandoc-crossref
+    labels (``@fig:``/``@sec:``/``@eq:``/``@tbl:``), which are followed by a colon."""
+    cited: set[str] = set()
     for path in manuscript_markdown():
         text = path.read_text(encoding="utf-8")
-        for match in CITATION_RE.finditer(text):
-            for raw_id in match.group(1).split(","):
-                used.add(int(raw_id.strip()))
-    return used
+        for match in CITATION_KEY_RE.finditer(text):
+            if text[match.end() : match.end() + 1] != ":":
+                cited.add(match.group(1))
+    return cited
+
+
+def test_no_legacy_numeric_citations_remain() -> None:
+    """Citations are bibkey-based ([@key]); no hardcoded numeric [N] markers."""
+    numeric = re.compile(r"\[\d+(?:,\s*\d+)*\]")
+    for path in manuscript_markdown():
+        hits = numeric.findall(path.read_text(encoding="utf-8"))
+        assert not hits, f"{path.name} still has hardcoded numeric citations: {hits}"
 
 
 def test_reference_ids_defined_and_used() -> None:
-    defined_ids = _defined_reference_ids()
-    used_ids = _used_reference_ids()
-    undefined_ids = sorted(used_ids - defined_ids)
-    unused_ids = sorted(defined_ids - used_ids)
-    assert not undefined_ids, f"Manuscript uses undefined references: {undefined_ids}"
-    assert not unused_ids, f"References defined but not used in manuscript: {unused_ids}"
+    defined = _defined_bib_keys()
+    cited = _cited_keys()
+    undefined = sorted(cited - defined)
+    unused = sorted(defined - cited)
+    assert defined, "references.bib defines no entries"
+    assert not undefined, f"Manuscript cites keys absent from references.bib: {undefined}"
+    assert not unused, f"references.bib defines keys never cited: {unused}"

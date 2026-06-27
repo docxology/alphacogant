@@ -1,14 +1,19 @@
+---
+natbiboptions: numbers,square,sort&compress
+biblio-style: unsrtnat
+---
+
 # Abstract {#sec:abstract}
 
 The AlphaFund whitepaper reframes recursive self-improvement (RSI) as a portfolio
-optimization problem: [1] a corporation recursively improves when realized economic
+optimization problem: [@westenhaver2026rsi] a corporation recursively improves when realized economic
 gains finance the next cycle of better prediction and deployment, and the firm's
 standing is summarized by **t-RSI**, a standardized gap between alpha-creation and
 alpha-decay rates. **AlphaCOGANT** observes that this construction is, term for
-term, an **Active Inference** agent [1, 2, 3, 4] — and makes the correspondence executable.
+term, an **Active Inference** agent [@westenhaver2026rsi; @friston2010freeenergy; @friston2015epistemic; @dacosta2020synthesis] — and makes the correspondence executable.
 
 We render AlphaFund's **Economic World Model (EWM)** as a generative model written
-in **Generalized Notation Notation (GNN)**, produced by the **COGANT** [5, 6]
+in **Generalized Notation Notation (GNN)**, produced by the **COGANT** [@friedman2026gnn; @friedman2026cogant]
 codebase-to-GNN translation pattern. The firm's five capital channels —
 Investments, Sensors, Actuators, Parameters, and R&D — become the hidden-state
 factors of a partially-observed model; capital allocation becomes the control
@@ -33,4 +38,4 @@ language model) and **auditable capital allocation** (every admissible funding
 move has a negative-EFE score under a single, legible objective). This is not
 financial advice; it is a demonstration that this reduced
 recursive-corporate-self-improvement model has a direct Active Inference
-representation supported by source-owning methods and artifact checks [1, 5, 6].
+representation supported by source-owning methods and artifact checks [@westenhaver2026rsi; @friedman2026gnn; @friedman2026cogant].

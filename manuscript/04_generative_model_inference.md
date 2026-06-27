@@ -14,7 +14,7 @@ $$ {#eq:generative-factorization}
 This is AlphaFund's "true corporate transition" $W$ — a property of the world the
 firm cannot access — approximated by the firm's learned $\widehat{W}_t$, the EWM.
 In this form it is a finite-state, controlled, partially-observed model in the
-same sense as active-inference POMDPs [2, 3, 24, 25].
+same sense as active-inference POMDPs [@friston2010freeenergy; @friston2015epistemic; @kaelbling1998pomdp; @friston2017process].
 The likelihoods $A_R, A_L$ are how the latent corporate state generates the
 observable broker ledger and forecast-evaluation panel; the transitions $B_k$ are
 how a capital-allocation action moves each channel. Inference is the inverse
@@ -31,7 +31,7 @@ loss observation. For this factor graph the mean-field update is exact per facto
 given the others, so the update is cheap and the posterior is a product of
 per-channel beliefs — the computational image of AlphaFund's per-channel row-laws.
 In this engine instance, exactness follows from the graph structure itself, so the
- tractability is explicit, not an extra approximation [20, 24, 25].
+ tractability is explicit, not an extra approximation [@vandemeent2021ppl; @kaelbling1998pomdp; @friston2017process].
 
 A worked reading: a high-reward, low-loss observation is most probable when the
 production channels and the EWM are strong and fresh, so the posterior shifts mass
@@ -47,7 +47,7 @@ non-refit action and refresh only when $\Theta$ is funded. [@fig:thetadecay]
 traces the belief in fresh $\Theta$ forward under the two policies: under `hold` the
 freshness mass bleeds away each cycle through the decay-leak probability
 {{B_THETA_LEAK_PROB}}, while under `fund_Theta` it is pulled back toward fresh — the
-mechanism that makes refit a first-order allocation rather than maintenance overhead [1].
+mechanism that makes refit a first-order allocation rather than maintenance overhead [@westenhaver2026rsi].
 
 ![The $B_\Theta$ alpha-decay law: belief in fresh parameters traced over {{PLANNING_HORIZON}} cycles under `hold` (freshness decays via leak probability {{B_THETA_LEAK_PROB}}) versus `fund_Theta` (freshness restored), with the transition read from `generative_model.default_model`.](../output/figures/theta_decay.png){#fig:thetadecay}
 
@@ -80,7 +80,7 @@ $$
 $$ {#eq:ewm-loss}
 
 — are, respectively, a likelihood with no temporal index and the **predictive**
- likelihood that a GNN/Active Inference model is built to optimize [1, 2, 24, 25]. In this reduced
+ likelihood that a GNN/Active Inference model is built to optimize [@westenhaver2026rsi; @friston2010freeenergy; @kaelbling1998pomdp; @friston2017process]. In this reduced
 project, the factor-graph `Connections` block makes the second form inspectable:
 there is no declared edge that conditions a time-$t$ belief on a time-$t{+}1$
 observation. AlphaFund spends a section arguing for a discipline; AlphaCOGANT

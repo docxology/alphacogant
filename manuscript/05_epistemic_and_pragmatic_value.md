@@ -3,7 +3,7 @@
 ## Expected Free Energy is the marginal-return objective
 
 At each cycle the controller scores a candidate policy $\pi$ (a capital
-allocation) by its **Expected Free Energy**, which in Active Inference [3, 25] decomposes
+allocation) by its **Expected Free Energy**, which in Active Inference [@friston2015epistemic; @friston2017process] decomposes
 into two terms with opposite signs of intent:
 
 $$
@@ -27,9 +27,9 @@ parts answer two different questions about a marginal dollar:
   R&D rows price: the data-scaling law (loss removed per decade of effective
   tokens) and the experiment-performance frontier (Sharpe gained per decade of
   experiments). Sensors and R&D ({{EPISTEMIC_CHANNELS}}) are the epistemic
-  channels — they sharpen the model that prices all future outcomes [3, 25].
+  channels — they sharpen the model that prices all future outcomes [@friston2015epistemic; @friston2017process].
 
-In AlphaFund's continuous formalism [1] the marginal-return vector is
+In AlphaFund's continuous formalism [@westenhaver2026rsi] the marginal-return vector is
 $g_t = \partial J_t/\partial a_t$ and the optimum equates the same risk-adjusted
 shadow price of capital — AlphaFund's equimarginal identity
 $\hat g^k_t/\sigma^k_t = \lambda^*_{S,t}$. In AlphaCOGANT's reduced discrete
@@ -74,7 +74,7 @@ funding $\Theta$ or $S$ is large (there is much to learn), so the controller
 explores; once the model is **fresh**, epistemic value falls and pragmatic value
 dominates, so the controller exploits the now-accurate forecasts. The firm's
 explore/exploit schedule is not a hand-tuned heuristic — it falls out of the EFE
-decomposition as the belief over $\Theta$ tightens [23]. [@fig:trajectory] shows this
+decomposition as the belief over $\Theta$ tightens [@lattimore2020bandits]. [@fig:trajectory] shows this
 directly: from the self-improving point (stale $\Theta$), the greedy policy
 funds $\Theta$ until it converges to fresh, then holds — the firm repairs its
 most critical deficiency first, then switches to exploitation.
@@ -93,7 +93,7 @@ $$
 $$ {#eq:trsi-certificate}
 
 In the AlphaCOGANT engine both rates are **path integrals over the planning
-horizon**, matching AlphaFund's "path integral along the planned allocation path" [1],
+horizon**, matching AlphaFund's "path integral along the planned allocation path" [@westenhaver2026rsi],
 and — critically — they are posteriors over **two genuinely different processes**,
 so t-RSI is *not* constrained to be positive. `t_rsi.create_rate` is the
 horizon-mean pragmatic value the greedy Expected-Free-Energy policy creates *over
@@ -146,7 +146,7 @@ The **certificate of monotone improvement** is the thresholded form:
 t-RSI clears a Sharpe-margin $\delta$. This is the Active Inference admissibility
 gate — a model update is accepted only when its expected free energy is reliably
 lower than the incumbent's — and it is what makes compounding survive selection
-rather than promoting drift on noise [1]. AlphaFund's claim that "the certificate gates
+rather than promoting drift on noise [@westenhaver2026rsi]. AlphaFund's claim that "the certificate gates
 each commit at the prevailing operating point rather than relying on supermodularity
 everywhere" is the standard Active Inference posture: value is evaluated locally,
 per policy, per cycle, against the current belief, with no global guarantee assumed.
@@ -180,4 +180,4 @@ different processes, not draws from one null. Reading t-RSI as "how many pooled
 standard errors create sits above decay" is a calibrated effort-allocation signal,
 not a p-value. The engine reflects this — it reports the separation and the pooled
 standard error, and leaves the threshold $\delta$ as the firm's risk choice rather
-than baking in a significance level [1, 17].
+than baking in a significance level [@westenhaver2026rsi; @shannon1948].

@@ -14,10 +14,10 @@ controller posts a flattering t-RSI and then bleeds capital live. In a GNN
 generative model the no-peeking property is a **typing constraint**: beliefs are
 forward functions of the history filtration $\mathcal{F}_t$, and a valid factor
 graph has no edge that routes a future observation into a past belief. The
-factor-graph `Connections` block makes that temporal claim auditable by eye [1, 2, 24, 25].
+factor-graph `Connections` block makes that temporal claim auditable by eye [@westenhaver2026rsi; @friston2010freeenergy; @kaelbling1998pomdp; @friston2017process].
 AlphaCOGANT thus converts AlphaFund's "we promise our holdout is strictly
 post-corpus" into a visible graph contract: every inference edge has to point
-from information available at decision time [14, 18].
+from information available at decision time [@milgrom1990; @coase1937].
 
 ## 2. Auditable capital allocation — one objective, every move scored
 
@@ -29,7 +29,7 @@ now) plus an epistemic part (information that prices future equity). A reviewer
 can ask of any allocation, "did it clear the shadow price, and was it bought for
 return or for knowledge?" and get a number, not a narrative. This is the integrity
 AlphaFund gestures at with "an auditable capital-allocation process"; the EFE
-decomposition is what makes the audit mechanical [3, 25].
+decomposition is what makes the audit mechanical [@friston2015epistemic; @friston2017process].
 
 ## 3. Reproducibility-by-construction — every prose number is a gate
 
@@ -40,10 +40,10 @@ out-of-sync narrative turns the build red before it can reach a PDF. Applied to 
 firm that grades itself, this is not cosmetic: it means the headline t-RSI in the
 document is provably the t-RSI the shipped engine computed from the shipped model,
 not a number typed by an optimist. This is the same reproducibility mechanism
-used across the manuscript pipeline [1], and the same mechanism is used in the
-template for source-only provenance [5]. The same gate that protects the template's
+used across the manuscript pipeline [@westenhaver2026rsi], and the same mechanism is used in the
+template for source-only provenance [@friedman2026gnn]. The same gate that protects the template's
 optimization numbers protects AlphaCOGANT's create-rate, decay-rate, and certificate
-threshold [6]. Functionality (the engine runs and is ≥90%-covered, no mocks) and
+threshold [@friedman2026cogant]. Functionality (the engine runs and is ≥90%-covered, no mocks) and
 integrity (the prose cannot diverge from the engine) are enforced by the same CI.
 
 ## 4. Artifact provenance — every figure has a producer
@@ -65,7 +65,7 @@ generating script to remain mutually visible.
 The certificate of monotone improvement is the operational integrity primitive: a
 candidate $\Theta$ update is admitted into the deployed model **only** when t-RSI
 clears the margin on every active channel. This is the Active Inference
-admissibility test [3, 24, 25] (accept a model revision only when its expected free energy is
+admissibility test [@friston2015epistemic; @kaelbling1998pomdp; @friston2017process] (accept a model revision only when its expected free energy is
 reliably lower) and it is what distinguishes a self-improving corporation from one
 that promotes noise. Because it is a function of beliefs the engine computes and
 logs, the gate is reproducible and reviewable — a self-improvement step leaves an

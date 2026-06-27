@@ -3,7 +3,7 @@
 Active Inference casts any adaptive system as an agent that holds a generative
 model of how hidden causes produce sensory data, infers those causes by minimizing
 variational free energy, and selects actions that minimize *expected* free energy
-over a planning horizon [2, 3, 4]. Below, each AlphaFund construct is matched to its Active
+over a planning horizon [@friston2010freeenergy; @friston2015epistemic; @dacosta2020synthesis]. Below, each AlphaFund construct is matched to its Active
 Inference counterpart. The match is structural, not metaphorical: the equations
 coincide.
 
@@ -51,22 +51,22 @@ to inference and to control, and the value of acting to improve them is
 quantified by the same expected-free-energy functional that values every other
 action. AlphaFund's insistence that "every input that lowers predictive loss is
 priced in dollars on the firm's books" is the economic image of Active Inference's
-unification of perception, learning, and action under one objective [1].
+unification of perception, learning, and action under one objective [@westenhaver2026rsi].
 
 ## Channel-specific world models = factorized generative models
 
-AlphaFund decomposes the joint EWM into **channel-specific world models** [4]
+AlphaFund decomposes the joint EWM into **channel-specific world models** [@dacosta2020synthesis]
 $\widehat{W}_t^k$, each trained on its own channel history — a scaling law, a
 market-impact curve, a refit-decay model, a search law. It is explicit that this
 is a practical approximation: "cross-channel coupling re-enters when the
 controller composes the rows." This is precisely the **mean-field / structured
-factorization** of a generative model in Active Inference [20]: the joint is
+factorization** of a generative model in Active Inference [@vandemeent2021ppl]: the joint is
 approximated as a product of per-factor distributions for tractable inference, and
 coupling re-enters at the policy-evaluation step where Expected Free Energy is
-computed over the joint predicted outcome [3, 4]. AlphaFund's supermodular cross-partials
+computed over the joint predicted outcome [@friston2015epistemic; @dacosta2020synthesis]. AlphaFund's supermodular cross-partials
 — "a marginal dollar on channel $j$ raises the marginal value of a dollar on
 channel $k$" — are the coupling terms that a fully factorized model drops and the
-EFE computation restores [14].
+EFE computation restores [@milgrom1990].
 
 The GNN model file in [@sec:gnn] encodes exactly this: five factor blocks with per-factor
 transition matrices $B_k$, two likelihood matrices $A_R, A_L$ that couple factors
