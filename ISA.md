@@ -6,7 +6,7 @@ phase: complete
 progress: 16/16
 mode: ALGORITHM
 started: 2026-06-23
-updated: 2026-06-23
+updated: 2026-06-27
 ---
 
 # AlphaCOGANT — Ideal State Artifact
@@ -172,3 +172,33 @@ caught by my visual + numeric verification:**
 
 - 2026-06-23: R15 convergent-automation — Forge re-authored `t_rsi.py` and `test_t_rsi.py` mid-session ≥2× toward a green-by-construction comparator. Switched to own stable layer (rewrote both via full Write), behaviour-diffed (the defect: t-RSI structurally ≥0), re-ran the gate myself, and did NOT re-invoke Forge. See [[gotcha-crippled-comparator-authored-artifact]].
 - 2026-06-23: Honest-null accepted over manufactured positive. The reduced 2-level encoding yields a modestly-negative bootstrap headline t-RSI even at the self-improving point; refused to tune `concentration`/matrices to flip the sign (seed-shopping). Documented in §5 + §6 as the instrument's integrity feature. See [[gotcha-single-seed-positive-is-cherry-pick]], [[gotcha-param-change-flips-value-prose-adjective-vs-token]].
+
+## Performance + publish-readiness pass (2026-06-27, E4)
+
+Picked up a large uncommitted refactor (flat modules → `model/efe/trsi/bridge/stats/tokens/viz`
+subpackages, expanded manuscript, new docs/figures/tests). The blocker: the full test suite
+effectively never finished — `generate_variables()` took **229s** (BOOTSTRAP_N=2560, ~7 bootstraps),
+the determinism test called it twice, and there was no pytest timeout.
+
+- **Bootstrap optimization (4.8× render; token values byte-identical).** Vectorized the EFE epistemic
+  double-loop (`efe/free_energy.py::_epistemic_value`), hoisted redundant `validate_belief_map` out of
+  `marginal_return_vector`, and shared one greedy trajectory across create/decay via
+  `trsi/t_rsi.py::paired_bootstrap_samples` (also collapsed `compute_regime_statistics`' three same-seed
+  bootstraps into one). `generate_variables()` 229s → **47.9s**; all 31→30 tokens byte-for-byte identical
+  to a pre-change baseline (negative-control verified; Forge independently confirmed bit-for-bit). Added an
+  equivalence test pinning `_epistemic_value` to a naive per-observation KL loop (max diff < 1e-12).
+- **Test suite unblocked.** `generate_variables(n=None)` parameterizes the resample count; tests run at
+  `FAST_N=32` (the contract is n-independent), production/manuscript keep BOOTSTRAP_N=2560. Added
+  `pytest-timeout` (300s ceiling). Suite: **198 passed, ~98% coverage** in ~4 min.
+- **Publish-readiness audit (5-dimension /workflow + cross-vendor Forge).** Fixed: a token literally named
+  `TOKEN` (="AlphaCOGANT") that corrupted self-referential `{{TOKEN}}` prose into "AlphaCOGANT" in the PDF
+  (HIGH — removed the token, reworded to "generated token"); a manuscript overclaim that the agent "selects
+  Sensors" at the prior when the greedy policy actually **holds** (HIGH — engine-verified, reworded); the
+  t-RSI "modestly negative" framing that understated a −13.26 *standardized* value whose magnitude scales as
+  √n (reworded to robust-*sign* / n-dependent magnitude across 4 sites); a structurally-constant
+  "exploration ratio" (2/6) made genuinely behavioral via the greedy trajectory; and the artifact-integrity
+  contract (dropped a dead producer-fallback, made `--check` gate on issues, made the manifest timestamp
+  SOURCE_DATE_EPOCH-aware). All HIGH/MEDIUM findings fixed and verified in the re-rendered PDF.
+- **Standalone-release scaffolding** (target = public `docxology/alphacogant` + Zenodo DOI): added LICENSE
+  (MIT), CITATION.cff, codemeta.json, .zenodo.json. DOI reservation + public push + Zenodo mint gated on
+  explicit go-ahead (irreversible). See [[gotcha-crippled-comparator-authored-artifact]], [[gotcha-doc-claim-must-be-backed-by-shipped-code]].

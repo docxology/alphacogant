@@ -2,24 +2,42 @@
 
 No mocks; all tests use real model computation and fixed seeds.
 """
+
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from alphacogant.generative_model import default_model
-from alphacogant.operating_points import IMPROVING, COASTING
-from alphacogant.statistics import (
+from alphacogant.model.generative_model import default_model
+from alphacogant.model.operating_points import COASTING, IMPROVING
+from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
+from alphacogant.stats.statistics import (
     BootstrapCI,
+    BreakEvenProfile,
     RegimeComparison,
     RegimeStatistics,
     bootstrap_ci,
+    break_even_profile,
     compare_regimes,
     compute_regime_statistics,
 )
 
 
+def test_exploration_ratio_is_behavioral_not_a_structural_constant():
+    """The regime exploration ratio is the greedy-trajectory epistemic-cycle fraction.
+
+    Binds it to the independent simulation module (not the constant epistemic/total
+    actions = 2/6), so it is a genuine per-regime statistic.
+    """
+    model = default_model()
+    for belief in (IMPROVING, COASTING):
+        stats = compute_regime_statistics(model, belief, n=16)
+        traj = simulate_trajectory(model, belief, horizon=12, policy="greedy")
+        expected = float(summarize_trajectory(traj)["exploration_ratio"])
+        assert stats.exploration_ratio == pytest.approx(expected)
+
 # ── bootstrap_ci ─────────────────────────────────────────────────────────────
+
 
 def test_bootstrap_ci_basic():
     rng = np.random.default_rng(42)
@@ -55,6 +73,7 @@ def test_bootstrap_ci_invalid_confidence():
 
 
 # ── compute_regime_statistics ────────────────────────────────────────────────
+
 
 def test_compute_regime_statistics_improving():
     model = default_model()
@@ -114,6 +133,7 @@ def test_compute_regime_statistics_efe_decomposition():
 
 # ── compare_regimes ─────────────────────────────────────────────────────────
 
+
 def test_compare_regimes():
     comparison = compare_regimes(n=32)
     assert isinstance(comparison, RegimeComparison)
@@ -161,3 +181,27 @@ def test_bootstrap_ci_property_ci_contains_mean():
     samples = rng.normal(0, 1, size=500)
     ci = bootstrap_ci(samples, confidence=0.95)
     assert ci.ci_lower < ci.mean < ci.ci_upper
+
+
+def test_break_even_profile_basic():
+    model = default_model()
+    profile = break_even_profile(model, IMPROVING, n=64)
+    assert isinstance(profile, BreakEvenProfile)
+    assert 0.0 <= profile.probability <= 1.0
+    assert profile.n == 64
+    assert profile.margin_ci_lower <= profile.margin_mean <= profile.margin_ci_upper
+    assert np.isfinite(profile.margin_std)
+
+
+def test_break_even_profile_is_paired_and_deterministic():
+    model = default_model()
+    p1 = break_even_profile(model, IMPROVING, n=64)
+    p2 = break_even_profile(model, IMPROVING, n=64)
+    assert p1 == p2
+
+
+def test_break_even_profile_as_dict():
+    data = break_even_profile(n=32).as_dict()
+    assert data["n"] == 32
+    assert "probability" in data
+    assert "margin_mean" in data

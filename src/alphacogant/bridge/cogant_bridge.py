@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Mapping
+from collections.abc import Mapping
+from typing import SupportsFloat, cast
 
 import numpy as np
 
-from alphacogant.channels import ACTIONS, CHANNELS
-from alphacogant.generative_model import EconomicWorldModel
+from alphacogant.model.channels import ACTIONS, CHANNELS
+from alphacogant.model.generative_model import EconomicWorldModel
 
 _ALIASES: dict[str, tuple[str, ...]] = {
     "I": ("book_size", "book", "aum"),
@@ -21,7 +22,7 @@ _ALIASES: dict[str, tuple[str, ...]] = {
 def _resolve_count(spec: Mapping[str, object], channel: str) -> float:
     for key in _ALIASES[channel]:
         if key in spec:
-            value = float(spec[key])
+            value = float(cast(SupportsFloat, spec[key]))
             if not np.isfinite(value):
                 raise ValueError(f"{key} must be finite.")
             if value < 0.0:

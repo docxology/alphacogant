@@ -7,10 +7,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alphacogant"
-version = "0.3.0"
+version = "1.0.0"
 description = "GNN-via-COGANT Active Inference model of recursive corporate self-improvement (AlphaFund)"
 authors = [
-    {name = "AlphaCOGANT Author", email = "author@research-template.org"}
+    {name = "Daniel Ari Friedman", email = "daniel@activeinference.institute"},
+    {name = "Tucker Cahill Chambers"},
 ]
 requires-python = ">=3.10"
 dependencies = [
@@ -23,6 +24,7 @@ dependencies = [
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-timeout>=2.3.0",
 ]
 
 [tool.pytest.ini_options]
@@ -30,7 +32,9 @@ pythonpath = [".", "src"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short --strict-markers"
+# --timeout is a hang-breaker: 300s is far above any healthy test (the slowest
+# real test is a ~20s figure subprocess) so it only fires on a genuine stall.
+addopts = "-v --tb=short --strict-markers --timeout=300"
 
 [tool.coverage.run]
 source = ["src"]

@@ -36,9 +36,7 @@ class Channel:
         if self.name not in CHANNELS:
             raise ValueError(f"Unknown channel name {self.name!r}; expected one of {CHANNELS}.")
         if self.role not in {"pragmatic", "epistemic", "both"}:
-            raise ValueError(
-                "Channel role must be 'pragmatic', 'epistemic', or 'both'."
-            )
+            raise ValueError("Channel role must be 'pragmatic', 'epistemic', or 'both'.")
         if self.levels != 2:
             raise ValueError("AlphaCOGANT channels are binary factors and must have 2 levels.")
 

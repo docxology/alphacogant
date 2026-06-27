@@ -4,20 +4,20 @@ These tests exercise the error-handling code paths that the main suite
 (the happy-path tests) does not cover: malformed matrices, negative
 probabilities, and the KL-nonnegativity guard.
 """
+
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from alphacogant.channels import CHANNELS
-from alphacogant.generative_model import (
-    EconomicWorldModel,
+from alphacogant.efe.free_energy import _kl_divergence
+from alphacogant.model.channels import CHANNELS
+from alphacogant.model.generative_model import (
     _validate_probability_columns,
     _validate_probability_vector,
     default_model,
     infer_states,
 )
-from alphacogant.free_energy import expected_free_energy, _kl_divergence
 
 
 def test_validate_probability_columns_rejects_negative():

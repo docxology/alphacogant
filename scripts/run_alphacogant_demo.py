@@ -7,6 +7,7 @@ and the marginal-return vector across the six allocation actions, and evaluates 
 t-RSI certificate. All computation comes from ``src/alphacogant``; this script only
 orchestrates and renders outputs.
 """
+
 from __future__ import annotations
 
 import json
@@ -18,14 +19,18 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from alphacogant.channels import ACTIONS  # noqa: E402
-from alphacogant.free_energy import (  # noqa: E402
+from alphacogant.efe.free_energy import (  # noqa: E402
     expected_free_energy,
     marginal_return_vector,
     policy_posterior,
 )
-from alphacogant.generative_model import belief_prior, default_model, infer_states  # noqa: E402
-from alphacogant.t_rsi import bootstrap_t_rsi, certificate  # noqa: E402
+from alphacogant.model.channels import ACTIONS  # noqa: E402
+from alphacogant.model.generative_model import (  # noqa: E402
+    belief_prior,
+    default_model,
+    infer_states,
+)
+from alphacogant.trsi.t_rsi import bootstrap_t_rsi, certificate  # noqa: E402
 
 
 def main() -> int:

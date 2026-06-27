@@ -8,13 +8,13 @@ value used for action ranking is therefore ``-G = pragmatic + epistemic``.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
 
 import numpy as np
 
-from alphacogant.channels import ACTIONS, CHANNELS
-from alphacogant.generative_model import EconomicWorldModel, validate_belief_map
+from alphacogant.model.channels import ACTIONS, CHANNELS
+from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
 
 
 @dataclass(frozen=True)
@@ -29,19 +29,6 @@ class EFEResult:
 def _validate_action(action: int) -> None:
     if action < 0 or action >= len(ACTIONS):
         raise ValueError(f"action must be in [0, {len(ACTIONS) - 1}], got {action}.")
-
-
-def _predict_belief(
-    model: EconomicWorldModel,
-    belief: Mapping[str, np.ndarray],
-    action: int,
-) -> dict[str, np.ndarray]:
-    _validate_action(action)
-    normalized = validate_belief_map(belief, context="belief")
-    predicted: dict[str, np.ndarray] = {}
-    for channel in CHANNELS:
-        predicted[channel] = model.B[channel][:, :, action] @ normalized[channel]
-    return predicted
 
 
 def _reward_distribution(model: EconomicWorldModel, belief: Mapping[str, np.ndarray]) -> np.ndarray:
@@ -61,24 +48,65 @@ def _theta_prior_likelihood_terms(
     return reward_given_theta, loss_given_theta
 
 
-def _theta_posterior_for_observation(
-    theta_prior: np.ndarray,
-    reward_given_theta: np.ndarray,
-    loss_given_theta: np.ndarray,
-    reward_index: int,
-    loss_index: int,
-) -> tuple[np.ndarray, float]:
-    unnormalized = theta_prior * reward_given_theta[reward_index] * loss_given_theta[loss_index]
-    observation_prob = float(unnormalized.sum())
-    if observation_prob <= 0.0:
-        return theta_prior.copy(), 0.0
-    posterior = unnormalized / observation_prob
-    return posterior, observation_prob
-
-
 def _kl_divergence(posterior: np.ndarray, prior: np.ndarray) -> float:
     mask = posterior > 0.0
     return float(np.sum(posterior[mask] * np.log(posterior[mask] / prior[mask])))
+
+
+def _epistemic_value(
+    theta_prior: np.ndarray,
+    reward_given_theta: np.ndarray,
+    loss_given_theta: np.ndarray,
+) -> float:
+    """Expected Bayesian surprise over Theta across all reward/loss observations.
+
+    Vectorized equivalent of the per-observation loop: for every (reward, loss)
+    outcome pair it forms the unnormalized Theta posterior, its observation
+    probability, and the KL(posterior || prior), then takes the observation-weighted
+    sum. Observations with zero probability contribute nothing (their weight is 0).
+    """
+    # joint[r, l, t] = theta_prior[t] * P(reward=r | theta=t) * P(loss=l | theta=t)
+    joint = (
+        theta_prior[None, None, :] * reward_given_theta[:, None, :] * loss_given_theta[None, :, :]
+    )
+    observation_prob = joint.sum(axis=2)  # (R, L)
+    valid = observation_prob > 0.0
+    safe_denominator = np.where(valid[..., None], joint.sum(axis=2, keepdims=True), 1.0)
+    posterior = joint / safe_denominator  # (R, L, T); rows for invalid obs are meaningless
+    positive = posterior > 0.0
+    ratio = np.where(positive, posterior / theta_prior[None, None, :], 1.0)
+    kl = np.sum(np.where(positive, posterior * np.log(ratio), 0.0), axis=2)  # (R, L)
+    if np.any(kl < -1e-12):
+        raise ValueError(
+            "Epistemic value must be non-negative because KL divergence is non-negative."
+        )
+    contributions = np.where(valid, observation_prob * np.clip(kl, 0.0, None), 0.0)
+    return float(np.clip(contributions.sum(), 0.0, None))
+
+
+def _efe_from_validated(
+    model: EconomicWorldModel,
+    validated_belief: Mapping[str, np.ndarray],
+    action: int,
+) -> EFEResult:
+    """EFE for an action given an already-validated/normalized belief map.
+
+    Hot-path entry that skips re-validation of the input belief; callers that
+    evaluate many actions against the same belief (e.g. ``marginal_return_vector``)
+    validate once and reuse, which removes redundant validation from the bootstrap.
+    """
+    _validate_action(action)
+    predicted = {
+        channel: model.B[channel][:, :, action] @ validated_belief[channel] for channel in CHANNELS
+    }
+    reward_distribution = _reward_distribution(model, predicted)
+    loss_distribution = _loss_distribution(model, predicted)
+    pragmatic = float(reward_distribution @ model.C_R + loss_distribution @ model.C_L)
+
+    theta_prior = predicted["Theta"]
+    reward_given_theta, loss_given_theta = _theta_prior_likelihood_terms(model, predicted)
+    epistemic = _epistemic_value(theta_prior, reward_given_theta, loss_given_theta)
+    return EFEResult(pragmatic=pragmatic, epistemic=epistemic, total=-(pragmatic + epistemic))
 
 
 def expected_free_energy(
@@ -87,33 +115,7 @@ def expected_free_energy(
     action: int,
 ) -> EFEResult:
     """Compute the pragmatic value, epistemic value, and total EFE for one action."""
-    predicted = _predict_belief(model, belief, action)
-    reward_distribution = _reward_distribution(model, predicted)
-    loss_distribution = _loss_distribution(model, predicted)
-    pragmatic = float(reward_distribution @ model.C_R + loss_distribution @ model.C_L)
-
-    theta_prior = predicted["Theta"]
-    reward_given_theta, loss_given_theta = _theta_prior_likelihood_terms(model, predicted)
-    epistemic = 0.0
-    for reward_index in range(reward_distribution.shape[0]):
-        for loss_index in range(loss_distribution.shape[0]):
-            posterior, observation_prob = _theta_posterior_for_observation(
-                theta_prior,
-                reward_given_theta,
-                loss_given_theta,
-                reward_index,
-                loss_index,
-            )
-            if observation_prob == 0.0:
-                continue
-            kl_value = _kl_divergence(posterior, theta_prior)
-            if kl_value < -1e-12:
-                raise ValueError("Epistemic value must be non-negative because KL divergence is non-negative.")
-            epistemic += observation_prob * max(0.0, kl_value)
-
-    epistemic = float(np.clip(epistemic, 0.0, None))
-    total = -(pragmatic + epistemic)
-    return EFEResult(pragmatic=pragmatic, epistemic=epistemic, total=total)
+    return _efe_from_validated(model, validate_belief_map(belief, context="belief"), action)
 
 
 def static_pragmatic_value(
@@ -139,9 +141,10 @@ def marginal_return_vector(
     belief: Mapping[str, np.ndarray],
 ) -> dict[int, float]:
     """Return the negative-EFE value for every action."""
+    validated = validate_belief_map(belief, context="belief")
     values: dict[int, float] = {}
     for action in range(len(ACTIONS)):
-        efe = expected_free_energy(model, belief, action)
+        efe = _efe_from_validated(model, validated, action)
         values[action] = -efe.total
     return values
 

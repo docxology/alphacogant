@@ -42,15 +42,21 @@ import numpy as np
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-from alphacogant.channels import CHANNELS  # noqa: E402
-from alphacogant.generative_model import default_model  # noqa: E402
-from alphacogant.operating_points import (  # noqa: E402
+from alphacogant.model.channels import CHANNELS  # noqa: E402
+from alphacogant.model.generative_model import default_model  # noqa: E402
+from alphacogant.model.operating_points import (  # noqa: E402
     BOOTSTRAP_CONCENTRATION as CONCENTRATION,
+)
+from alphacogant.model.operating_points import (
     BOOTSTRAP_N as N_SAMPLES,
+)
+from alphacogant.model.operating_points import (
     BOOTSTRAP_SEED as SEED,
+)
+from alphacogant.model.operating_points import (
     IMPROVING,
 )
-from alphacogant.t_rsi import (  # noqa: E402
+from alphacogant.trsi.t_rsi import (  # noqa: E402
     DEFAULT_HORIZON,
     bootstrap_t_rsi,
     create_rate,
@@ -136,8 +142,12 @@ def main() -> Path:
     # (the same call that produces the HEADLINE_T_RSI manuscript token). Fail loudly
     # on any drift so the figure can never silently contradict the manuscript.
     canonical = bootstrap_t_rsi(
-        model, IMPROVING, np.random.default_rng(SEED), n=N_SAMPLES,
-        horizon=DEFAULT_HORIZON, concentration=CONCENTRATION,
+        model,
+        IMPROVING,
+        np.random.default_rng(SEED),
+        n=N_SAMPLES,
+        horizon=DEFAULT_HORIZON,
+        concentration=CONCENTRATION,
     )
     assert abs(value - canonical["t_rsi"]) < 1e-9, (value, canonical["t_rsi"])
     assert abs(create_mean - canonical["create_mean"]) < 1e-9
@@ -209,8 +219,7 @@ def main() -> Path:
     ax.set_xlabel("path-integral rate (horizon-mean pragmatic value, nats)")
     ax.set_ylabel("density")
     ax.set_title(
-        f"t-RSI create/decay densities at the IMPROVING operating point "
-        f"(t-RSI = {value:.3f})"
+        f"t-RSI create/decay densities at the IMPROVING operating point (t-RSI = {value:.3f})"
     )
     ax.legend(loc="upper right", fontsize=8, framealpha=0.9)
     ax.grid(True, alpha=0.25)

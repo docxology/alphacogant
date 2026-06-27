@@ -9,26 +9,29 @@ orchestrates and reports.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Mapping
+from collections.abc import Mapping
+from dataclasses import dataclass
 
 import numpy as np
 
-from alphacogant.channels import CHANNELS
-from alphacogant.free_energy import expected_free_energy, marginal_return_vector
-from alphacogant.generative_model import EconomicWorldModel, belief_prior, default_model
-from alphacogant.operating_points import (
+from alphacogant.efe.free_energy import expected_free_energy, marginal_return_vector
+from alphacogant.model.channels import CHANNELS
+from alphacogant.model.generative_model import (
+    EconomicWorldModel,
+    belief_prior,
+    default_model,
+)
+from alphacogant.model.operating_points import (
     BOOTSTRAP_CONCENTRATION,
     BOOTSTRAP_N,
     BOOTSTRAP_SEED,
     COASTING,
     IMPROVING,
 )
-from alphacogant.t_rsi import (
+from alphacogant.trsi.t_rsi import (
     DEFAULT_HORIZON,
-    bootstrap_t_rsi,
-    create_rate,
-    decay_rate,
+    paired_bootstrap_samples,
+    t_rsi,
 )
 
 
@@ -47,6 +50,40 @@ class BootstrapCI:
     @property
     def ci_width(self) -> float:
         return self.ci_upper - self.ci_lower
+
+
+@dataclass(frozen=True)
+class BreakEvenProfile:
+    probability: float
+    margin_mean: float
+    margin_std: float
+    margin_ci_lower: float
+    margin_ci_upper: float
+    create_mean: float
+    decay_mean: float
+    n: int
+    horizon: int
+    concentration: float
+    confidence: float
+
+    @property
+    def margin_ci_width(self) -> float:
+        return self.margin_ci_upper - self.margin_ci_lower
+
+    def as_dict(self) -> dict[str, float | int]:
+        return {
+            "probability": self.probability,
+            "margin_mean": self.margin_mean,
+            "margin_std": self.margin_std,
+            "margin_ci_lower": self.margin_ci_lower,
+            "margin_ci_upper": self.margin_ci_upper,
+            "create_mean": self.create_mean,
+            "decay_mean": self.decay_mean,
+            "n": self.n,
+            "horizon": self.horizon,
+            "concentration": self.concentration,
+            "confidence": self.confidence,
+        }
 
 
 @dataclass(frozen=True)
@@ -102,9 +139,7 @@ class RegimeComparison:
     @property
     def cohen_d_create(self) -> float:
         """Cohen's d effect size for the create-rate difference between regimes."""
-        pooled_std = np.sqrt(
-            (self.improving.create_ci.std**2 + self.coasting.create_ci.std**2) / 2
-        )
+        pooled_std = np.sqrt((self.improving.create_ci.std**2 + self.coasting.create_ci.std**2) / 2)
         if pooled_std == 0:
             return 0.0
         return float(self.create_rate_delta / pooled_std)
@@ -112,28 +147,52 @@ class RegimeComparison:
     @property
     def cohen_d_decay(self) -> float:
         """Cohen's d effect size for the decay-rate difference."""
-        pooled_std = np.sqrt(
-            (self.improving.decay_ci.std**2 + self.coasting.decay_ci.std**2) / 2
-        )
+        pooled_std = np.sqrt((self.improving.decay_ci.std**2 + self.coasting.decay_ci.std**2) / 2)
         if pooled_std == 0:
             return 0.0
         return float(self.decay_rate_delta / pooled_std)
 
     def as_table(self) -> str:
         """Render the comparison as a markdown table."""
-        return (
-            f"| Metric | Improving | Coasting | Delta |\n"
-            f"|--------|-----------|----------|-------|\n"
-            f"| t-RSI | {self.improving.t_rsi:.4f} | {self.coasting.t_rsi:.4f} | {self.t_rsi_delta:.4f} |\n"
-            f"| Create-rate mean | {self.improving.create_ci.mean:.4f} | {self.coasting.create_ci.mean:.4f} | {self.create_rate_delta:.4f} |\n"
-            f"| Create-rate 95% CI | [{self.improving.create_ci.ci_lower:.4f}, {self.improving.create_ci.ci_upper:.4f}] | [{self.coasting.create_ci.ci_lower:.4f}, {self.coasting.create_ci.ci_upper:.4f}] | — |\n"
-            f"| Decay-rate mean | {self.improving.decay_ci.mean:.4f} | {self.coasting.decay_ci.mean:.4f} | {self.decay_rate_delta:.4f} |\n"
-            f"| Decay-rate 95% CI | [{self.improving.decay_ci.ci_lower:.4f}, {self.improving.decay_ci.ci_upper:.4f}] | [{self.coasting.decay_ci.ci_lower:.4f}, {self.coasting.decay_ci.ci_upper:.4f}] | — |\n"
-            f"| Cohen's d (create) | — | — | {self.cohen_d_create:.4f} |\n"
-            f"| Cohen's d (decay) | — | — | {self.cohen_d_decay:.4f} |\n"
-            f"| Funded channel | {self.improving.funded_channel} | {self.coasting.funded_channel} | — |\n"
-            f"| Exploration ratio | {self.improving.exploration_ratio:.4f} | {self.coasting.exploration_ratio:.4f} | — |"
-        )
+        rows = [
+            "| Metric | Improving | Coasting | Delta |",
+            "|--------|-----------|----------|-------|",
+            (
+                f"| t-RSI | {self.improving.t_rsi:.4f} | "
+                f"{self.coasting.t_rsi:.4f} | {self.t_rsi_delta:.4f} |"
+            ),
+            (
+                f"| Create-rate mean | {self.improving.create_ci.mean:.4f} | "
+                f"{self.coasting.create_ci.mean:.4f} | {self.create_rate_delta:.4f} |"
+            ),
+            (
+                f"| Create-rate 95% CI | [{self.improving.create_ci.ci_lower:.4f}, "
+                f"{self.improving.create_ci.ci_upper:.4f}] | "
+                f"[{self.coasting.create_ci.ci_lower:.4f}, "
+                f"{self.coasting.create_ci.ci_upper:.4f}] | — |"
+            ),
+            (
+                f"| Decay-rate mean | {self.improving.decay_ci.mean:.4f} | "
+                f"{self.coasting.decay_ci.mean:.4f} | {self.decay_rate_delta:.4f} |"
+            ),
+            (
+                f"| Decay-rate 95% CI | [{self.improving.decay_ci.ci_lower:.4f}, "
+                f"{self.improving.decay_ci.ci_upper:.4f}] | "
+                f"[{self.coasting.decay_ci.ci_lower:.4f}, "
+                f"{self.coasting.decay_ci.ci_upper:.4f}] | — |"
+            ),
+            f"| Cohen's d (create) | — | — | {self.cohen_d_create:.4f} |",
+            f"| Cohen's d (decay) | — | — | {self.cohen_d_decay:.4f} |",
+            (
+                f"| Funded channel | {self.improving.funded_channel} | "
+                f"{self.coasting.funded_channel} | — |"
+            ),
+            (
+                f"| Exploration ratio | {self.improving.exploration_ratio:.4f} | "
+                f"{self.coasting.exploration_ratio:.4f} | — |"
+            ),
+        ]
+        return "\n".join(rows)
 
 
 def bootstrap_ci(
@@ -162,27 +221,48 @@ def bootstrap_ci(
     )
 
 
-def _bootstrap_rate_samples(
-    model: EconomicWorldModel,
-    belief: Mapping[str, np.ndarray],
-    rng: np.random.Generator,
-    rate_fn,
+def break_even_profile(
+    model: EconomicWorldModel | None = None,
+    belief: Mapping[str, np.ndarray] | None = None,
+    *,
+    seed: int = BOOTSTRAP_SEED,
     n: int = BOOTSTRAP_N,
     horizon: int = DEFAULT_HORIZON,
     concentration: float = BOOTSTRAP_CONCENTRATION,
-) -> np.ndarray:
-    """Bootstrap per-perturbation samples of a rate function."""
-    from alphacogant.generative_model import validate_belief_map
+    confidence: float = 0.95,
+) -> BreakEvenProfile:
+    if n < 2:
+        raise ValueError("Need at least 2 samples for a break-even profile.")
+    if not (0.0 < confidence < 1.0):
+        raise ValueError("confidence must be in (0, 1).")
 
-    normalized = validate_belief_map(belief, context="belief")
-    samples = np.empty(n, dtype=float)
-    for i in range(n):
-        perturbed: dict[str, np.ndarray] = {}
-        for channel, vector in normalized.items():
-            alpha = np.clip(vector, 1e-9, None) * concentration + 1.0
-            perturbed[channel] = rng.dirichlet(alpha)
-        samples[i] = rate_fn(model, perturbed, horizon)
-    return samples
+    model = model or default_model()
+    if belief is None:
+        belief = belief_prior(model)
+
+    create_samples, decay_samples = paired_bootstrap_samples(
+        model,
+        belief,
+        np.random.default_rng(seed),
+        n,
+        horizon,
+        concentration,
+    )
+    margins = create_samples - decay_samples
+    alpha = (1.0 - confidence) / 2.0
+    return BreakEvenProfile(
+        probability=float(np.mean(margins > 0.0)),
+        margin_mean=float(np.mean(margins)),
+        margin_std=float(np.std(margins, ddof=1)),
+        margin_ci_lower=float(np.percentile(margins, 100 * alpha)),
+        margin_ci_upper=float(np.percentile(margins, 100 * (1 - alpha))),
+        create_mean=float(np.mean(create_samples)),
+        decay_mean=float(np.mean(decay_samples)),
+        n=n,
+        horizon=horizon,
+        concentration=concentration,
+        confidence=confidence,
+    )
 
 
 def compute_regime_statistics(
@@ -201,14 +281,13 @@ def compute_regime_statistics(
     if belief is None:
         belief = belief_prior(model)
 
-    rng = np.random.default_rng(seed)
-    boot = bootstrap_t_rsi(model, belief, rng, n=n, horizon=horizon, concentration=concentration)
-
-    # Separate CIs from fresh bootstrap
-    rng2 = np.random.default_rng(seed)
-    create_samples = _bootstrap_rate_samples(model, belief, rng2, create_rate, n, horizon, concentration)
-    rng3 = np.random.default_rng(seed)
-    decay_samples = _bootstrap_rate_samples(model, belief, rng3, decay_rate, n, horizon, concentration)
+    # One paired bootstrap (same seed, same draw order) yields the t-RSI statistic
+    # and the create/decay CIs from a single deterministic sample set — identical to
+    # the previous three separate same-seed bootstraps, at a third of the cost.
+    create_samples, decay_samples = paired_bootstrap_samples(
+        model, belief, np.random.default_rng(seed), n, horizon, concentration
+    )
+    boot = {"t_rsi": float(t_rsi(create_samples, decay_samples))}
 
     create_ci = bootstrap_ci(create_samples, confidence)
     decay_ci = bootstrap_ci(decay_samples, confidence)
@@ -218,7 +297,7 @@ def compute_regime_statistics(
     funded_action = max(returns, key=lambda a: returns[a])
     funded_result = expected_free_energy(model, belief, funded_action)
 
-    from alphacogant.channels import ACTIONS
+    from alphacogant.model.channels import ACTIONS
 
     efe_prag: dict[str, float] = {}
     efe_epis: dict[str, float] = {}
@@ -227,10 +306,13 @@ def compute_regime_statistics(
         efe_prag[ACTIONS[action_idx]] = efe.pragmatic
         efe_epis[ACTIONS[action_idx]] = efe.epistemic
 
-    # Exploration ratio: fraction of actions that are epistemic
-    epistemic_actions = {"fund_S", "fund_Z"}
-    epistemic_count = sum(1 for a in ACTIONS if a in epistemic_actions)
-    exploration_ratio = epistemic_count / len(ACTIONS)
+    # Exploration ratio: the fraction of greedy-trajectory CYCLES this regime spends
+    # funding an epistemic channel (S or Z) — a behavioral, regime-discriminating
+    # quantity, not the structural constant (epistemic actions / total actions).
+    from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
+
+    trajectory = simulate_trajectory(model, belief, horizon=horizon, policy="greedy")
+    exploration_ratio = float(summarize_trajectory(trajectory)["exploration_ratio"])
 
     return RegimeStatistics(
         name=name,
@@ -258,20 +340,32 @@ def compare_regimes(
     """Compare the IMPROVING and COASTING regimes side by side."""
     model = model or default_model()
     improving = compute_regime_statistics(
-        model, IMPROVING, "Improving",
-        seed=seed, n=n, horizon=horizon, concentration=concentration,
+        model,
+        IMPROVING,
+        "Improving",
+        seed=seed,
+        n=n,
+        horizon=horizon,
+        concentration=concentration,
     )
     coasting = compute_regime_statistics(
-        model, COASTING, "Coasting",
-        seed=seed, n=n, horizon=horizon, concentration=concentration,
+        model,
+        COASTING,
+        "Coasting",
+        seed=seed,
+        n=n,
+        horizon=horizon,
+        concentration=concentration,
     )
     return RegimeComparison(improving=improving, coasting=coasting)
 
 
 __all__ = [
+    "BreakEvenProfile",
     "BootstrapCI",
     "RegimeComparison",
     "RegimeStatistics",
+    "break_even_profile",
     "bootstrap_ci",
     "compare_regimes",
     "compute_regime_statistics",

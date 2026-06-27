@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from alphacogant.channels import ACTIONS, CHANNELS, Channel, action_index, channel_index
+from alphacogant.model.channels import ACTIONS, CHANNELS, Channel, action_index, channel_index
 
 
 def test_channel_metadata_and_lookup() -> None:

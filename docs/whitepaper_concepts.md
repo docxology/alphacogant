@@ -1,7 +1,7 @@
 # AlphaFund whitepaper — concept inventory & AlphaCOGANT mapping rubric
 
 Source: AlphaFund, *Recursive Self-Improvement is a Portfolio Optimization Problem*
-(York Westenhaver, Massey Branscomb, Aidan Grant). This is the coverage checklist:
+(York Westenhaver, Massey Branscomb, Aidan Grant) [1]. This is the coverage checklist:
 every concept below must be connected to an Active-Inference / GNN counterpart in the
 AlphaCOGANT manuscript and, where it carries a number, an auto-injected `{{TOKEN}}`.
 

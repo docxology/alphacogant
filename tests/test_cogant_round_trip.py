@@ -2,14 +2,15 @@
 
 No mocks; all tests use real model computation.
 """
+
 from __future__ import annotations
 
-import numpy as np
-import pytest
-
-from alphacogant.channels import CHANNELS
-from alphacogant.cogant_bridge import firm_structure_to_channels, model_to_gnn_summary, parse_gnn_summary
-from alphacogant.generative_model import default_model
+from alphacogant.bridge.cogant_bridge import (
+    model_to_gnn_summary,
+    parse_gnn_summary,
+)
+from alphacogant.model.channels import CHANNELS
+from alphacogant.model.generative_model import default_model
 
 
 def test_gnn_summary_has_all_sections():

@@ -13,15 +13,15 @@ and records.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Mapping, Sequence
+from collections.abc import Mapping
+from dataclasses import dataclass
 
 import numpy as np
 
-from alphacogant.channels import ACTIONS, CHANNELS, action_index
-from alphacogant.free_energy import expected_free_energy, marginal_return_vector
-from alphacogant.generative_model import EconomicWorldModel, validate_belief_map
-from alphacogant.t_rsi import DEFAULT_HORIZON, _advance, _greedy_action
+from alphacogant.efe.free_energy import expected_free_energy, marginal_return_vector
+from alphacogant.model.channels import ACTIONS, CHANNELS, action_index
+from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
+from alphacogant.trsi.t_rsi import DEFAULT_HORIZON, _advance, _greedy_action
 
 
 @dataclass(frozen=True)
@@ -120,7 +120,7 @@ def simulate_trajectory(
         elif policy == "fund_theta":
             action = action_index("fund_Theta")
         else:  # stochastic
-            from alphacogant.free_energy import policy_posterior
+            from alphacogant.efe.free_energy import policy_posterior
 
             posterior = policy_posterior(model, current)
             action = int(rng.choice(len(ACTIONS), p=posterior))  # type: ignore[union-attr]

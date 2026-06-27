@@ -21,21 +21,22 @@ from pathlib import Path
 
 import numpy as np
 
-from alphacogant.channels import CHANNEL_ROLES, CHANNELS
-from alphacogant.free_energy import expected_free_energy, marginal_return_vector
-from alphacogant.generative_model import belief_prior, default_model
-from alphacogant.operating_points import (
+from alphacogant.efe.free_energy import expected_free_energy, marginal_return_vector
+from alphacogant.model.channels import CHANNEL_ROLES, CHANNELS
+from alphacogant.model.generative_model import belief_prior, default_model
+from alphacogant.model.operating_points import (
     BOOTSTRAP_CONCENTRATION,
     BOOTSTRAP_N,
     BOOTSTRAP_SEED,
-    IMPROVING,
     COASTING,
+    IMPROVING,
 )
-from alphacogant.t_rsi import DEFAULT_HORIZON, bootstrap_t_rsi
+from alphacogant.trsi.t_rsi import DEFAULT_HORIZON, bootstrap_t_rsi
 
 PLANNING_HORIZON = DEFAULT_HORIZON
 
-_MANUSCRIPT_DIR = Path(__file__).resolve().parents[2] / "manuscript"
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_MANUSCRIPT_DIR = _PROJECT_ROOT / "manuscript"
 _DEFINITION_RE = re.compile(r"\*\*Definition\s+D(\d+)\b")
 _FIGURE_RE = re.compile(r"\{#fig:[A-Za-z0-9_]+\}")
 
@@ -56,7 +57,7 @@ def _theta_decay_leak_probability(model) -> float:
     bleeds away when the firm does not refit, read directly off the normalized
     transition tensor.
     """
-    from alphacogant.channels import action_index
+    from alphacogant.model.channels import action_index
 
     theta = model.B["Theta"]
     stale, fresh = 0, 1  # level0 = weak/stale, level1 = fresh
@@ -79,29 +80,58 @@ def _count_figures() -> int:
     return len(labels)
 
 
-def generate_variables() -> dict[str, str]:
-    """Generate every manuscript token from the live deterministic model."""
-    from alphacogant.simulation import simulate_trajectory, summarize_trajectory
-    from alphacogant.statistics import compare_regimes, compute_regime_statistics
+def resolve_bootstrap_n(n: int | None) -> int:
+    """Resolve the bootstrap resample count, defaulting to the published value."""
+    return BOOTSTRAP_N if n is None else n
 
+
+def generate_variables(n: int | None = None) -> dict[str, str]:
+    """Generate every manuscript token from the live deterministic model.
+
+    ``n`` overrides the bootstrap resample count. It defaults to the published
+    ``BOOTSTRAP_N`` (the value rendered into the manuscript); tests pass a small
+    ``n`` to exercise the full token surface quickly, since the token *contract*
+    (determinism, key set, formatting, behaviour) does not depend on the resample
+    count — only the bootstrap point values do, and those are reported at the
+    published ``BOOTSTRAP_N``.
+    """
+    from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
+    from alphacogant.stats.statistics import (
+        break_even_profile,
+        compare_regimes,
+        compute_regime_statistics,
+    )
+
+    bootstrap_n = resolve_bootstrap_n(n)
     model = default_model()
 
     # Exactly two bootstraps (improving + coasting); results reused for every
     # t-RSI / create / decay token below. Fixed seeds keep this deterministic.
     improving = bootstrap_t_rsi(
-        model, IMPROVING, np.random.default_rng(BOOTSTRAP_SEED), n=BOOTSTRAP_N,
+        model,
+        IMPROVING,
+        np.random.default_rng(BOOTSTRAP_SEED),
+        n=bootstrap_n,
         concentration=BOOTSTRAP_CONCENTRATION,
     )
     coasting = bootstrap_t_rsi(
-        model, COASTING, np.random.default_rng(BOOTSTRAP_SEED), n=BOOTSTRAP_N,
+        model,
+        COASTING,
+        np.random.default_rng(BOOTSTRAP_SEED),
+        n=bootstrap_n,
         concentration=BOOTSTRAP_CONCENTRATION,
     )
 
     # Full regime statistics (bootstrap CIs + effect sizes)
     stats_improving = compute_regime_statistics(
-        model, IMPROVING, "Improving", n=BOOTSTRAP_N,
+        model,
+        IMPROVING,
+        "Improving",
+        n=bootstrap_n,
     )
-    comparison = compare_regimes(model, n=BOOTSTRAP_N)
+    comparison = compare_regimes(model, n=bootstrap_n)
+    improving_break_even = break_even_profile(model, IMPROVING, n=bootstrap_n)
+    coasting_break_even = break_even_profile(model, COASTING, n=bootstrap_n)
 
     # The funded channel is reported at the neutral prior operating point. It comes
     # out epistemic (Sensors) with negative immediate pragmatic value — the firm
@@ -118,10 +148,10 @@ def generate_variables() -> dict[str, str]:
     traj_summary = summarize_trajectory(trajectory)
 
     return {
-        "TOKEN": "AlphaCOGANT",
         "NUM_CHANNELS": str(len(CHANNELS)),
         "NUM_ACTIONS": str(model.B[CHANNELS[0]].shape[2]),
         "PLANNING_HORIZON": str(PLANNING_HORIZON),
+        "BOOTSTRAP_N": str(bootstrap_n),
         "EPISTEMIC_CHANNELS": _channels_with_role("epistemic"),
         "PRAGMATIC_CHANNELS": _channels_with_role("pragmatic"),
         "FUNDED_CHANNEL": CHANNELS[funded_action],
@@ -138,8 +168,7 @@ def generate_variables() -> dict[str, str]:
         "TRAJ_FIRST_FUNDED": traj_summary["first_funded"],
         "TRAJ_LAST_FUNDED": traj_summary["last_funded"],
         "TRAJ_THETA_DELTA": _format_float(
-            float(traj_summary["last_p_strong_theta"])
-            - float(traj_summary["first_p_strong_theta"])
+            float(traj_summary["last_p_strong_theta"]) - float(traj_summary["first_p_strong_theta"])
         ),
         "TRAJ_EXPLORATION_RATIO": traj_summary["exploration_ratio"],
         "TRAJ_DOMINANT_ACTION": traj_summary["dominant_action"],
@@ -150,6 +179,9 @@ def generate_variables() -> dict[str, str]:
         "DECAY_CI_UPPER": _format_float(stats_improving.decay_ci.ci_upper),
         "COHEN_D_CREATE": _format_float(comparison.cohen_d_create),
         "COHEN_D_DECAY": _format_float(comparison.cohen_d_decay),
+        "BREAK_EVEN_PROB": _format_float(improving_break_even.probability),
+        "COASTING_BREAK_EVEN_PROB": _format_float(coasting_break_even.probability),
+        "BREAK_EVEN_MARGIN_MEAN": _format_float(improving_break_even.margin_mean),
     }
 
 

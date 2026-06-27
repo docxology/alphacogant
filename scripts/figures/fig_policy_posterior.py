@@ -11,6 +11,7 @@ Theta); as the model freshens, probability mass shifts to pragmatic actions
 (Investments, Actuators). The explore→exploit transition is visible as a
 redistribution of probability mass, not a hard switch.
 """
+
 from __future__ import annotations
 
 import sys
@@ -21,11 +22,11 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from alphacogant.channels import ACTIONS  # noqa: E402
-from alphacogant.free_energy import policy_posterior  # noqa: E402
-from alphacogant.generative_model import default_model  # noqa: E402
-from alphacogant.operating_points import IMPROVING  # noqa: E402
-from alphacogant.simulation import simulate_trajectory  # noqa: E402
+from alphacogant.efe.free_energy import policy_posterior  # noqa: E402
+from alphacogant.model.channels import ACTIONS  # noqa: E402
+from alphacogant.model.generative_model import default_model  # noqa: E402
+from alphacogant.model.operating_points import IMPROVING  # noqa: E402
+from alphacogant.stats.simulation import simulate_trajectory  # noqa: E402
 
 HORIZON = 12
 GAMMA = 1.0  # precision for the softmax

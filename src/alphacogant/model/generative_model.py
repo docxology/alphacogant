@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
 
 import numpy as np
 
-from alphacogant.channels import ACTIONS, CHANNELS
+from alphacogant.model.channels import ACTIONS, CHANNELS
 
 ArrayMap = Mapping[str, np.ndarray]
 
@@ -95,36 +95,106 @@ def _build_default_B() -> dict[str, np.ndarray]:
     raw_B = {
         "I": np.array(
             [
-                [(0.60, 0.05), (0.95, 0.95), (0.95, 0.95), (0.95, 0.95), (0.95, 0.95), (0.90, 0.10)],
-                [(0.40, 0.95), (0.05, 0.05), (0.05, 0.05), (0.05, 0.05), (0.05, 0.05), (0.10, 0.90)],
+                [
+                    (0.60, 0.05),
+                    (0.95, 0.95),
+                    (0.95, 0.95),
+                    (0.95, 0.95),
+                    (0.95, 0.95),
+                    (0.90, 0.10),
+                ],
+                [
+                    (0.40, 0.95),
+                    (0.05, 0.05),
+                    (0.05, 0.05),
+                    (0.05, 0.05),
+                    (0.05, 0.05),
+                    (0.10, 0.90),
+                ],
             ],
             dtype=float,
         ),
         "S": np.array(
             [
-                [(0.90, 0.90), (0.55, 0.05), (0.90, 0.90), (0.90, 0.90), (0.90, 0.90), (0.90, 0.10)],
-                [(0.10, 0.10), (0.45, 0.95), (0.10, 0.10), (0.10, 0.10), (0.10, 0.10), (0.10, 0.90)],
+                [
+                    (0.90, 0.90),
+                    (0.55, 0.05),
+                    (0.90, 0.90),
+                    (0.90, 0.90),
+                    (0.90, 0.90),
+                    (0.90, 0.10),
+                ],
+                [
+                    (0.10, 0.10),
+                    (0.45, 0.95),
+                    (0.10, 0.10),
+                    (0.10, 0.10),
+                    (0.10, 0.10),
+                    (0.10, 0.90),
+                ],
             ],
             dtype=float,
         ),
         "U": np.array(
             [
-                [(0.90, 0.90), (0.90, 0.90), (0.55, 0.05), (0.90, 0.90), (0.90, 0.90), (0.90, 0.10)],
-                [(0.10, 0.10), (0.10, 0.10), (0.45, 0.95), (0.10, 0.10), (0.10, 0.10), (0.10, 0.90)],
+                [
+                    (0.90, 0.90),
+                    (0.90, 0.90),
+                    (0.55, 0.05),
+                    (0.90, 0.90),
+                    (0.90, 0.90),
+                    (0.90, 0.10),
+                ],
+                [
+                    (0.10, 0.10),
+                    (0.10, 0.10),
+                    (0.45, 0.95),
+                    (0.10, 0.10),
+                    (0.10, 0.10),
+                    (0.10, 0.90),
+                ],
             ],
             dtype=float,
         ),
         "Theta": np.array(
             [
-                [(0.85, 0.35), (0.85, 0.35), (0.85, 0.35), (0.50, 0.02), (0.85, 0.35), (0.85, 0.40)],
-                [(0.15, 0.65), (0.15, 0.65), (0.15, 0.65), (0.50, 0.98), (0.15, 0.65), (0.15, 0.60)],
+                [
+                    (0.85, 0.35),
+                    (0.85, 0.35),
+                    (0.85, 0.35),
+                    (0.50, 0.02),
+                    (0.85, 0.35),
+                    (0.85, 0.40),
+                ],
+                [
+                    (0.15, 0.65),
+                    (0.15, 0.65),
+                    (0.15, 0.65),
+                    (0.50, 0.98),
+                    (0.15, 0.65),
+                    (0.15, 0.60),
+                ],
             ],
             dtype=float,
         ),
         "Z": np.array(
             [
-                [(0.90, 0.90), (0.90, 0.90), (0.90, 0.90), (0.90, 0.90), (0.55, 0.05), (0.90, 0.10)],
-                [(0.10, 0.10), (0.10, 0.10), (0.10, 0.10), (0.10, 0.10), (0.45, 0.95), (0.10, 0.90)],
+                [
+                    (0.90, 0.90),
+                    (0.90, 0.90),
+                    (0.90, 0.90),
+                    (0.90, 0.90),
+                    (0.55, 0.05),
+                    (0.90, 0.10),
+                ],
+                [
+                    (0.10, 0.10),
+                    (0.10, 0.10),
+                    (0.10, 0.10),
+                    (0.10, 0.10),
+                    (0.45, 0.95),
+                    (0.10, 0.90),
+                ],
             ],
             dtype=float,
         ),
@@ -196,8 +266,12 @@ def default_model(
         "Theta": np.array([0.4, 0.6], dtype=float),
         "Z": np.array([0.5, 0.5], dtype=float),
     }
-    normalized_A_R = _normalize_probability_columns("A_R", A_R if A_R is not None else default_A_R, (3, 2, 2, 2))
-    normalized_A_L = _normalize_probability_columns("A_L", A_L if A_L is not None else default_A_L, (3, 2, 2))
+    normalized_A_R = _normalize_probability_columns(
+        "A_R", A_R if A_R is not None else default_A_R, (3, 2, 2, 2)
+    )
+    normalized_A_L = _normalize_probability_columns(
+        "A_L", A_L if A_L is not None else default_A_L, (3, 2, 2)
+    )
     normalized_B = _build_default_B()
     if B is not None:
         missing = [channel for channel in CHANNELS if channel not in B]
@@ -226,8 +300,12 @@ def default_model(
         A_R=normalized_A_R,
         A_L=normalized_A_L,
         B=normalized_B,
-        C_R=_as_array("C_R", C_R if C_R is not None else np.array([-2.0, 0.0, 3.0], dtype=float), (3,)),
-        C_L=_as_array("C_L", C_L if C_L is not None else np.array([-2.0, 0.0, 2.0], dtype=float), (3,)),
+        C_R=_as_array(
+            "C_R", C_R if C_R is not None else np.array([-2.0, 0.0, 3.0], dtype=float), (3,)
+        ),
+        C_L=_as_array(
+            "C_L", C_L if C_L is not None else np.array([-2.0, 0.0, 2.0], dtype=float), (3,)
+        ),
         D=normalized_D,
     )
 
@@ -271,7 +349,9 @@ def infer_states(
     return posterior
 
 
-def validate_belief_map(belief: Mapping[str, np.ndarray], *, context: str = "belief") -> dict[str, np.ndarray]:
+def validate_belief_map(
+    belief: Mapping[str, np.ndarray], *, context: str = "belief"
+) -> dict[str, np.ndarray]:
     """Validate and normalize a belief map for downstream modules."""
     return _validate_belief_map(belief, context=context)
 

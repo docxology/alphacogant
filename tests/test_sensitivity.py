@@ -2,14 +2,15 @@
 
 No mocks; all tests use real model computation and fixed seeds.
 """
+
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from alphacogant.generative_model import default_model
-from alphacogant.operating_points import IMPROVING
-from alphacogant.sensitivity import sweep_concentration, sweep_theta_freshness
+from alphacogant.model.generative_model import default_model
+from alphacogant.model.operating_points import IMPROVING
+from alphacogant.stats.sensitivity import sweep_concentration, sweep_theta_freshness
 
 
 def test_sweep_concentration_returns_arrays():

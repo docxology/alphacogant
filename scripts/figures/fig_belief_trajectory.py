@@ -14,6 +14,7 @@ Two-panel figure:
       funds Sensors then holds. Shows that with a fresh model, the
       controller explores briefly then exploits the now-accurate forecasts.
 """
+
 from __future__ import annotations
 
 import sys
@@ -24,10 +25,10 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from alphacogant.channels import ACTIONS, CHANNELS  # noqa: E402
-from alphacogant.generative_model import default_model, validate_belief_map  # noqa: E402
-from alphacogant.operating_points import IMPROVING  # noqa: E402
-from alphacogant.simulation import simulate_trajectory  # noqa: E402
+from alphacogant.model.channels import CHANNELS  # noqa: E402
+from alphacogant.model.generative_model import default_model, validate_belief_map  # noqa: E402
+from alphacogant.model.operating_points import IMPROVING  # noqa: E402
+from alphacogant.stats.simulation import simulate_trajectory  # noqa: E402
 
 HORIZON = 12
 

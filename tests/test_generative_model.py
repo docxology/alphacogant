@@ -5,7 +5,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.generative_model import EconomicWorldModel, belief_prior, default_model, infer_states
+from alphacogant.model.generative_model import (
+    EconomicWorldModel,
+    belief_prior,
+    default_model,
+    infer_states,
+)
 
 
 def test_default_model_probabilities_and_belief_prior_copy(model) -> None:

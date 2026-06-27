@@ -39,11 +39,10 @@ base font size live in `config.yaml` (`metadata.geometry`, `metadata.fontsize`,
 }
 \usepackage[capitalise,noabbrev]{cleveref}
 
-# ── Unicode-capable fonts (xelatex) ──────────────────────────────────
-# The manuscript uses Greek/math unicode (Θ, Ξ, λ, ∂, ∇, ≥) in prose and math.
-# latinmodern-math gives full BMP math coverage; JuliaMono covers code glyphs.
-# If JuliaMono is absent on another machine, the \IfFontExistsTF guard makes
-# xelatex fall back to the default mono silently — no comment-out needed.
+% Unicode-capable fonts (xelatex)
+% The manuscript uses Greek/math unicode in prose and math.
+% latinmodern-math gives broad math coverage; JuliaMono covers code glyphs.
+% If JuliaMono is absent, the guard leaves xelatex on its default mono font.
 \usepackage{fontspec}
 \IfFontExistsTF{JuliaMono-Regular}{%
   \setmonofont{JuliaMono-Regular}[

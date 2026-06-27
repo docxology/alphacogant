@@ -9,13 +9,13 @@ controls how tightly the bootstrap perturbations hug the operating belief.
 
 from __future__ import annotations
 
-from typing import Mapping
+from collections.abc import Mapping
 
 import numpy as np
 
-from alphacogant.generative_model import EconomicWorldModel, validate_belief_map
-from alphacogant.operating_points import BOOTSTRAP_SEED
-from alphacogant.t_rsi import bootstrap_t_rsi
+from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
+from alphacogant.model.operating_points import BOOTSTRAP_N, BOOTSTRAP_SEED
+from alphacogant.trsi.t_rsi import bootstrap_t_rsi
 
 
 def sweep_concentration(
@@ -24,7 +24,7 @@ def sweep_concentration(
     *,
     concentrations: np.ndarray | None = None,
     seed: int = BOOTSTRAP_SEED,
-    n: int = 256,
+    n: int = BOOTSTRAP_N,
 ) -> dict[str, np.ndarray]:
     """Bootstrap t-RSI across a range of Dirichlet concentrations.
 
@@ -70,7 +70,7 @@ def sweep_theta_freshness(
     *,
     theta_values: np.ndarray | None = None,
     seed: int = BOOTSTRAP_SEED,
-    n: int = 256,
+    n: int = BOOTSTRAP_N,
     concentration: float = 12.0,
 ) -> dict[str, np.ndarray]:
     """Bootstrap t-RSI as the Theta-freshness prior is swept.

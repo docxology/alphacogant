@@ -40,10 +40,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
-from alphacogant.channels import ACTIONS, CHANNELS, action_index  # noqa: E402
-from alphacogant.free_energy import expected_free_energy  # noqa: E402
-from alphacogant.generative_model import default_model  # noqa: E402
-from alphacogant.operating_points import IMPROVING, COASTING  # noqa: E402
+from alphacogant.efe.free_energy import expected_free_energy  # noqa: E402
+from alphacogant.model.channels import ACTIONS, CHANNELS, action_index  # noqa: E402
+from alphacogant.model.generative_model import default_model  # noqa: E402
+from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
 
 OUTPUT_PATH = PROJECT_ROOT / "output" / "figures" / "value_by_regime.png"
 

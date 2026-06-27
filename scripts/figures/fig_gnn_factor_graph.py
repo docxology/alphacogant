@@ -53,13 +53,13 @@ _SRC = _PROJECT_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from alphacogant.channels import ACTIONS, CHANNELS, action_index, channel_index  # noqa: E402
-from alphacogant.free_energy import (  # noqa: E402
+from alphacogant.efe.free_energy import (  # noqa: E402
     expected_free_energy,
     marginal_return_vector,
 )
-from alphacogant.generative_model import default_model, validate_belief_map  # noqa: E402
-from alphacogant.operating_points import IMPROVING_RAW, COASTING_RAW  # noqa: E402
+from alphacogant.model.channels import ACTIONS, CHANNELS, action_index, channel_index  # noqa: E402
+from alphacogant.model.generative_model import default_model, validate_belief_map  # noqa: E402
+from alphacogant.model.operating_points import COASTING_RAW, IMPROVING_RAW  # noqa: E402
 
 OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "gnn_factor_graph.png"
 

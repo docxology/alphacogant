@@ -1,14 +1,14 @@
-# Abstract
+# Abstract {#sec:abstract}
 
 The AlphaFund whitepaper reframes recursive self-improvement (RSI) as a portfolio
-optimization problem: a corporation recursively improves when realized economic
+optimization problem: [1] a corporation recursively improves when realized economic
 gains finance the next cycle of better prediction and deployment, and the firm's
 standing is summarized by **t-RSI**, a standardized gap between alpha-creation and
 alpha-decay rates. **AlphaCOGANT** observes that this construction is, term for
-term, an **Active Inference** agent — and makes the correspondence executable.
+term, an **Active Inference** agent [1, 2, 3, 4] — and makes the correspondence executable.
 
 We render AlphaFund's **Economic World Model (EWM)** as a generative model written
-in **Generalized Notation Notation (GNN)**, produced by the **COGANT**
+in **Generalized Notation Notation (GNN)**, produced by the **COGANT** [5, 6]
 codebase-to-GNN translation pattern. The firm's five capital channels —
 Investments, Sensors, Actuators, Parameters, and R&D — become the hidden-state
 factors of a partially-observed model; capital allocation becomes the control
@@ -29,7 +29,8 @@ vector, and evaluates the t-RSI certificate. We argue that GNN-via-COGANT brings
 two things AlphaFund's program needs and Active Inference already enforces:
 **filtration integrity** (the model may condition only on information available
 at decision time — the same "no-peeking" discipline that separates an EWM from a
-language model) and **auditable capital allocation** (every allocation is a
-gradient of a single, legible objective). This is not financial advice; it is a
-demonstration that recursive corporate self-improvement and active inference are
-the same control problem seen from two directions.
+language model) and **auditable capital allocation** (every admissible funding
+move has a negative-EFE score under a single, legible objective). This is not
+financial advice; it is a demonstration that this reduced
+recursive-corporate-self-improvement model has a direct Active Inference
+representation supported by source-owning methods and artifact checks [1, 5, 6].

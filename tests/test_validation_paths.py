@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.generative_model import EconomicWorldModel, default_model
+from alphacogant.model.generative_model import EconomicWorldModel, default_model
 
 
 def _valid_matrices(model):
@@ -55,7 +55,7 @@ def test_validate_probability_vector_rejects_zero_sum(model) -> None:
 
 
 def test_validate_belief_map_rejects_negative(model, prior) -> None:
-    from alphacogant.generative_model import infer_states
+    from alphacogant.model.generative_model import infer_states
 
     bad_prior = {k: v.copy() for k, v in prior.items()}
     bad_prior["Theta"] = np.array([-0.1, 1.1], dtype=float)
@@ -69,7 +69,12 @@ def test_constructor_rejects_non_column_stochastic_a_r(model) -> None:
     bad_a_r[0, 0, 0, 0] = 10.0
     with pytest.raises(ValueError, match="A_R"):
         EconomicWorldModel(
-            A_R=bad_a_r, A_L=a_l, B=b, C_R=c_r, C_L=c_l, D=d,
+            A_R=bad_a_r,
+            A_L=a_l,
+            B=b,
+            C_R=c_r,
+            C_L=c_l,
+            D=d,
         )
 
 
@@ -79,7 +84,12 @@ def test_constructor_rejects_non_column_stochastic_a_l(model) -> None:
     bad_a_l[0, 0, 0] = 10.0
     with pytest.raises(ValueError, match="A_L"):
         EconomicWorldModel(
-            A_R=a_r, A_L=bad_a_l, B=b, C_R=c_r, C_L=c_l, D=d,
+            A_R=a_r,
+            A_L=bad_a_l,
+            B=b,
+            C_R=c_r,
+            C_L=c_l,
+            D=d,
         )
 
 
@@ -89,5 +99,10 @@ def test_constructor_rejects_non_normalized_d(model) -> None:
     bad_d["I"] = np.array([0.3, 0.3], dtype=float)
     with pytest.raises(ValueError, match="D\\[I\\]"):
         EconomicWorldModel(
-            A_R=a_r, A_L=a_l, B=b, C_R=c_r, C_L=c_l, D=bad_d,
+            A_R=a_r,
+            A_L=a_l,
+            B=b,
+            C_R=c_r,
+            C_L=c_l,
+            D=bad_d,
         )

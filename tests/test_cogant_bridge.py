@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.cogant_bridge import firm_structure_to_channels, model_to_gnn_summary
+from alphacogant.bridge.cogant_bridge import firm_structure_to_channels, model_to_gnn_summary
 
 
 def test_richer_firm_structure_strengthens_channel_priors() -> None:

@@ -5,9 +5,57 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.channels import action_index
-from alphacogant.free_energy import expected_free_energy, marginal_return_vector, policy_posterior
-from alphacogant.generative_model import default_model
+from alphacogant.efe.free_energy import (
+    _epistemic_value,
+    _kl_divergence,
+    expected_free_energy,
+    marginal_return_vector,
+    policy_posterior,
+)
+from alphacogant.model.channels import action_index
+from alphacogant.model.generative_model import default_model
+
+
+def _reference_epistemic(
+    theta_prior: np.ndarray,
+    reward_given_theta: np.ndarray,
+    loss_given_theta: np.ndarray,
+) -> float:
+    """Naive per-observation epistemic value — the pre-vectorization reference.
+
+    Independent implementation (explicit double loop over reward/loss outcomes,
+    using the scalar ``_kl_divergence``) that pins the vectorized ``_epistemic_value``
+    so a value-altering vectorization bug cannot pass silently.
+    """
+    total = 0.0
+    for r in range(reward_given_theta.shape[0]):
+        for loss in range(loss_given_theta.shape[0]):
+            unnormalized = theta_prior * reward_given_theta[r] * loss_given_theta[loss]
+            observation_prob = float(unnormalized.sum())
+            if observation_prob <= 0.0:
+                continue
+            posterior = unnormalized / observation_prob
+            total += observation_prob * max(0.0, _kl_divergence(posterior, theta_prior))
+    return total
+
+
+def test_epistemic_value_matches_naive_per_observation_loop() -> None:
+    """Vectorized _epistemic_value equals the explicit per-observation KL loop."""
+    rng = np.random.default_rng(20240623)
+    max_diff = 0.0
+    for _ in range(200):
+        theta_states = int(rng.integers(2, 5))
+        reward_outcomes = int(rng.integers(2, 5))
+        loss_outcomes = int(rng.integers(2, 5))
+        theta_prior = rng.dirichlet(np.ones(theta_states))
+        # Columns over outcomes sum to 1 per theta-state, matching A column-stochasticity.
+        reward_given_theta = rng.dirichlet(np.ones(reward_outcomes), size=theta_states).T
+        loss_given_theta = rng.dirichlet(np.ones(loss_outcomes), size=theta_states).T
+        vectorized = _epistemic_value(theta_prior, reward_given_theta, loss_given_theta)
+        reference = _reference_epistemic(theta_prior, reward_given_theta, loss_given_theta)
+        assert vectorized >= 0.0
+        max_diff = max(max_diff, abs(vectorized - reference))
+    assert max_diff < 1e-12, f"vectorized epistemic drifted from reference by {max_diff}"
 
 
 def test_expected_free_energy_sign_and_value_consistency(model, prior) -> None:

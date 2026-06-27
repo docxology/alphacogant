@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from alphacogant.t_rsi import _standard_error
+from alphacogant.trsi.t_rsi import _standard_error
 
 
 def test_standard_error_returns_zero_for_single_sample() -> None:

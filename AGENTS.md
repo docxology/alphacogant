@@ -14,18 +14,16 @@ thresholded EFE-improvement certificate.
 ```
 models/alphafund_ewm.md       # GNN model file (the contract)
 src/alphacogant/              # NumPy engine (SPEC.md is the contract)
-  channels.py                 # 5 channels + 6 allocation actions
-  generative_model.py         # A/B/C/D matrices, state inference
-  free_energy.py              # EFE = epistemic + pragmatic; marginal-return vector
-  t_rsi.py                    # create/decay rates, t-RSI, certificate
-  cogant_bridge.py            # firm structure -> priors -> GNN summary (round-trip)
-  operating_points.py         # canonical IMPROVING/COASTING beliefs + bootstrap constants
-  manuscript_variables.py     # every prose {{TOKEN}} is generated here
-  simulation.py              # multi-cycle trajectory recorder
-  sensitivity.py             # t-RSI sweep over belief precision and Theta freshness
+  model/                      # channels, A/B/C/D matrices, operating points
+  efe/                        # EFE = epistemic + pragmatic; marginal-return vector
+  trsi/                       # create/decay rates, t-RSI, certificate
+  bridge/                     # firm structure -> priors -> GNN summary (round-trip)
+  stats/                      # trajectories, sensitivity, bootstrap evidence profiles
+  tokens/                     # every prose {{TOKEN}} is generated here
+  viz/                        # shared plot style and color palettes
 manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variables, figures)
-tests/                        # 158 tests, 99.75% coverage, no mocks
+tests/                        # 198 tests, 98%+ coverage, no mocks
 ```
 
 ## Key Invariants
@@ -48,6 +46,9 @@ uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
 # Demo
 uv run --no-project python scripts/run_alphacogant_demo.py
 
+# Manuscript figures
+uv run --no-project python scripts/y_generate_figures.py
+
 # Manuscript variables
 uv run --no-project python scripts/z_generate_manuscript_variables.py
 
@@ -61,7 +62,7 @@ uv run --no-project python scripts/figures/fig_trsi_sensitivity.py
 ## Token Discipline
 
 Every numeric cited in prose is a `{{TOKEN}}` produced by
-`src/alphacogant/manuscript_variables.py::generate_variables` and written to
+`src/alphacogant/tokens/manuscript_variables.py::generate_variables` and written to
 `output/manuscript_variables.json` by `scripts/z_generate_manuscript_variables.py`.
 A token used in prose but absent from the generator is a build failure (no orphans).
 
@@ -75,7 +76,7 @@ uv run --no-project python scripts/z_generate_manuscript_variables.py --check
 The model file `models/alphafund_ewm.md` conforms to GNN section structure:
 StateSpaceBlock, Connections, InitialParameterization, Equations,
 ActInfOntologyAnnotation. The engine's `default_model()` loads the same numeric
-values as the GNN file, and `cogant_bridge.model_to_gnn_summary()` re-emits a
+ values as the GNN file, and `bridge.cogant_bridge.model_to_gnn_summary()` re-emits a
 GNN-style block from the live arrays (round-trip).
 
 ## Private Repo

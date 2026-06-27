@@ -47,16 +47,16 @@ sys.path.insert(0, str(SRC_DIR))
 
 import numpy as np  # noqa: E402
 
-from alphacogant.channels import ACTIONS, CHANNELS  # noqa: E402
-from alphacogant.free_energy import (  # noqa: E402
+from alphacogant.efe.free_energy import (  # noqa: E402
     expected_free_energy,
     marginal_return_vector,
 )
-from alphacogant.generative_model import default_model  # noqa: E402
+from alphacogant.model.channels import ACTIONS, CHANNELS  # noqa: E402
+from alphacogant.model.generative_model import default_model  # noqa: E402
 
 OUTPUT_PNG = PROJECT_ROOT / "output" / "figures" / "aif_dictionary.png"
 
-from alphacogant.operating_points import IMPROVING, COASTING  # noqa: E402
+from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
 
 # Dictionary rows: (AlphaFund construct, Active-Inference object, semantic tag).
 ROWS: tuple[tuple[str, str, str], ...] = (

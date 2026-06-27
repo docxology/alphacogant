@@ -10,9 +10,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.generative_model import belief_prior, default_model
-from alphacogant.operating_points import IMPROVING as _IMPROVING, COASTING as _COASTING
-from alphacogant.t_rsi import bootstrap_t_rsi, certificate, create_rate, decay_rate, t_rsi
+from alphacogant.model.generative_model import belief_prior, default_model
+from alphacogant.model.operating_points import COASTING as _COASTING
+from alphacogant.model.operating_points import IMPROVING as _IMPROVING
+from alphacogant.trsi.t_rsi import bootstrap_t_rsi, certificate, create_rate, decay_rate, t_rsi
 
 
 def test_decay_rate_is_non_negative_everywhere(model, prior) -> None:

@@ -16,12 +16,12 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
 
 ## Modules
 
-### `channels.py`
+### `model/channels.py`
 - `CHANNELS: tuple[str,...]` and `ACTIONS: tuple[str,...]` constants.
 - `Channel` dataclass: name, role in `{"pragmatic","epistemic","both"}`, 2-level.
 - `channel_index(name) -> int`, `action_index(name) -> int`.
 
-### `generative_model.py`
+### `model/generative_model.py`
 - `EconomicWorldModel` dataclass holding `A_R (3,2,2,2)`, `A_L (3,2,2)`,
   `B` dict of `{channel: (2,2,6)}`, `C_R (3,)`, `C_L (3,)`, `D` dict `{channel:(2,)}`.
 - `default_model() -> EconomicWorldModel` returning the matrices in the GNN file
@@ -33,7 +33,7 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   Bayesian filtering update of the per-channel posterior from a bucketed reward
   obs and loss obs (mean-field factorized; exact for this factor graph).
 
-### `free_energy.py` — the heart
+### `efe/free_energy.py` — the heart
 - `expected_free_energy(model, belief, action) -> EFEResult` where `EFEResult`
   has `pragmatic: float`, `epistemic: float`, `total: float` and
   `total == -(pragmatic + epistemic)` (G is negated value; lower G = better).
@@ -49,7 +49,7 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
 - `policy_posterior(model, belief, gamma=1.0) -> np.ndarray (6,)`: softmax over
   `-G` (precision gamma). Sums to 1.
 
-### `t_rsi.py`
+### `trsi/t_rsi.py`
 - `create_rate(model, belief) -> float`: pragmatic value of the best funded policy
   (gross alpha-creation rate).
 - `decay_rate(model, belief) -> float`: expected pragmatic loss per cycle from the
@@ -63,7 +63,7 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   deterministic-seeded bootstrap over per-channel belief perturbations.
 - `certificate(t_rsi_value, delta) -> bool`: the monotone-improvement gate.
 
-### `cogant_bridge.py` — codebase→GNN→EWM provenance
+### `bridge/cogant_bridge.py` — codebase→GNN→EWM provenance
 - `firm_structure_to_channels(spec: dict) -> dict`: map a small firm-description
   dict (counts of data feeds, venues, models, researchers, book size) onto the
   five channel prior beliefs `D` (more feeds → stronger `S` prior, etc.). Pure,
@@ -78,7 +78,7 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   summary block back into structured data (factors, connections, ontology).
   Used to verify round-trip fidelity in tests.
 
-### `operating_points.py`
+### `model/operating_points.py`
 - `IMPROVING` / `COASTING`: the two canonical operating-point belief maps (weak
   channels + stale parameters vs. strong channels + fresh parameters). The single
   source of truth — every figure script, test, and the manuscript-variables
@@ -90,14 +90,14 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   bootstrap constants used by `manuscript_variables.generate_variables` and the
   `fig_trsi_densities` figure.
 
-### `manuscript_variables.py`
+### `tokens/manuscript_variables.py`
 - `generate_variables() -> dict[str, str]`: every numeric the manuscript prose
   cites as a `{{TOKEN}}` is produced here from the live model + a deterministic
   demo trajectory (headline t-RSI, create_mean, decay_mean, epistemic/pragmatic of
   the funded policy, channel count, action count, planning horizon, etc.). Used by
   `scripts/z_generate_manuscript_variables.py`.
 
-### `simulation.py`
+### `stats/simulation.py`
 - `simulate_trajectory(model, initial_belief, horizon, *, policy, seed) -> TrajectoryResult`:
   run the firm for `horizon` cycles under a greedy, hold, fund_theta, or stochastic
   policy. Each cycle records the full belief map, the selected action, the EFE
@@ -112,13 +112,25 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   (first/last funded channel, belief deltas, total pragmatic/epistemic value,
   exploration ratio, dominant action).
 
-### `sensitivity.py`
+### `stats/sensitivity.py`
 - `sweep_concentration(model, belief, *, concentrations, seed, n) -> dict`: bootstrap
   t-RSI across a range of Dirichlet concentrations, showing how robust the headline
   number is to the firm's belief precision.
 - `sweep_theta_freshness(model, base_belief, *, theta_values, seed, n, concentration) -> dict`:
   bootstrap t-RSI as the Theta-freshness prior is swept from stale to fresh, showing
   how the certificate responds to the firm's belief about its own parameter quality.
+
+### `stats/statistics.py`
+- `bootstrap_ci(samples, confidence) -> BootstrapCI`: percentile interval summary
+  for generated rate samples.
+- `compute_regime_statistics(...) -> RegimeStatistics`: bootstrap CIs, EFE
+  decomposition, funded action, and effect-size inputs for one operating point.
+- `compare_regimes(...) -> RegimeComparison`: improving-vs-coasting table and
+  Cohen's d summaries.
+- `break_even_profile(...) -> BreakEvenProfile`: paired bootstrap estimate of
+  `P(create_rate > decay_rate)` plus the create-minus-decay margin interval. The
+  same belief perturbation feeds both rates, so the probability is an event-level
+  complement to the standardized t-RSI distance.
 
 ## Tests (`tests/`, no mocks, fixed seeds)
 - `test_generative_model.py`: matrices valid distributions; `infer_states` moves

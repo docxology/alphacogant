@@ -10,6 +10,7 @@ The waterfall makes visible how each action's total G is built from its
 pragmatic and epistemic components, and why the greedy policy selects the
 action it does (lowest G = highest value = highest pragmatic + epistemic).
 """
+
 from __future__ import annotations
 
 import sys
@@ -20,11 +21,15 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from alphacogant.channels import ACTIONS  # noqa: E402
-from alphacogant.free_energy import expected_free_energy, marginal_return_vector  # noqa: E402
-from alphacogant.generative_model import default_model  # noqa: E402
-from alphacogant.operating_points import IMPROVING  # noqa: E402
-from alphacogant.plot_style import apply_style, EPISTEMIC_COLOR, PRAGMATIC_COLOR, NEUTRAL_COLOR  # noqa: E402
+from alphacogant.efe.free_energy import expected_free_energy, marginal_return_vector  # noqa: E402
+from alphacogant.model.channels import ACTIONS  # noqa: E402
+from alphacogant.model.generative_model import default_model  # noqa: E402
+from alphacogant.model.operating_points import IMPROVING  # noqa: E402
+from alphacogant.viz.plot_style import (  # noqa: E402
+    EPISTEMIC_COLOR,
+    PRAGMATIC_COLOR,
+    apply_style,
+)
 
 
 def main() -> int:
@@ -56,17 +61,42 @@ def main() -> int:
     w = 0.6
 
     # Draw pragmatic bars (negative — costs)
-    bars_prag = ax.bar(x, prags, w, color=PRAGMATIC_COLOR, alpha=0.85,
-                       edgecolor="black", linewidth=0.8, label="pragmatic (expected log-preference)")
+    ax.bar(
+        x,
+        prags,
+        w,
+        color=PRAGMATIC_COLOR,
+        alpha=0.85,
+        edgecolor="black",
+        linewidth=0.8,
+        label="pragmatic (expected log-preference)",
+    )
 
     # Draw epistemic bars on top of pragmatic
     # total = -(pragmatic + epistemic), so G = -pragmatic - epistemic
     # We draw: pragmatic (negative) then epistemic (positive, reduces total)
-    bars_epis = ax.bar(x, epis, w, bottom=prags, color=EPISTEMIC_COLOR, alpha=0.85,
-                       edgecolor="black", linewidth=0.8, label="epistemic (info gain, ≥0)")
+    ax.bar(
+        x,
+        epis,
+        w,
+        bottom=prags,
+        color=EPISTEMIC_COLOR,
+        alpha=0.85,
+        edgecolor="black",
+        linewidth=0.8,
+        label="epistemic (info gain, >=0)",
+    )
 
     # Draw total markers
-    ax.scatter(x, totals, color="black", s=60, zorder=5, marker="D", label="G (total EFE, minimized)")
+    ax.scatter(
+        x,
+        totals,
+        color="black",
+        s=60,
+        zorder=5,
+        marker="D",
+        label="G (total EFE, minimized)",
+    )
 
     # Highlight the greedy action
     ax.bar(x[greedy_action], 0, w, color="none", edgecolor="#16a34a", linewidth=3)
@@ -74,22 +104,41 @@ def main() -> int:
         "GREEDY\n(lowest G)",
         (x[greedy_action], totals[greedy_action]),
         xytext=(x[greedy_action] + 0.5, totals[greedy_action] + 0.15),
-        fontsize=8, fontweight="bold", color="#16a34a",
+        fontsize=8,
+        fontweight="bold",
+        color="#16a34a",
         arrowprops={"arrowstyle": "->", "color": "#16a34a", "lw": 1.5},
     )
 
     # Value annotations
     for i in range(len(ACTIONS)):
-        ax.text(x[i], prags[i] - 0.08, f"{prags[i]:.3f}",
-                ha="center", va="top", fontsize=7, color="white", fontweight="bold")
-        ax.text(x[i], prags[i] + epis[i] + 0.02, f"+{epis[i]:.3f}",
-                ha="center", va="bottom", fontsize=7, color=EPISTEMIC_COLOR)
+        ax.text(
+            x[i],
+            prags[i] - 0.08,
+            f"{prags[i]:.3f}",
+            ha="center",
+            va="top",
+            fontsize=7,
+            color="white",
+            fontweight="bold",
+        )
+        ax.text(
+            x[i],
+            prags[i] + epis[i] + 0.02,
+            f"+{epis[i]:.3f}",
+            ha="center",
+            va="bottom",
+            fontsize=7,
+            color=EPISTEMIC_COLOR,
+        )
 
     ax.set_xticks(x)
     ax.set_xticklabels(list(ACTIONS), rotation=20, ha="right")
     ax.set_ylabel("EFE components (nats)")
-    ax.set_title("Expected Free Energy decomposition per action at the IMPROVING operating point\n"
-                 "G (◆) = -(pragmatic + epistemic); the greedy policy selects the lowest G")
+    ax.set_title(
+        "Expected Free Energy decomposition per action at the IMPROVING operating point\n"
+        "black diamonds show G = -(pragmatic + epistemic); greedy selects lowest G"
+    )
     ax.axhline(0.0, color="black", linewidth=1.0)
     ax.legend(loc="upper right", fontsize=8)
 

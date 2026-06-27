@@ -27,7 +27,7 @@ It is built from three pieces of the template monorepo:
   orchestrator, `{{TOKEN}}` manuscript, ≥90% coverage, no mocks).
 - **GNN** (Generalized Notation Notation) — the text language for Active Inference
   generative models. `models/alphafund_ewm.md` encodes the five-channel EWM.
-- **COGANT** — the codebase-to-GNN translation pattern; `src/alphacogant/cogant_bridge.py`
+- **COGANT** — the codebase-to-GNN translation pattern; `src/alphacogant/bridge/cogant_bridge.py`
   maps firm structure → generative-model priors and re-emits a GNN summary (round-trip).
 
 ## Layout
@@ -35,18 +35,17 @@ It is built from three pieces of the template monorepo:
 ```
 models/alphafund_ewm.md       # AlphaFund EWM as a GNN Active Inference model
 src/alphacogant/              # NumPy engine (SPEC.md is the contract)
-  channels.py                 # the 5 channels + 6 allocation actions
-  generative_model.py         # A/B/C/D matrices, state inference
-  free_energy.py              # EFE = epistemic + pragmatic; marginal-return vector
-  t_rsi.py                    # create/decay rates, t-RSI, certificate
-  cogant_bridge.py            # firm structure -> priors -> GNN summary (round-trip)
-  operating_points.py         # canonical IMPROVING/COASTING beliefs + bootstrap constants
-  manuscript_variables.py     # every prose {{TOKEN}} is generated here
-  simulation.py              # multi-cycle trajectory recorder
-  sensitivity.py             # t-RSI sweep over belief precision and Theta freshness
+  model/                      # channels, A/B/C/D matrices, operating points
+  efe/                        # EFE = epistemic + pragmatic; marginal-return vector
+  trsi/                       # create/decay rates, t-RSI, certificate
+  bridge/                     # firm structure -> priors -> GNN summary (round-trip)
+  stats/                      # trajectories, sensitivity, paired bootstrap profiles
+  tokens/                     # every prose {{TOKEN}} is generated here
+  viz/                        # shared plot style and color palettes
 manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variable generation, figures)
-  figures/                    # 15 engine-generated figures
+  y_generate_figures.py       # runs every manuscript figure script
+  figures/                    # 15 manuscript figures + cover art
     fig_aif_dictionary.py     # AlphaFund ↔ Active Inference dictionary
     fig_certificate_sign_flip.py  # not-green-by-construction comparator
     fig_gnn_factor_graph.py    # EWM-as-GNN factor graph
@@ -61,6 +60,8 @@ scripts/                      # thin orchestrators (demo, variable generation, f
     fig_regime_comparison.py   # bootstrap CIs + EFE decomposition per regime
     fig_efe_waterfall.py       # EFE decomposition waterfall per action
     fig_create_vs_decay_scatter.py  # bootstrap scatter with break-even line
+    fig_break_even_probability.py  # paired break-even probability over Theta freshness
+    fig_cover_art.py          # PDF title-page cover art
 ```
 
 ## Quick start
@@ -70,6 +71,7 @@ scripts/                      # thin orchestrators (demo, variable generation, f
 cd projects/working/alphacogant
 uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
 uv run --no-project python scripts/run_alphacogant_demo.py
+uv run --no-project python scripts/y_generate_figures.py
 uv run --no-project python scripts/z_generate_manuscript_variables.py
 ```
 
@@ -80,6 +82,9 @@ The manuscript writes the idea out in full: the AlphaFund↔Active Inference dic
 epistemic/pragmatic value split and t-RSI as the EFE certificate (§5), and the
 functionality + integrity case (§6), numbered formalisms (§8), limitations and
 sensitivity analysis (§9).
+
+Implementation and artifact regeneration details live in
+[`docs/methods_and_artifacts.md`](docs/methods_and_artifacts.md).
 
 > **Not financial advice.** AlphaCOGANT is a modeling and integrity instrument. The
 > GNN model is an illustrative reduced encoding; every numeric in the manuscript is a

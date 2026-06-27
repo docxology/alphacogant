@@ -1,4 +1,4 @@
-# Technical and computational realization: GNN via COGANT
+# Technical and computational realization: GNN via COGANT {#sec:gnn}
 
 ## What GNN is, and why it fits
 
@@ -6,6 +6,7 @@ Generalized Notation Notation (GNN) is a text-based specification language for
 Active Inference generative models, with a processing pipeline that transforms a
 GNN `.md` file into executable simulations (PyMDP, RxInfer.jl, JAX, Active
 Inference.jl, and others), visualizations, type-checked validations, and reports.
+This pipeline and model contract are the source of our representation [5].
 A GNN model is a Markdown document with structured sections: a `StateSpaceBlock`
 declaring tensors (the $A$ likelihood, $B$ transitions, $C$ preferences, $D$
 priors, hidden states $s$, observations $o$, policy $\pi$, Expected Free Energy
@@ -16,12 +17,15 @@ $G$), a `Connections` block giving the factor-graph edges, an
 GNN is the right target for AlphaFund because it is **executable, typed, and
 filtration-explicit**. The EWM is not a diagram; it is an object the firm rolls
 forward under candidate actions. GNN compiles to exactly such rollouts, and its
-type-checker enforces that the declared tensors are well-formed probability
-objects — the static discipline AlphaFund needs for an auditable controller.
+structured sections make tensor shapes, probability objects, and graph
+connections explicit before any policy is evaluated. That static discipline is
+what AlphaFund needs for an auditable controller: a reviewer can inspect the
+state factors, likelihoods, transitions, and action edges rather than trusting a
+free-form narrative.
 
 ## What COGANT is, and the translation step
 
-COGANT is a **codebase-to-GNN translator**: it scans a system's structure
+COGANT is a **codebase-to-GNN translator** [6]: it scans a system's structure
 (program graph, modules, call edges), builds a state-space factor graph, and
 exports a GNN generative model of the system, which it then renders, visualizes,
 and validates against the GNN package. The conceptual claim of AlphaCOGANT is that
@@ -40,7 +44,7 @@ The translation has three stages, mirrored by the engine in `src/alphacogant/`:
    channel factors and their prior beliefs $D_k$. More feeds strengthen the
    Sensors prior; a larger validated book strengthens Investments; a fresher
    model strengthens Parameters. This is `cogant_bridge.firm_structure_to_channels`.
-   It is the COGANT scan in miniature: system structure becomes generative-model
+   It is the COGANT scan in miniature [6]: system structure becomes generative-model
    priors.
 
 2. **Channels → GNN model.** The five factors, their likelihood matrices ($A_R$
@@ -83,8 +87,9 @@ observation conditioning a past belief is an edge one can see is absent.
 ![GNN factor graph of the five-channel firm: {{NUM_CHANNELS}} hidden-state factors, likelihoods $A_R$ (coupling $I, U, \Theta$ to reward $o_R$) and $A_L$ (coupling $S, \Theta$ to loss $o_L$), per-factor transitions $B_k$ over {{NUM_ACTIONS}} actions, and the EFE objective block, with factor structure read from `generative_model.default_model`.](../output/figures/gnn_factor_graph.png){#fig:factorgraph}
 
 The reduced two-level encoding keeps the GNN file legible and type-checkable; the
-continuous marginal-return formalism of §5 is what the engine and the whitepaper
-use in production. The point of the file is not numerical fidelity to AlphaFund's
+continuous marginal-return formalism of [@sec:value] is what the engine and the whitepaper
+uses in production [1]. The point of the file is not numerical fidelity to AlphaFund's
 proprietary surfaces (which are not public); it is to demonstrate that the firm's
-control problem **is** a well-formed Active Inference model with an Expected-Free-
-Energy objective, expressible in a language that compiles to executable inference.
+control problem has a well-formed reduced Active Inference representation with an
+Expected-Free-Energy objective, expressible in a language intended to compile to
+executable inference.

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from alphacogant.channels import CHANNELS
-from alphacogant.operating_points import (
+from alphacogant.model.channels import CHANNELS
+from alphacogant.model.operating_points import (
     BOOTSTRAP_CONCENTRATION,
     BOOTSTRAP_N,
     BOOTSTRAP_SEED,
@@ -43,7 +43,7 @@ def test_as_belief_returns_independent_arrays() -> None:
 
 def test_bootstrap_constants_are_canonical() -> None:
     assert BOOTSTRAP_SEED == 20240623
-    assert BOOTSTRAP_N == 256
+    assert BOOTSTRAP_N == 2560
     assert BOOTSTRAP_CONCENTRATION == 12.0
 
 

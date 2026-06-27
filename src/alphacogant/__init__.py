@@ -8,32 +8,83 @@ portfolio optimizer's marginal-return objective, decomposed into pragmatic value
 EWM / what Sensors and R&D buy); t-RSI is the standardized create-vs-decay distance
 that gates each self-improvement commit.
 
+Subpackage layout:
+  model/    — channels, generative model, operating points
+  efe/      — Expected Free Energy computation, marginal returns, policy posterior
+  trsi/     — create/decay rates, standardized distance, certificate, bootstrap
+  bridge/   — COGANT firm structure → priors → GNN summary round-trip
+  viz/      — shared plot style and color palettes
+  stats/    — simulation, sensitivity analysis, bootstrap CIs, regime comparison
+  tokens/   — deterministic manuscript {{TOKEN}} generation
+
 See ``SPEC.md`` for the module contract and ``models/alphafund_ewm.md`` for the GNN
 specification this package realizes.
 """
 
-from alphacogant.channels import ACTIONS, CHANNELS, CHANNEL_ROLES, Channel, action_index, channel_index
-from alphacogant.cogant_bridge import firm_structure_to_channels, model_to_gnn_summary, parse_gnn_summary
-from alphacogant.free_energy import EFEResult, expected_free_energy, marginal_return_vector, policy_posterior, static_pragmatic_value
-from alphacogant.generative_model import (
+# ── Model subpackage ─────────────────────────────────────────────────────────
+# ── Bridge subpackage ────────────────────────────────────────────────────────
+from alphacogant.bridge import (
+    firm_structure_to_channels,
+    model_to_gnn_summary,
+    parse_gnn_summary,
+)
+
+# ── EFE subpackage ───────────────────────────────────────────────────────────
+from alphacogant.efe import (
+    EFEResult,
+    expected_free_energy,
+    marginal_return_vector,
+    policy_posterior,
+    static_pragmatic_value,
+)
+from alphacogant.model import (
+    ACTIONS,
+    BOOTSTRAP_CONCENTRATION,
+    BOOTSTRAP_N,
+    BOOTSTRAP_SEED,
+    CHANNEL_ROLES,
+    CHANNELS,
+    COASTING,
+    COASTING_RAW,
+    IMPROVING,
+    IMPROVING_RAW,
+    Channel,
     EconomicWorldModel,
+    action_index,
+    as_belief,
     belief_prior,
+    channel_index,
     default_model,
     infer_states,
     validate_belief_map,
 )
-from alphacogant.operating_points import COASTING, COASTING_RAW, IMPROVING, IMPROVING_RAW, as_belief
-from alphacogant.sensitivity import sweep_concentration, sweep_theta_freshness
-from alphacogant.simulation import CycleRecord, TrajectoryResult, simulate_trajectory, summarize_trajectory
-from alphacogant.statistics import (
+
+# ── Stats subpackage ─────────────────────────────────────────────────────────
+from alphacogant.stats import (
     BootstrapCI,
+    BreakEvenProfile,
+    CycleRecord,
     RegimeComparison,
     RegimeStatistics,
+    TrajectoryResult,
     bootstrap_ci,
+    break_even_profile,
     compare_regimes,
     compute_regime_statistics,
+    simulate_trajectory,
+    summarize_trajectory,
+    sweep_concentration,
+    sweep_theta_freshness,
 )
-from alphacogant.t_rsi import (
+
+# ── Tokens subpackage ─────────────────────────────────────────────────────────
+from alphacogant.tokens import (
+    PLANNING_HORIZON,
+    generate_variables,
+)
+
+# ── t-RSI subpackage ─────────────────────────────────────────────────────────
+from alphacogant.trsi import (
     DEFAULT_HORIZON,
     bootstrap_t_rsi,
     certificate,
@@ -41,61 +92,67 @@ from alphacogant.t_rsi import (
     decay_rate,
     t_rsi,
 )
+from alphacogant.viz import plot_style as plot_style
 
-__version__ = "0.3.0"
+__version__ = "1.0.0"
 
 __all__ = [
-    # channels
+    # model
     "ACTIONS",
+    "BOOTSTRAP_CONCENTRATION",
+    "BOOTSTRAP_N",
+    "BOOTSTRAP_SEED",
     "CHANNELS",
     "CHANNEL_ROLES",
+    "COASTING",
+    "COASTING_RAW",
     "Channel",
-    "action_index",
-    "channel_index",
-    # generative_model
     "EconomicWorldModel",
+    "IMPROVING",
+    "IMPROVING_RAW",
+    "action_index",
+    "as_belief",
     "belief_prior",
+    "channel_index",
     "default_model",
     "infer_states",
     "validate_belief_map",
-    # cogant_bridge
-    "firm_structure_to_channels",
-    "model_to_gnn_summary",
-    "parse_gnn_summary",
-    # free_energy
+    # efe
     "EFEResult",
     "expected_free_energy",
     "marginal_return_vector",
     "policy_posterior",
     "static_pragmatic_value",
-    # t_rsi
+    # trsi
     "DEFAULT_HORIZON",
     "bootstrap_t_rsi",
     "certificate",
     "create_rate",
     "decay_rate",
     "t_rsi",
-    # operating_points
-    "COASTING",
-    "COASTING_RAW",
-    "IMPROVING",
-    "IMPROVING_RAW",
-    "as_belief",
-    # simulation
-    "CycleRecord",
-    "TrajectoryResult",
-    "simulate_trajectory",
-    "summarize_trajectory",
-    # sensitivity
-    "sweep_concentration",
-    "sweep_theta_freshness",
-    # statistics
+    # bridge
+    "firm_structure_to_channels",
+    "model_to_gnn_summary",
+    "parse_gnn_summary",
+    # stats
+    "BreakEvenProfile",
     "BootstrapCI",
+    "CycleRecord",
     "RegimeComparison",
     "RegimeStatistics",
+    "TrajectoryResult",
+    "break_even_profile",
     "bootstrap_ci",
     "compare_regimes",
     "compute_regime_statistics",
+    "simulate_trajectory",
+    "summarize_trajectory",
+    "sweep_concentration",
+    "sweep_theta_freshness",
+    "plot_style",
+    # tokens
+    "PLANNING_HORIZON",
+    "generate_variables",
     # metadata
     "__version__",
 ]

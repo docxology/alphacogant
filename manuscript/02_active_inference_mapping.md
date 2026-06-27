@@ -1,9 +1,9 @@
-# The AlphaFund ↔ Active Inference dictionary
+# The AlphaFund ↔ Active Inference dictionary {#sec:dictionary}
 
 Active Inference casts any adaptive system as an agent that holds a generative
 model of how hidden causes produce sensory data, infers those causes by minimizing
 variational free energy, and selects actions that minimize *expected* free energy
-over a planning horizon. Below, each AlphaFund construct is matched to its Active
+over a planning horizon [2, 3, 4]. Below, each AlphaFund construct is matched to its Active
 Inference counterpart. The match is structural, not metaphorical: the equations
 coincide.
 
@@ -16,7 +16,7 @@ coincide.
 | Firm filtration $\mathcal{F}_t = \sigma(H_t)$ | Belief-update information set | "No-peeking" — posterior at $t$ depends only on $\mathcal{F}_t$ |
 | Action vector $a_t$ (dollars per channel) | Control state / policy $\pi$ | Capital allocation = the agent's action |
 | Cumulative objective $J_t$ (expected $\sum \log$-equity) | Negative Expected Free Energy (pragmatic part) | Discounted log-return = preference satisfaction |
-| Marginal-return vector $g_t = \partial J_t/\partial a_t$ | $-\partial G/\partial a$ | Per-channel return = negative EFE gradient |
+| Marginal-return vector $g_t = \partial J_t/\partial a_t$ | Negative-EFE action value | Continuous marginal return becomes a discrete funding-move score |
 | Equimarginal identity $\hat g^k_t/\sigma^k_t = \lambda^*_{S,t}$ | Precision-weighted policy optimum | Risk-adjusted shadow price of capital |
 | Sensors / R&D returns (data-scaling, search laws) | **Epistemic value** (information gain) | What reduces EWM predictive loss |
 | Investments / Actuators returns (broker ledger, Sharpe) | **Pragmatic value** (expected utility) | What realizes preferred outcomes now |
@@ -51,24 +51,24 @@ to inference and to control, and the value of acting to improve them is
 quantified by the same expected-free-energy functional that values every other
 action. AlphaFund's insistence that "every input that lowers predictive loss is
 priced in dollars on the firm's books" is the economic image of Active Inference's
-unification of perception, learning, and action under one objective.
+unification of perception, learning, and action under one objective [1].
 
 ## Channel-specific world models = factorized generative models
 
-AlphaFund decomposes the joint EWM into **channel-specific world models**
+AlphaFund decomposes the joint EWM into **channel-specific world models** [4]
 $\widehat{W}_t^k$, each trained on its own channel history — a scaling law, a
 market-impact curve, a refit-decay model, a search law. It is explicit that this
 is a practical approximation: "cross-channel coupling re-enters when the
 controller composes the rows." This is precisely the **mean-field / structured
-factorization** of a generative model in Active Inference: the joint is
+factorization** of a generative model in Active Inference [20]: the joint is
 approximated as a product of per-factor distributions for tractable inference, and
 coupling re-enters at the policy-evaluation step where Expected Free Energy is
-computed over the joint predicted outcome. AlphaFund's supermodular cross-partials
+computed over the joint predicted outcome [3, 4]. AlphaFund's supermodular cross-partials
 — "a marginal dollar on channel $j$ raises the marginal value of a dollar on
 channel $k$" — are the coupling terms that a fully factorized model drops and the
-EFE computation restores.
+EFE computation restores [14].
 
-The GNN model file in §3 encodes exactly this: five factor blocks with per-factor
+The GNN model file in [@sec:gnn] encodes exactly this: five factor blocks with per-factor
 transition matrices $B_k$, two likelihood matrices $A_R, A_L$ that couple factors
 at the observation, and an Expected-Free-Energy block whose epistemic and
 pragmatic parts compose the rows back together.

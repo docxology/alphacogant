@@ -47,17 +47,15 @@ _SRC = _PROJECT_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from alphacogant.channels import ACTIONS, CHANNELS  # noqa: E402
-from alphacogant.free_energy import marginal_return_vector  # noqa: E402
-from alphacogant.generative_model import default_model  # noqa: E402
+from alphacogant.efe.free_energy import marginal_return_vector  # noqa: E402
+from alphacogant.model.channels import ACTIONS, CHANNELS  # noqa: E402
+from alphacogant.model.generative_model import default_model  # noqa: E402
 
 # Two operating-point beliefs used in the manuscript. The self-improving regime
 # drives the PREDICT-node label so the schematic reflects a real engine output.
-from alphacogant.operating_points import IMPROVING, COASTING  # noqa: E402
+from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
 
-OUTPUT_PATH = (
-    _PROJECT_ROOT / "output" / "figures" / "self_forecasting_loop.png"
-)
+OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "self_forecasting_loop.png"
 
 
 def _belief_map(spec: dict[str, tuple[float, float]]) -> dict[str, np.ndarray]:

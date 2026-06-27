@@ -2,15 +2,16 @@
 
 No mocks; all tests use real model computation and fixed seeds.
 """
+
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from alphacogant.channels import ACTIONS, CHANNELS
-from alphacogant.generative_model import default_model
-from alphacogant.operating_points import IMPROVING
-from alphacogant.simulation import (
+from alphacogant.model.channels import ACTIONS, CHANNELS
+from alphacogant.model.generative_model import default_model
+from alphacogant.model.operating_points import IMPROVING
+from alphacogant.stats.simulation import (
     CycleRecord,
     TrajectoryResult,
     simulate_trajectory,
@@ -49,7 +50,7 @@ def test_greedy_trajectory_deterministic():
     t1 = simulate_trajectory(model, IMPROVING, horizon=8, policy="greedy")
     t2 = simulate_trajectory(model, IMPROVING, horizon=8, policy="greedy")
     assert t1.action_history == t2.action_history
-    for c1, c2 in zip(t1.cycles, t2.cycles):
+    for c1, c2 in zip(t1.cycles, t2.cycles, strict=True):
         assert c1.action == c2.action
         for channel in CHANNELS:
             assert np.allclose(c1.belief[channel], c2.belief[channel])
@@ -108,8 +109,10 @@ def test_cumulative_pragmatic_monotone():
     assert len(traj.cumulative_pragmatic) == 6
     # cumulative should be a running sum
     for i in range(1, len(traj.cumulative_pragmatic)):
-        assert traj.cumulative_pragmatic[i] >= traj.cumulative_pragmatic[i - 1] - 1e-10 or \
-               traj.cumulative_pragmatic[i] <= traj.cumulative_pragmatic[i - 1] + 1e-10
+        assert (
+            traj.cumulative_pragmatic[i] >= traj.cumulative_pragmatic[i - 1] - 1e-10
+            or traj.cumulative_pragmatic[i] <= traj.cumulative_pragmatic[i - 1] + 1e-10
+        )
 
 
 def test_action_counts_sum_to_horizon():
@@ -149,9 +152,12 @@ def test_summarize_trajectory():
 
 
 def test_summarize_empty_trajectory_raises():
-    model = default_model()
-    empty = TrajectoryResult(cycles=[], belief_history={c: [] for c in CHANNELS},
-                            action_history=[], cumulative_pragmatic=[])
+    empty = TrajectoryResult(
+        cycles=[],
+        belief_history={c: [] for c in CHANNELS},
+        action_history=[],
+        cumulative_pragmatic=[],
+    )
     with pytest.raises(ValueError, match="empty"):
         summarize_trajectory(empty)
 

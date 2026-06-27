@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from alphacogant.channels import CHANNELS
+from alphacogant.model.channels import CHANNELS
 
 # -- Operating-point beliefs ---------------------------------------------------
 
@@ -56,12 +56,11 @@ COASTING: dict[str, np.ndarray] = as_belief(COASTING_RAW)
 
 # -- Bootstrap constants -------------------------------------------------------
 
-#: Bootstrap seed — identical to ``manuscript_variables._BOOTSTRAP_SEED``.
-#: Kept here so figure scripts can import it rather than re-declaring it.
+#: Bootstrap seed shared by manuscript variables, statistics, and figure scripts.
 BOOTSTRAP_SEED: int = 20240623
 
-#: Bootstrap sample count — identical to ``manuscript_variables._BOOTSTRAP_N``.
-BOOTSTRAP_N: int = 256
+#: Canonical bootstrap sample count shared by manuscript variables and figures.
+BOOTSTRAP_N: int = 2560
 
 #: Bootstrap Dirichlet concentration — the firm's belief precision.
 #: Must match ``t_rsi.bootstrap_t_rsi``'s default.

@@ -4,22 +4,29 @@ These tests exercise the mathematical properties that must hold for ANY
 valid model and belief combination, not just the default operating points.
 No mocks; all tests use real computation with randomly-generated valid models.
 """
+
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from alphacogant.channels import ACTIONS, CHANNELS
-from alphacogant.free_energy import expected_free_energy, marginal_return_vector, policy_posterior
-from alphacogant.generative_model import EconomicWorldModel, default_model, validate_belief_map
-from alphacogant.t_rsi import certificate, t_rsi
+from alphacogant.efe.free_energy import (
+    expected_free_energy,
+    marginal_return_vector,
+    policy_posterior,
+)
+from alphacogant.model.channels import ACTIONS, CHANNELS
+from alphacogant.model.generative_model import (
+    EconomicWorldModel,
+    default_model,
+    validate_belief_map,
+)
+from alphacogant.trsi.t_rsi import certificate, t_rsi
 
 
 def _random_belief(rng: np.random.Generator) -> dict[str, np.ndarray]:
     """Generate a random valid belief map."""
-    return {
-        channel: rng.dirichlet([5.0, 5.0]) for channel in CHANNELS
-    }
+    return {channel: rng.dirichlet([5.0, 5.0]) for channel in CHANNELS}
 
 
 def _random_valid_model(rng: np.random.Generator) -> EconomicWorldModel:
@@ -29,10 +36,7 @@ def _random_valid_model(rng: np.random.Generator) -> EconomicWorldModel:
     # Random A_L: shape (3, 2, 2), column-stochastic over axis 0
     A_L = rng.dirichlet([5, 5, 5], size=(2, 2)).transpose(2, 0, 1)
     # Random B: each (2, 2, 6), column-stochastic over axis 0
-    B = {
-        channel: rng.dirichlet([5, 5], size=(2, 6)).transpose(2, 0, 1)
-        for channel in CHANNELS
-    }
+    B = {channel: rng.dirichlet([5, 5], size=(2, 6)).transpose(2, 0, 1) for channel in CHANNELS}
     D = {channel: rng.dirichlet([5, 5]) for channel in CHANNELS}
     C_R = rng.uniform(-3, 3, size=3)
     C_L = rng.uniform(-3, 3, size=3)
@@ -58,7 +62,9 @@ def test_epistemic_non_negative(execution_number):
     belief = _random_belief(rng)
     for action in range(len(ACTIONS)):
         efe = expected_free_energy(model, belief, action)
-        assert efe.epistemic >= -1e-10, f"Epistemic value negative: {efe.epistemic} for action {action}"
+        assert efe.epistemic >= -1e-10, (
+            f"Epistemic value negative: {efe.epistemic} for action {action}"
+        )
 
 
 @pytest.mark.parametrize("execution_number", range(10))

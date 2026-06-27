@@ -11,6 +11,7 @@ transition: early cycles show high value on epistemic actions (Sensors, R&D,
 Theta), while later cycles shift toward pragmatic actions (Investments,
 Actuators) as the model freshens and epistemic value falls.
 """
+
 from __future__ import annotations
 
 import sys
@@ -21,10 +22,10 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from alphacogant.channels import ACTIONS  # noqa: E402
-from alphacogant.generative_model import default_model  # noqa: E402
-from alphacogant.operating_points import IMPROVING  # noqa: E402
-from alphacogant.simulation import simulate_trajectory  # noqa: E402
+from alphacogant.model.channels import ACTIONS  # noqa: E402
+from alphacogant.model.generative_model import default_model  # noqa: E402
+from alphacogant.model.operating_points import IMPROVING  # noqa: E402
+from alphacogant.stats.simulation import simulate_trajectory  # noqa: E402
 
 HORIZON = 12
 
@@ -68,7 +69,9 @@ def main() -> int:
     ax.set_yticklabels(list(ACTIONS))
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Action")
-    ax.set_title("Marginal-return vector (negative EFE) over the greedy trajectory\n★ = selected action")
+    ax.set_title(
+        "Marginal-return vector (negative EFE) over the greedy trajectory\n★ = selected action"
+    )
 
     # Add value annotations
     for action_idx in range(len(ACTIONS)):

@@ -21,13 +21,13 @@ Both rates are path integrals over the planning horizon, matching the whitepaper
 
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 
-from alphacogant.channels import ACTIONS, CHANNELS, action_index
-from alphacogant.free_energy import marginal_return_vector, static_pragmatic_value
-from alphacogant.generative_model import EconomicWorldModel, validate_belief_map
+from alphacogant.efe.free_energy import marginal_return_vector, static_pragmatic_value
+from alphacogant.model.channels import ACTIONS, CHANNELS, action_index
+from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
 
 DEFAULT_HORIZON = 12
 
@@ -47,7 +47,9 @@ def _standard_error(samples: np.ndarray) -> float:
     return float(np.std(samples, ddof=1) / np.sqrt(samples.size))
 
 
-def _advance(model: EconomicWorldModel, belief: Mapping[str, np.ndarray], action: int) -> dict[str, np.ndarray]:
+def _advance(
+    model: EconomicWorldModel, belief: Mapping[str, np.ndarray], action: int
+) -> dict[str, np.ndarray]:
     return {channel: model.B[channel][:, :, action] @ belief[channel] for channel in CHANNELS}
 
 
@@ -83,6 +85,30 @@ def _hold_mean_pragmatic(
     return float(np.mean(values))
 
 
+def _create_from_trajectory(
+    model: EconomicWorldModel,
+    normalized: Mapping[str, np.ndarray],
+    trajectory: list[dict[str, np.ndarray]],
+    horizon: int,
+) -> float:
+    greedy_mean = float(np.mean([static_pragmatic_value(model, b) for b in trajectory]))
+    return greedy_mean - _hold_mean_pragmatic(model, normalized, horizon)
+
+
+def _decay_from_trajectory(
+    model: EconomicWorldModel,
+    trajectory: list[dict[str, np.ndarray]],
+) -> float:
+    refresh = action_index("fund_Theta")
+    erosions: list[float] = []
+    for b in trajectory:
+        refreshed = {**b, "Theta": model.B["Theta"][:, :, refresh] @ b["Theta"]}
+        erosions.append(
+            max(0.0, static_pragmatic_value(model, refreshed) - static_pragmatic_value(model, b))
+        )
+    return float(np.mean(erosions))
+
+
 def create_rate(
     model: EconomicWorldModel,
     belief: Mapping[str, np.ndarray],
@@ -93,8 +119,7 @@ def create_rate(
         raise ValueError("horizon must be a positive integer.")
     normalized = validate_belief_map(belief, context="belief")
     trajectory = _greedy_trajectory(model, normalized, horizon)
-    greedy_mean = float(np.mean([static_pragmatic_value(model, b) for b in trajectory]))
-    return greedy_mean - _hold_mean_pragmatic(model, normalized, horizon)
+    return _create_from_trajectory(model, normalized, trajectory, horizon)
 
 
 def decay_rate(
@@ -106,12 +131,8 @@ def decay_rate(
     if horizon <= 0:
         raise ValueError("horizon must be a positive integer.")
     normalized = validate_belief_map(belief, context="belief")
-    refresh = action_index("fund_Theta")
-    erosions: list[float] = []
-    for b in _greedy_trajectory(model, normalized, horizon):
-        refreshed = {**b, "Theta": model.B["Theta"][:, :, refresh] @ b["Theta"]}
-        erosions.append(max(0.0, static_pragmatic_value(model, refreshed) - static_pragmatic_value(model, b)))
-    return float(np.mean(erosions))
+    trajectory = _greedy_trajectory(model, normalized, horizon)
+    return _decay_from_trajectory(model, trajectory)
 
 
 def t_rsi(
@@ -136,6 +157,45 @@ def t_rsi(
     return float((create_mean - decay_mean) / pooled_se)
 
 
+def paired_bootstrap_samples(
+    model: EconomicWorldModel,
+    belief: Mapping[str, np.ndarray],
+    rng: np.random.Generator,
+    n: int,
+    horizon: int = DEFAULT_HORIZON,
+    concentration: float = 12.0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Per-perturbation ``(create, decay)`` rate samples sharing one greedy trajectory.
+
+    Both rates are read off the *same* greedy trajectory per perturbation, so a
+    caller that needs both (the t-RSI statistic and its create/decay CIs) draws one
+    deterministic sample set instead of re-bootstrapping the identical draws. The
+    draw order (Dirichlet per channel, in ``CHANNELS`` order) is preserved so the
+    samples are byte-identical to the previous create-then-decay implementation.
+    """
+    if not isinstance(rng, np.random.Generator):
+        raise ValueError("rng must be a numpy.random.Generator instance.")
+    if n <= 0:
+        raise ValueError("n must be a positive integer.")
+    if concentration <= 0.0:
+        raise ValueError("concentration must be a positive number.")
+    if horizon <= 0:
+        raise ValueError("horizon must be a positive integer.")
+    normalized_belief = validate_belief_map(belief, context="belief")
+    create_samples = np.empty(n, dtype=float)
+    decay_samples = np.empty(n, dtype=float)
+    for index in range(n):
+        perturbed: dict[str, np.ndarray] = {}
+        for channel, vector in normalized_belief.items():
+            alpha = np.clip(vector, 1e-9, None) * concentration + 1.0
+            perturbed[channel] = rng.dirichlet(alpha)
+        normalized = validate_belief_map(perturbed, context="belief")
+        trajectory = _greedy_trajectory(model, normalized, horizon)
+        create_samples[index] = _create_from_trajectory(model, normalized, trajectory, horizon)
+        decay_samples[index] = _decay_from_trajectory(model, trajectory)
+    return create_samples, decay_samples
+
+
 def bootstrap_t_rsi(
     model: EconomicWorldModel,
     belief: Mapping[str, np.ndarray],
@@ -150,22 +210,9 @@ def bootstrap_t_rsi(
     is the firm's belief precision, a modelling choice, not a tuned knob; the
     reported t-RSI is whatever this honest comparator yields at that precision.
     """
-    if not isinstance(rng, np.random.Generator):
-        raise ValueError("rng must be a numpy.random.Generator instance.")
-    if n <= 0:
-        raise ValueError("n must be a positive integer.")
-    if concentration <= 0.0:
-        raise ValueError("concentration must be a positive number.")
-    normalized_belief = validate_belief_map(belief, context="belief")
-    create_samples = np.empty(n, dtype=float)
-    decay_samples = np.empty(n, dtype=float)
-    for index in range(n):
-        perturbed: dict[str, np.ndarray] = {}
-        for channel, vector in normalized_belief.items():
-            alpha = np.clip(vector, 1e-9, None) * concentration + 1.0
-            perturbed[channel] = rng.dirichlet(alpha)
-        create_samples[index] = create_rate(model, perturbed, horizon)
-        decay_samples[index] = decay_rate(model, perturbed, horizon)
+    create_samples, decay_samples = paired_bootstrap_samples(
+        model, belief, rng, n, horizon, concentration
+    )
 
     return {
         "t_rsi": float(t_rsi(create_samples, decay_samples)),
@@ -189,5 +236,6 @@ __all__ = [
     "certificate",
     "create_rate",
     "decay_rate",
+    "paired_bootstrap_samples",
     "t_rsi",
 ]
