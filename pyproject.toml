@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alphacogant"
-version = "1.0.0"
+version = "1.0.1"
 description = "GNN-via-COGANT Active Inference model of recursive corporate self-improvement (AlphaFund)"
 authors = [
     {name = "Daniel Ari Friedman", email = "daniel@activeinference.institute"},
