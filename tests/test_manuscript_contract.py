@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-MANUSCRIPT_DIR = PROJECT_ROOT / "manuscript"
+MANUSCRIPT_DIR = PROJECT_ROOT / "docs" / "manuscript"
 SECTION_RE = re.compile(r"^#\s+.+\{#sec:[a-z0-9_-]+\}\s*$")
 DISPLAY_MATH_RE = re.compile(r"\$\$\s*\n(.*?)\n\$\$(?:\s*\{#eq:[a-z0-9_-]+\})?", re.DOTALL)
 LABELED_EQUATION_RE = re.compile(r"\$\$\s*\n.*?\n\$\$\s*\{#eq:[a-z0-9_-]+\}", re.DOTALL)

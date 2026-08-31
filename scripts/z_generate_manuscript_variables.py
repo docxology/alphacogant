@@ -3,7 +3,7 @@
 
 Business logic lives in ``src/alphacogant/tokens/manuscript_variables.py``. This
 script only handles I/O: it writes ``output/manuscript_variables.json``, checks
-that every ``{{TOKEN}}`` used in ``manuscript/*.md`` is produced by the generator
+that every ``{{TOKEN}}`` used in ``docs/manuscript/*.md`` is produced by the generator
 (no orphans), records figure/artifact contracts, and (unless ``--check``) writes
 token-substituted copies under ``output/manuscript/``.
 """
@@ -64,7 +64,7 @@ def figure_registry_entries(
                     "filename": filename,
                     "generated_by": generated_by,
                     "label": match.group("label"),
-                    "source": f"manuscript/{md.name}",
+                    "source": f"docs/manuscript/{md.name}",
                 }
             )
     return entries
@@ -189,7 +189,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    manuscript_dir = PROJECT_ROOT / "manuscript"
+    manuscript_dir = PROJECT_ROOT / "docs" / "manuscript"
     output_dir = PROJECT_ROOT / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
 

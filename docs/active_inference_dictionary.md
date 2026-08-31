@@ -29,6 +29,6 @@ portfolio derivative.
 
 ## Where this appears in the manuscript
 
-- `manuscript/02_active_inference_mapping.md`
-- `manuscript/05_epistemic_and_pragmatic_value.md`
-- `manuscript/08_formalisms.md`
+- `docs/manuscript/02_active_inference_mapping.md`
+- `docs/manuscript/05_epistemic_and_pragmatic_value.md`
+- `docs/manuscript/08_formalisms.md`

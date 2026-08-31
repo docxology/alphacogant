@@ -7,7 +7,7 @@ point numbers (used in the provenance footer) and draws the schematic. The figur
 itself is a static, deterministic dictionary mapping: each left-hand AlphaFund
 construct is connected by a line to its right-hand Active-Inference counterpart,
 following the coverage rubric in ``docs/whitepaper_concepts.md`` and the sign /
-value conventions in ``manuscript/05_epistemic_and_pragmatic_value.md``.
+value conventions in ``docs/manuscript/05_epistemic_and_pragmatic_value.md``.
 
 Mapping (left -> right):
     EWM                          -> generative model  Ŵ_t

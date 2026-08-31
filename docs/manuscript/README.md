@@ -24,7 +24,7 @@ Every numeric cited in prose is a generated token produced by
 A token used in prose but absent from the generator is a build failure (no orphans).
 
 Figure references are registered by the same script in
-`output/figures/figure_registry.json`, using labels parsed from `manuscript/*.md`.
+`output/figures/figure_registry.json`, using labels parsed from `docs/manuscript/*.md`.
 The template output validator reads that registry directly.
 
 Validate tokens locally:

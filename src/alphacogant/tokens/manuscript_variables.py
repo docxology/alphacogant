@@ -36,7 +36,7 @@ from alphacogant.trsi.t_rsi import DEFAULT_HORIZON, bootstrap_t_rsi
 PLANNING_HORIZON = DEFAULT_HORIZON
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
-_MANUSCRIPT_DIR = _PROJECT_ROOT / "manuscript"
+_MANUSCRIPT_DIR = _PROJECT_ROOT / "docs" / "manuscript"
 _DEFINITION_RE = re.compile(r"\*\*Definition\s+D(\d+)\b")
 _FIGURE_RE = re.compile(r"\{#fig:[A-Za-z0-9_]+\}")
 
