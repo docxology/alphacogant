@@ -21,9 +21,9 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   stats/                      # trajectories, sensitivity, bootstrap evidence profiles
   tokens/                     # every prose {{TOKEN}} is generated here
   viz/                        # shared plot style and color palettes
-manuscript/                   # the concept, fully written out (00–09 + refs)
+docs/manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variables, figures)
-tests/                        # 198 tests, 98%+ coverage, no mocks
+tests/                        # 199 tests, 97.70% coverage (2026-08-31), no mocks
 ```
 
 ## Key Invariants
@@ -81,9 +81,11 @@ GNN-style block from the live arrays (round-trip).
 
 ## Private Repo
 
-This project lives in the private GitHub repo `docxology/alphacogant` and is
-symlinked into the template at `projects/working/alphacogant`. It is
-local-only and must never be committed to the public template repo.
+This project lives in the private GitHub repo `docxology/alphacogant` (this
+checkout: `/Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant`)
+and is symlinked into the template at
+`projects/ongoing/ActiveInference/alphacogant`. It is local-only and must
+never be committed to the public template repo.
 
 ## Not Financial Advice
 

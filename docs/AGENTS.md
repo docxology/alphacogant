@@ -29,7 +29,7 @@ uv run --no-project python scripts/z_generate_manuscript_variables.py
 Then render from the template root with:
 
 ```bash
-uv run python scripts/03_render_pdf.py --project working/alphacogant
-uv run python scripts/04_validate_output.py --project working/alphacogant
-uv run python scripts/05_copy_outputs.py --project working/alphacogant
+uv run python scripts/pipeline/stage_03_render.py --project ongoing/ActiveInference/alphacogant
+uv run python scripts/pipeline/stage_04_validate.py --project ongoing/ActiveInference/alphacogant
+uv run python scripts/pipeline/stage_05_copy.py --project ongoing/ActiveInference/alphacogant
 ```

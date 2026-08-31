@@ -50,12 +50,12 @@ not a numerically-calibrated replica of AlphaFund's books.
   epistemic value (a KL) is always ≥ 0.
 - GNN model file conforms to GNN section structure (StateSpaceBlock, Connections,
   InitialParameterization, ActInfOntologyAnnotation).
-- Lives local-only under `projects/working/alphacogant/` (confidentiality invariant —
+- Lives local-only under `projects/ongoing/ActiveInference/alphacogant/` (2026-08: moved from the earlier `projects/working/alphacogant/` mirror; confidentiality invariant —
   only `projects/templates/` is git-tracked).
 
 ## Goal
 
-Deliver `projects/working/alphacogant/`: a GNN model file encoding AlphaFund's
+Deliver `projects/ongoing/ActiveInference/alphacogant/` (originally `projects/working/alphacogant/`): a GNN model file encoding AlphaFund's
 five-channel EWM as an Active Inference generative model; a tested NumPy engine that
 performs channel inference, computes the epistemic/pragmatic Expected-Free-Energy
 split, the marginal-return vector, and the t-RSI certificate; a COGANT-style
@@ -77,7 +77,7 @@ cited numeric gated by `manuscript_variables`.
 - [x] ISC-11: `bootstrap_t_rsi` is deterministic under a fixed seed (two runs identical, tested).
 - [x] ISC-12: `cogant_bridge` maps firm structure→priors and re-emits a GNN summary naming all 5 channels + "ExpectedFreeEnergy".
 - [x] ISC-13: `manuscript_variables.generate_variables()` emits all tokens used in prose as strings.
-- [x] ISC-14: every `{{TOKEN}}` in `manuscript/*.md` is produced by the generator (no orphans).
+- [x] ISC-14: every `{{TOKEN}}` in `docs/manuscript/*.md` is produced by the generator (no orphans).
 - [x] ISC-15: `pytest tests/ --cov=src/alphacogant --cov-fail-under=90` passes with >0 collected.
 - [x] ISC-16: Anti: no mocks / `unittest.mock` anywhere in `tests/`; no prose number absent from the generator.
 - [x] ISC-17: Anti: the create/decay comparator is NOT green-by-construction — t-RSI changes sign across operating points (negative-control test enforces it).
@@ -107,6 +107,7 @@ cited numeric gated by `manuscript_variables`.
 ## Decisions
 
 - 2026-06-23: Home = `projects/working/alphacogant/` (local-only; confidentiality invariant).
+- 2026-08: Home = `projects/ongoing/ActiveInference/alphacogant/` (lifecycle move from `working/`).
 - 2026-06-23: Reduced 2-level GNN encoding for legibility/type-checkability; full continuous marginal-return formalism carried by the manuscript, not the toy matrices. Avoids over-claiming numeric fidelity to AlphaFund's proprietary books.
 - 2026-06-23: Engine implemented by Forge (cross-vendor, GPT-5.4) against `src/alphacogant/SPEC.md`; primary author verifies on-disk + runs the gate (never inherits Forge's self-reported numbers — R8/GENERATOR-CHECK).
 

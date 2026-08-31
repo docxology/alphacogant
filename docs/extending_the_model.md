@@ -43,5 +43,5 @@ changes how much evidence the firm can buy next cycle.
 - new or updated tests
 - updated manuscript tokens when numbers change
 - regenerated figures
-- `scripts/04_validate_output.py --project working/alphacogant`
+- `scripts/pipeline/stage_04_validate.py --project ongoing/ActiveInference/alphacogant`
 - copied-output parity after stage 05

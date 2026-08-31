@@ -41,5 +41,5 @@ The manifest `issues` array must be empty before render closeout.
 ## Root copy
 
 After validation, template stage 05 copies the project output tree to
-`/Users/4d/Documents/GitHub/template/output/working/alphacogant/`. The copied PDF
-should hash-match the project-local PDF.
+`/Volumes/external_drive/Git/template/output/ongoing/ActiveInference/alphacogant/`.
+The copied PDF should hash-match the project-local PDF.

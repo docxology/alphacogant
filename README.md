@@ -5,6 +5,11 @@
 
 **Recursive corporate self-improvement as Active Inference, rendered in GNN via COGANT.**
 
+**Status (2026-08-31, verified by the commands shown):** research artifact, phase
+complete per `ISA.md` (16/16). 199 tests collected (`pytest tests/ --collect-only -q`),
+coverage 97.70%, 5 known failures pending the `manuscript/` → `docs/manuscript/`
+migration commit — current state and open work: [`TODO.md`](TODO.md).
+
 The [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) reframes recursive
 self-improvement (RSI) as a portfolio-optimization problem: a corporation recursively
 improves when realized economic gains finance the next cycle of better prediction and
@@ -45,7 +50,7 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   stats/                      # trajectories, sensitivity, paired bootstrap profiles
   tokens/                     # every prose {{TOKEN}} is generated here
   viz/                        # shared plot style and color palettes
-manuscript/                   # the concept, fully written out (00–09 + refs)
+docs/manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variable generation, figures)
   y_generate_figures.py       # runs every manuscript figure script
   figures/                    # 15 manuscript figures + cover art
@@ -70,8 +75,9 @@ scripts/                      # thin orchestrators (demo, variable generation, f
 ## Quick start
 
 ```bash
-# from the template repo root (after `uv sync`)
-cd projects/working/alphacogant
+# from this repo root (repo lives at
+# /Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant,
+# symlinked into the template checkout as projects/ongoing/ActiveInference/alphacogant)
 uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
 uv run --no-project python scripts/run_alphacogant_demo.py
 uv run --no-project python scripts/y_generate_figures.py

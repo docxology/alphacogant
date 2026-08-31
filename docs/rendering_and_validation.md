@@ -1,11 +1,10 @@
 # Rendering and Validation
 
-AlphaCOGANT is a private working project rendered through the sibling template
-checkout.
+AlphaCOGANT is a private project rendered through the sibling template checkout.
 
 ## Project-root commands
 
-From `/Users/4d/Documents/GitHub/projects/working/alphacogant`:
+From this repo root (`/Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant`):
 
 ```bash
 uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
@@ -16,12 +15,12 @@ uv run --no-project python scripts/z_generate_manuscript_variables.py
 
 ## Template-root commands
 
-From `/Users/4d/Documents/GitHub/template`:
+From the template checkout (`/Volumes/external_drive/Git/template`):
 
 ```bash
-uv run python scripts/03_render_pdf.py --project working/alphacogant
-uv run python scripts/04_validate_output.py --project working/alphacogant
-uv run python scripts/05_copy_outputs.py --project working/alphacogant
+uv run python scripts/pipeline/stage_03_render.py --project ongoing/ActiveInference/alphacogant
+uv run python scripts/pipeline/stage_04_validate.py --project ongoing/ActiveInference/alphacogant
+uv run python scripts/pipeline/stage_05_copy.py --project ongoing/ActiveInference/alphacogant
 ```
 
 ## Expected validation surfaces
