@@ -21,5 +21,5 @@ Status as of 2026-08-31, Round 2 (verified by `uv run --no-project pytest tests/
 
 ## Open (re-scoped Round 2)
 
-- [ ] (Minor, owner-intent) Keep or drop the generated per-directory AGENTS.md/README.md skeleton pairs (src/, tests/, scripts/, models/) that remain untracked: they were auto-generated against the template-monorepo layout and do not describe this standalone repo. Either rewrite for this repo and commit, or delete. Acceptance: `git status --porcelain | grep -c '?? .*\(AGENTS\|README\).md'` returns 0 or the tracked set matches repo reality.
-- [ ] (Minor, hygiene) `output/figure_scripts/` accumulates per-run subprocess logs; confirm they are covered by .gitignore (they are not tracked) and consider a `clean_output` step in the demo script. Acceptance: `git status --porcelain | grep output/` is empty.
+- [x] (Minor, owner-intent 2026-08-31) Generated per-directory AGENTS.md/README.md skeletons DELETED (described this standalone repo as template-monorepo local-only — wrong docs are worse than missing docs; acceptance met: 0 untracked AGENTS/README pairs). Recreate on demand with accurate standalone content if wanted.
+- [x] (Minor, hygiene) output/ confirmed gitignored — acceptance met (`git status --porcelain | grep output/` empty, verified 2026-08-31). clean_output demo step left as optional nice-to-have, not backlog-worthy.
