@@ -22,3 +22,11 @@ All Minors fixed (counts, coverage figure, status file, paths, README status sec
 - Link check re-run over all touched docs: no broken repo-relative links (output/figures links documented as regeneration prerequisite).
 - Entry doc links resolve; TODO completed items marked.
 - Fast gate: full pytest run (5m46s, above the 2-min bar) → 194 pass / 5 pre-existing failures / 97.70% coverage. Recorded, not claimed green.
+
+## Round 2 — 2026-08-31 (execute open TODO items)
+
+- Major executed: manuscript migration landed as eaf19cd (renames + prepared path fixes in code/tests/docs). Suite after: 200 passed, coverage 98.70% (full gate, external drive, 12m55s).
+- Medium resolved by that landing: all 5 previously-failing tests pass (re-verified individually too).
+- Minor executed: plot_style.py coverage 86.05% → 100.00% via two real-plot tests exercising the default-arg branches (tests/test_plot_style.py).
+- Transient noted: one figure-script subprocess test failed once under 49-lane drive load, passed standalone on rerun — load transient, not a defect.
+- TODO.md re-scoped: remaining Open items are owner-intent scoping (skeleton doc pairs; output/ log hygiene), each with an acceptance line.
