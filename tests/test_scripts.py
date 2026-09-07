@@ -5,11 +5,12 @@ Runs each as a subprocess (no mocks) and verifies the expected output artifacts.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
+
+from alphacogant.tokens.manuscript_artifacts import artifact_manifest_issues
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC = PROJECT_ROOT / "src"
@@ -32,18 +33,6 @@ def _run(script_name: str) -> subprocess.CompletedProcess:
         timeout=SCRIPT_TIMEOUT_SECONDS,
     )
     return result
-
-
-def _load_variable_script_module():
-    spec = importlib.util.spec_from_file_location(
-        "z_generate_manuscript_variables",
-        SCRIPTS_DIR / "z_generate_manuscript_variables.py",
-    )
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def test_run_demo_produces_json_and_png() -> None:
@@ -127,7 +116,6 @@ def test_generate_manuscript_variables_check_mode() -> None:
 
 
 def test_artifact_manifest_reports_broken_registered_figures(tmp_path: Path) -> None:
-    module = _load_variable_script_module()
     output_dir = tmp_path / "output"
     figures_dir = output_dir / "figures"
     figures_dir.mkdir(parents=True)
@@ -143,7 +131,7 @@ def test_artifact_manifest_reports_broken_registered_figures(tmp_path: Path) -> 
     scripts_dir.mkdir(parents=True)
     (scripts_dir / "fig_ok.py").write_text("print('ok')\n", encoding="utf-8")
 
-    issues = module.artifact_manifest_issues(
+    issues = artifact_manifest_issues(
         output_dir,
         [
             {"filename": "ok.png", "generated_by": "scripts/figures/fig_ok.py", "label": "fig:ok"},
