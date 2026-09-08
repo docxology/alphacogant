@@ -10,10 +10,16 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.model.generative_model import belief_prior, default_model
 from alphacogant.model.operating_points import COASTING as _COASTING
 from alphacogant.model.operating_points import IMPROVING as _IMPROVING
-from alphacogant.trsi.t_rsi import bootstrap_t_rsi, certificate, create_rate, decay_rate, t_rsi
+from alphacogant.trsi.t_rsi import (
+    bootstrap_t_rsi,
+    certificate,
+    create_rate,
+    decay_rate,
+    paired_bootstrap_samples,
+    t_rsi,
+)
 
 
 def test_decay_rate_is_non_negative_everywhere(model, prior) -> None:
@@ -55,10 +61,33 @@ def test_bootstrap_reports_rates_and_finite_t_rsi(model, seeded_rng) -> None:
         bootstrap_t_rsi(model, _IMPROVING, seeded_rng, n=10, concentration=0.0)
 
 
-def test_t_rsi_standardization_is_monotone_in_separation() -> None:
-    narrow = t_rsi([1.0, 1.1, 1.2], [0.9, 1.0, 1.1])
-    wide = t_rsi([1.4, 1.5, 1.6], [0.8, 0.9, 1.0])
-    assert wide > narrow
+def test_t_rsi_standardization_is_pairing_aware() -> None:
+    """Same marginal means, tighter paired margins -> larger |t-RSI|.
+
+    create and decay samples are paired (both rates read off the same perturbed
+    trajectory), so the denominator is the SE of the elementwise differences:
+    correlation between the two rate streams changes the statistic even when the
+    marginal distributions are identical. This is exactly the property the pooled
+    independence-assuming SE ignores.
+    """
+    create = [1.0, 1.2]
+    noisy_margin_decay = [1.05, 0.95]  # margins [-0.05, +0.25]
+    tight_margin_decay = [0.95, 1.05]  # margins [+0.05, +0.15]
+    noisy = t_rsi(create, noisy_margin_decay)
+    tight = t_rsi(create, tight_margin_decay)
+    assert tight > noisy > 0.0
+
+
+def test_t_rsi_rejects_unpaired_sample_sets() -> None:
+    """Non-empty arrays of unequal length cannot be paired."""
+    with pytest.raises(ValueError, match="paired"):
+        t_rsi([1.0, 1.1, 1.2], [0.9, 1.0])
+
+
+def test_t_rsi_sign_carries_into_degenerate_zero_variance() -> None:
+    """A zero-variance paired margin yields a signed infinity, not +inf always."""
+    assert t_rsi([2.0, 2.0], [1.0, 1.0]) == float("inf")
+    assert t_rsi([1.0, 1.0], [2.0, 2.0]) == float("-inf")
 
 
 def test_certificate_fires_only_at_or_above_delta() -> None:
@@ -67,9 +96,7 @@ def test_certificate_fires_only_at_or_above_delta() -> None:
     assert certificate(1.9, 2.0) is False
 
 
-def test_bootstrap_is_byte_identical_for_same_seed() -> None:
-    model = default_model()
-    prior = belief_prior(model)
+def test_bootstrap_is_byte_identical_for_same_seed(model, prior) -> None:
     first = bootstrap_t_rsi(model, prior, np.random.default_rng(7), n=200)
     second = bootstrap_t_rsi(model, prior, np.random.default_rng(7), n=200)
     assert first == second
@@ -90,3 +117,18 @@ def test_t_rsi_edge_cases_and_validation(model, prior) -> None:
         bootstrap_t_rsi(model, prior, rng=np.random.default_rng(3), n=0)
     with pytest.raises(ValueError, match="NaN"):
         certificate(float("nan"), 1.0)
+
+
+def test_paired_bootstrap_samples_are_byte_identical_and_aligned(model, prior) -> None:
+    """paired_bootstrap_samples is deterministic and yields aligned rate arrays."""
+    first_create, first_decay = paired_bootstrap_samples(
+        model, prior, np.random.default_rng(7), n=24, horizon=4
+    )
+    second_create, second_decay = paired_bootstrap_samples(
+        model, prior, np.random.default_rng(7), n=24, horizon=4
+    )
+    assert np.array_equal(first_create, second_create)
+    assert np.array_equal(first_decay, second_decay)
+    assert first_create.shape == first_decay.shape == (24,)
+    # Decay samples are residual erosions: never negative.
+    assert np.all(first_decay >= 0.0)

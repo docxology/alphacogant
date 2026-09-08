@@ -8,7 +8,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.model.generative_model import default_model
 from alphacogant.model.operating_points import COASTING, IMPROVING
 from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
 from alphacogant.stats.statistics import (
@@ -23,13 +22,12 @@ from alphacogant.stats.statistics import (
 )
 
 
-def test_exploration_ratio_is_behavioral_not_a_structural_constant():
+def test_exploration_ratio_is_behavioral_not_a_structural_constant(model):
     """The regime exploration ratio is the greedy-trajectory epistemic-cycle fraction.
 
     Binds it to the independent simulation module (not the constant epistemic/total
     actions = 2/6), so it is a genuine per-regime statistic.
     """
-    model = default_model()
     for belief in (IMPROVING, COASTING):
         stats = compute_regime_statistics(model, belief, n=16)
         traj = simulate_trajectory(model, belief, horizon=12, policy="greedy")
@@ -75,8 +73,7 @@ def test_bootstrap_ci_invalid_confidence():
 # ── compute_regime_statistics ────────────────────────────────────────────────
 
 
-def test_compute_regime_statistics_improving():
-    model = default_model()
+def test_compute_regime_statistics_improving(model):
     stats = compute_regime_statistics(model, IMPROVING, "Improving", n=32)
     assert isinstance(stats, RegimeStatistics)
     assert stats.name == "Improving"
@@ -90,15 +87,13 @@ def test_compute_regime_statistics_improving():
     assert 0 <= stats.exploration_ratio <= 1
 
 
-def test_compute_regime_statistics_coasting():
-    model = default_model()
+def test_compute_regime_statistics_coasting(model):
     stats = compute_regime_statistics(model, COASTING, "Coasting", n=32)
     assert stats.name == "Coasting"
     assert np.isfinite(stats.t_rsi)
 
 
-def test_compute_regime_statistics_deterministic():
-    model = default_model()
+def test_compute_regime_statistics_deterministic(model):
     s1 = compute_regime_statistics(model, IMPROVING, n=32)
     s2 = compute_regime_statistics(model, IMPROVING, n=32)
     assert s1.t_rsi == s2.t_rsi
@@ -111,8 +106,7 @@ def test_compute_regime_statistics_default_model():
     assert np.isfinite(stats.t_rsi)
 
 
-def test_compute_regime_statistics_as_dict():
-    model = default_model()
+def test_compute_regime_statistics_as_dict(model):
     stats = compute_regime_statistics(model, IMPROVING, "test", n=32)
     d = stats.as_dict()
     assert d["name"] == "test"
@@ -122,8 +116,7 @@ def test_compute_regime_statistics_as_dict():
     assert len(d["create_ci"]) == 2
 
 
-def test_compute_regime_statistics_efe_decomposition():
-    model = default_model()
+def test_compute_regime_statistics_efe_decomposition(model):
     stats = compute_regime_statistics(model, IMPROVING, n=32)
     assert len(stats.efe_pragmatic_per_action) == 6
     assert len(stats.efe_epistemic_per_action) == 6
@@ -183,8 +176,7 @@ def test_bootstrap_ci_property_ci_contains_mean():
     assert ci.ci_lower < ci.mean < ci.ci_upper
 
 
-def test_break_even_profile_basic():
-    model = default_model()
+def test_break_even_profile_basic(model):
     profile = break_even_profile(model, IMPROVING, n=64)
     assert isinstance(profile, BreakEvenProfile)
     assert 0.0 <= profile.probability <= 1.0
@@ -193,8 +185,7 @@ def test_break_even_profile_basic():
     assert np.isfinite(profile.margin_std)
 
 
-def test_break_even_profile_is_paired_and_deterministic():
-    model = default_model()
+def test_break_even_profile_is_paired_and_deterministic(model):
     p1 = break_even_profile(model, IMPROVING, n=64)
     p2 = break_even_profile(model, IMPROVING, n=64)
     assert p1 == p2

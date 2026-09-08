@@ -10,11 +10,9 @@ from alphacogant.bridge.cogant_bridge import (
     parse_gnn_summary,
 )
 from alphacogant.model.channels import CHANNELS
-from alphacogant.model.generative_model import default_model
 
 
-def test_gnn_summary_has_all_sections():
-    model = default_model()
+def test_gnn_summary_has_all_sections(model):
     summary = model_to_gnn_summary(model)
     assert "## GNNSection" in summary
     assert "## StateSpaceBlock" in summary
@@ -24,8 +22,7 @@ def test_gnn_summary_has_all_sections():
     assert "## Footer" in summary
 
 
-def test_gnn_summary_mentions_all_channels():
-    model = default_model()
+def test_gnn_summary_mentions_all_channels(model):
     summary = model_to_gnn_summary(model)
     for channel in CHANNELS:
         assert f"s{channel}" in summary
@@ -33,8 +30,7 @@ def test_gnn_summary_mentions_all_channels():
         assert f"D_{channel}" in summary
 
 
-def test_gnn_summary_mentions_key_concepts():
-    model = default_model()
+def test_gnn_summary_mentions_key_concepts(model):
     summary = model_to_gnn_summary(model)
     assert "ExpectedFreeEnergy" in summary
     assert "HiddenStateFactor" in summary
@@ -46,8 +42,7 @@ def test_gnn_summary_mentions_key_concepts():
     assert "ImprovementSignalToNoiseRatio" in summary
 
 
-def test_gnn_summary_has_connections():
-    model = default_model()
+def test_gnn_summary_has_connections(model):
     summary = model_to_gnn_summary(model)
     assert "sI-A_R" in summary
     assert "sU-A_R" in summary
@@ -57,8 +52,7 @@ def test_gnn_summary_has_connections():
     assert "g_pragmatic>tRSI" in summary
 
 
-def test_parse_gnn_summary_round_trip():
-    model = default_model()
+def test_parse_gnn_summary_round_trip(model):
     summary = model_to_gnn_summary(model)
     parsed = parse_gnn_summary(summary)
     assert "sections" in parsed
@@ -69,16 +63,14 @@ def test_parse_gnn_summary_round_trip():
     assert len(parsed["factors"]) == len(CHANNELS)
 
 
-def test_parse_gnn_summary_factors_match_channels():
-    model = default_model()
+def test_parse_gnn_summary_factors_match_channels(model):
     summary = model_to_gnn_summary(model)
     parsed = parse_gnn_summary(summary)
     for channel in CHANNELS:
         assert f"s{channel}" in parsed["factors"]
 
 
-def test_parse_gnn_summary_connections_present():
-    model = default_model()
+def test_parse_gnn_summary_connections_present(model):
     summary = model_to_gnn_summary(model)
     parsed = parse_gnn_summary(summary)
     connections = parsed["connections"]
@@ -87,8 +79,7 @@ def test_parse_gnn_summary_connections_present():
     assert "g_pragmatic>tRSI" in connections
 
 
-def test_parse_gnn_summary_ontology_present():
-    model = default_model()
+def test_parse_gnn_summary_ontology_present(model):
     summary = model_to_gnn_summary(model)
     parsed = parse_gnn_summary(summary)
     ontology = parsed["ontology"]
@@ -103,9 +94,8 @@ def test_parse_empty_text():
     assert parsed["connections"] == []
 
 
-def test_round_trip_preserves_information():
+def test_round_trip_preserves_information(model):
     """The GNN summary → parse → model round-trip preserves key structural facts."""
-    model = default_model()
     summary = model_to_gnn_summary(model)
     parsed = parse_gnn_summary(summary)
     # All 5 channel factors are recovered

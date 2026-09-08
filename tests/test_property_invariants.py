@@ -18,7 +18,6 @@ from alphacogant.efe.free_energy import (
 from alphacogant.model.channels import ACTIONS, CHANNELS
 from alphacogant.model.generative_model import (
     EconomicWorldModel,
-    default_model,
     validate_belief_map,
 )
 from alphacogant.trsi.t_rsi import certificate, t_rsi
@@ -44,10 +43,9 @@ def _random_valid_model(rng: np.random.Generator) -> EconomicWorldModel:
 
 
 @pytest.mark.parametrize("execution_number", range(10))
-def test_efe_total_equals_negative_sum(execution_number):
+def test_efe_total_equals_negative_sum(execution_number, model):
     """G = -(pragmatic + epistemic) for every action."""
     rng = np.random.default_rng(42 + execution_number)
-    model = default_model()
     belief = _random_belief(rng)
     for action in range(len(ACTIONS)):
         efe = expected_free_energy(model, belief, action)
@@ -55,10 +53,9 @@ def test_efe_total_equals_negative_sum(execution_number):
 
 
 @pytest.mark.parametrize("execution_number", range(10))
-def test_epistemic_non_negative(execution_number):
+def test_epistemic_non_negative(execution_number, model):
     """Epistemic value (a KL divergence) is always >= 0."""
     rng = np.random.default_rng(100 + execution_number)
-    model = default_model()
     belief = _random_belief(rng)
     for action in range(len(ACTIONS)):
         efe = expected_free_energy(model, belief, action)
@@ -68,10 +65,9 @@ def test_epistemic_non_negative(execution_number):
 
 
 @pytest.mark.parametrize("execution_number", range(10))
-def test_policy_posterior_sums_to_one(execution_number):
+def test_policy_posterior_sums_to_one(execution_number, model):
     """Policy posterior is a valid probability distribution."""
     rng = np.random.default_rng(200 + execution_number)
-    model = default_model()
     belief = _random_belief(rng)
     posterior = policy_posterior(model, belief, gamma=1.0)
     assert abs(sum(posterior) - 1.0) < 1e-10
@@ -79,10 +75,9 @@ def test_policy_posterior_sums_to_one(execution_number):
 
 
 @pytest.mark.parametrize("execution_number", range(5))
-def test_marginal_return_vector_all_actions(execution_number):
+def test_marginal_return_vector_all_actions(execution_number, model):
     """Marginal return vector covers all actions."""
     rng = np.random.default_rng(300 + execution_number)
-    model = default_model()
     belief = _random_belief(rng)
     returns = marginal_return_vector(model, belief)
     assert len(returns) == len(ACTIONS)
@@ -149,8 +144,9 @@ def test_t_rsi_returns_zero_for_small_samples():
 
 
 def test_t_rsi_inf_when_zero_variance_different_means():
-    """t-RSI returns inf when both SEs are 0 and means differ."""
-    assert t_rsi([1.0, 1.0], [2.0, 2.0]) == float("inf")
+    """t-RSI returns a signed infinity when the margin SE is 0 and means differ."""
+    assert t_rsi([1.0, 1.0], [2.0, 2.0]) == float("-inf")
+    assert t_rsi([2.0, 2.0], [1.0, 1.0]) == float("inf")
 
 
 def test_t_rsi_finite_when_zero_variance_same_mean():
