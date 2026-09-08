@@ -23,7 +23,7 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   viz/                        # shared plot style and color palettes
 docs/manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variables, figures)
-tests/                        # 199 tests, 97.70% coverage (2026-08-31), no mocks
+tests/                        # 216 tests, 95.23% coverage (2026-09-08), no mocks
 ```
 
 ## Key Invariants

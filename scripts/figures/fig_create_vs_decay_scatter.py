@@ -37,10 +37,13 @@ from alphacogant.model.operating_points import (  # noqa: E402
 )
 from alphacogant.trsi.t_rsi import create_rate, decay_rate  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
+    BOOTSTRAP_FOOTER,
     COASTING_COLOR,
+    DPI,
     IMPROVING_COLOR,
     NEGATIVE_COLOR,
     POSITIVE_COLOR,
+    add_provenance_footer,
     apply_style,
 )
 
@@ -106,7 +109,7 @@ def main() -> int:
     ax.text(
         0.03,
         0.97,
-        "self-improvement\n(create > decay)",
+        "▲ self-improvement\n(create > decay)",
         transform=ax.transAxes,
         fontsize=8,
         va="top",
@@ -117,7 +120,7 @@ def main() -> int:
     ax.text(
         0.97,
         0.03,
-        "bleeding\n(decay > create)",
+        "▼ bleeding\n(decay > create)",
         transform=ax.transAxes,
         fontsize=8,
         va="bottom",
@@ -131,6 +134,7 @@ def main() -> int:
         imp_create,
         imp_decay,
         s=25,
+        marker="o",
         alpha=0.5,
         color=IMPROVING_COLOR,
         edgecolors="black",
@@ -141,6 +145,7 @@ def main() -> int:
         coast_create,
         coast_decay,
         s=25,
+        marker="^",
         alpha=0.5,
         color=COASTING_COLOR,
         edgecolors="black",
@@ -162,7 +167,7 @@ def main() -> int:
     ax.scatter(
         [np.mean(coast_create)],
         [np.mean(coast_decay)],
-        marker="X",
+        marker="P",
         s=150,
         color=COASTING_COLOR,
         edgecolors="black",
@@ -201,9 +206,10 @@ def main() -> int:
     ax.set_aspect("equal")
 
     fig.tight_layout()
+    add_provenance_footer(fig, BOOTSTRAP_FOOTER)  # Dirichlet bootstrap perturbations
 
     out_path = out_fig / "create_vs_decay_scatter.png"
-    fig.savefig(out_path, dpi=200)
+    fig.savefig(out_path, dpi=DPI)
     plt.close(fig)
 
     print(str(out_path.resolve()))

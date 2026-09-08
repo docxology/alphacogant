@@ -13,7 +13,6 @@ FIGURE_SCRIPTS = sorted((PROJECT_ROOT / "scripts" / "figures").glob("fig_*.py"))
 def main() -> int:
     env = os.environ.copy()
     env["MPLBACKEND"] = "Agg"
-    env["PYTHONPATH"] = str(PROJECT_ROOT / "src")
 
     for script in FIGURE_SCRIPTS:
         result = subprocess.run(
@@ -31,8 +30,19 @@ def main() -> int:
         if result.returncode != 0:
             print(f"{script.name} failed with exit code {result.returncode}", file=sys.stderr)
             return result.returncode
+        # Each figure script self-bootstraps sys.path, so no PYTHONPATH injection
+        # is needed here; each must still actually write its PNG.
+        expected_png = (
+            PROJECT_ROOT / "output" / "figures" / f"{script.stem.removeprefix('fig_')}.png"
+        )
+        if not expected_png.exists():
+            print(
+                f"{script.name} exited 0 but did not write {expected_png}",
+                file=sys.stderr,
+            )
+            return 1
 
-    print(f"generated {len(FIGURE_SCRIPTS)} figure scripts")
+    print(f"generated {len(FIGURE_SCRIPTS)} figures into output/figures/")
     return 0
 
 

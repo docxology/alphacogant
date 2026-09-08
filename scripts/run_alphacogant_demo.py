@@ -5,11 +5,12 @@ Builds the AlphaFund Economic World Model, infers channel state from a synthetic
 high-reward/low-loss observation, computes the Expected-Free-Energy decomposition
 and the marginal-return vector across the six allocation actions, and evaluates the
 t-RSI certificate. All computation comes from ``src/alphacogant``; this script only
-orchestrates and renders outputs.
+orchestrates and delegates output rendering.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -33,14 +34,28 @@ from alphacogant.model.generative_model import (  # noqa: E402
 from alphacogant.trsi.t_rsi import bootstrap_t_rsi, certificate  # noqa: E402
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run the AlphaCOGANT demo pipeline.")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=PROJECT_ROOT / "output",
+        help="Directory for the demo summary JSON and value-decomposition figure.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+
     import matplotlib
 
     matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
 
-    out_data = PROJECT_ROOT / "output" / "data"
-    out_fig = PROJECT_ROOT / "output" / "figures"
+    from alphacogant.viz import render_value_decomposition  # noqa: E402
+
+    out_data = args.output_dir / "data"
+    out_fig = args.output_dir / "figures"
     out_data.mkdir(parents=True, exist_ok=True)
     out_fig.mkdir(parents=True, exist_ok=True)
 
@@ -75,24 +90,8 @@ def main() -> int:
     data_path.write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
     print(str(data_path))
 
-    # Figure: epistemic vs pragmatic value per allocation action.
-    labels = list(ACTIONS)
-    prag = [float(efe[a].pragmatic) for a in range(len(ACTIONS))]
-    epis = [float(efe[a].epistemic) for a in range(len(ACTIONS))]
-    x = np.arange(len(labels))
-    w = 0.4
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    ax.bar(x - w / 2, prag, w, label="pragmatic (expected log-equity)")
-    ax.bar(x + w / 2, epis, w, label="epistemic (information gain)")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.set_ylabel("value (nats)")
-    ax.set_title("AlphaCOGANT: epistemic vs pragmatic value per capital channel")
-    ax.legend()
-    fig.tight_layout()
-    fig_path = out_fig / "value_decomposition.png"
-    fig.savefig(fig_path, dpi=150)
-    plt.close(fig)
+    # Figure: epistemic vs pragmatic value per allocation action (rendered by viz).
+    fig_path = render_value_decomposition(efe, out_fig / "value_decomposition.png")
     print(str(fig_path))
     return 0
 

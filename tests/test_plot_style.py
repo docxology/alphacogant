@@ -30,8 +30,51 @@ def test_plot_style_colors():
 
 def test_apply_style_does_not_raise():
     from alphacogant.viz.plot_style import apply_style
-
     apply_style()
+
+
+def test_positive_negative_pair_is_okabe_ito():
+    """POSITIVE/NEGATIVE and IMPROVING/COASTING use the colorblind-safe Okabe-Ito pair."""
+    from alphacogant.viz.plot_style import (
+        COASTING_COLOR,
+        IMPROVING_COLOR,
+        NEGATIVE_COLOR,
+        POSITIVE_COLOR,
+    )
+
+    okabe_ito = {"#0072B2", "#E69F00"}
+    assert {POSITIVE_COLOR, NEGATIVE_COLOR} == okabe_ito
+    assert {IMPROVING_COLOR, COASTING_COLOR} == okabe_ito
+    assert POSITIVE_COLOR != NEGATIVE_COLOR
+
+
+def test_channel_labels_exported_and_keyed_like_colors():
+    from alphacogant.viz.plot_style import CHANNEL_COLORS, CHANNEL_LABELS
+
+    assert set(CHANNEL_LABELS) == set(CHANNEL_COLORS)
+    assert all(isinstance(label, str) and label for label in CHANNEL_LABELS.values())
+
+
+def test_render_value_decomposition_writes_png(tmp_path):
+    """The demo figure renderer is real engine output rendered to a real PNG."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    from alphacogant.efe.free_energy import expected_free_energy
+    from alphacogant.model.channels import ACTIONS
+    from alphacogant.model.generative_model import belief_prior, default_model
+    from alphacogant.viz import render_value_decomposition
+
+    model = default_model()
+    posterior = belief_prior(model)
+    efe = {a: expected_free_energy(model, posterior, a) for a in range(len(ACTIONS))}
+
+    out = tmp_path / "value_decomposition.png"
+    result = render_value_decomposition(efe, out)
+    assert result == out
+    assert out.stat().st_size > 100
+    with open(out, "rb") as handle:
+        assert handle.read(8) == b"\x89PNG\r\n\x1a\n"
 
 
 def test_styled_figure_produces_real_png(tmp_path):

@@ -17,9 +17,12 @@ from alphacogant.model.operating_points import (  # noqa: E402
 )
 from alphacogant.stats.statistics import break_even_profile  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
-    DECAY_COLOR,
+    BOOTSTRAP_FOOTER,
+    DPI,
     EPISTEMIC_COLOR,
+    NEGATIVE_COLOR,
     POSITIVE_COLOR,
+    add_provenance_footer,
     apply_style,
 )
 
@@ -76,14 +79,16 @@ def main() -> int:
         where=probabilities >= 0.5,
         color=POSITIVE_COLOR,
         alpha=0.12,
+        hatch="/",
     )
     ax_prob.fill_between(
         theta_values,
         probabilities,
         0.5,
         where=probabilities < 0.5,
-        color=DECAY_COLOR,
+        color=NEGATIVE_COLOR,
         alpha=0.12,
+        hatch="\\",
     )
     ax_prob.set_xlabel(r"$P(\Theta=\mathrm{fresh})$ prior")
     ax_prob.set_ylabel("paired bootstrap probability")
@@ -115,9 +120,10 @@ def main() -> int:
 
     fig.suptitle("Break-even robustness across parameter-freshness beliefs", fontweight="bold")
     fig.tight_layout(rect=(0, 0, 1, 0.94))
+    add_provenance_footer(fig, BOOTSTRAP_FOOTER)  # paired bootstrap profile
 
     output_path = output_dir / "break_even_probability.png"
-    fig.savefig(output_path, dpi=200)
+    fig.savefig(output_path, dpi=DPI)
     plt.close(fig)
     print(str(output_path.resolve()))
     return 0

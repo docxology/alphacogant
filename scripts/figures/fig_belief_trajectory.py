@@ -29,6 +29,15 @@ from alphacogant.model.channels import CHANNELS  # noqa: E402
 from alphacogant.model.generative_model import default_model, validate_belief_map  # noqa: E402
 from alphacogant.model.operating_points import IMPROVING  # noqa: E402
 from alphacogant.stats.simulation import simulate_trajectory  # noqa: E402
+from alphacogant.viz.plot_style import (  # noqa: E402
+    CHANNEL_COLORS,
+    CHANNEL_LABELS,
+    DPI,
+    GRID_ALPHA,
+    REDUCED_SIM_FOOTER,
+    add_provenance_footer,
+    apply_style,
+)
 
 HORIZON = 12
 
@@ -41,21 +50,6 @@ FRESH_THETA_RAW: dict[str, tuple[float, float]] = {
     "Z": (0.70, 0.30),
 }
 
-CHANNEL_COLORS = {
-    "I": "#b91c1c",
-    "S": "#2563eb",
-    "U": "#ea580c",
-    "Theta": "#7c3aed",
-    "Z": "#0891b2",
-}
-
-CHANNEL_LABELS = {
-    "I": "Investments",
-    "S": "Sensors",
-    "U": "Actuators",
-    "Theta": "Parameters",
-    "Z": "R&D",
-}
 
 ACTION_SHORT = {
     "fund_I": "I",
@@ -97,7 +91,7 @@ def _draw_panel(ax, trajectory, title: str) -> None:
     ax.set_xlim(-0.5, len(trajectory.cycles) - 0.5)
     ax.set_ylim(-0.05, 1.05)
     ax.set_xticks(cycles)
-    ax.grid(True, alpha=0.3)
+    ax.grid(True, alpha=GRID_ALPHA)
     ax.legend(loc="upper left", framealpha=0.95, fontsize=7)
 
 
@@ -105,6 +99,7 @@ def main() -> int:
     import matplotlib
 
     matplotlib.use("Agg")
+    apply_style()
     import matplotlib.pyplot as plt
 
     out_fig = PROJECT_ROOT / "output" / "figures"
@@ -127,9 +122,10 @@ def main() -> int:
         fontsize=11,
     )
     fig.tight_layout(rect=(0, 0, 1, 0.94))
+    add_provenance_footer(fig, REDUCED_SIM_FOOTER)  # greedy-trajectory simulation
 
     out_path = out_fig / "belief_trajectory.png"
-    fig.savefig(out_path, dpi=200)
+    fig.savefig(out_path, dpi=DPI)
     plt.close(fig)
 
     print(str(out_path.resolve()))

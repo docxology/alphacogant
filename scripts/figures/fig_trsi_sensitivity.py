@@ -27,9 +27,12 @@ from alphacogant.model.generative_model import default_model  # noqa: E402
 from alphacogant.model.operating_points import IMPROVING  # noqa: E402
 from alphacogant.stats.sensitivity import sweep_concentration, sweep_theta_freshness  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
+    BOOTSTRAP_FOOTER,
     CREATE_COLOR,
     DECAY_COLOR,
+    DPI,
     EPISTEMIC_COLOR,
+    add_provenance_footer,
     apply_style,
 )
 
@@ -144,9 +147,10 @@ def main() -> int:
         fontweight="bold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.94))
+    add_provenance_footer(fig, BOOTSTRAP_FOOTER)  # bootstrap sweeps (n=128)
 
     out_path = out_fig / "trsi_sensitivity.png"
-    fig.savefig(out_path, dpi=200)
+    fig.savefig(out_path, dpi=DPI)
     plt.close(fig)
 
     print(str(out_path.resolve()))

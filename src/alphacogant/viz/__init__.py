@@ -1,4 +1,4 @@
-"""Visualization subpackage: shared plot style and color palettes."""
+"""Visualization subpackage: shared plot style, color palettes, and renderers."""
 
 from alphacogant.viz.plot_style import (
     ACTION_COLORS,
@@ -6,6 +6,7 @@ from alphacogant.viz.plot_style import (
     ANNOTATION_FONTSIZE,
     BOOTSTRAP_FOOTER,
     CHANNEL_COLORS,
+    CHANNEL_LABELS,
     COASTING_COLOR,
     COVER_ART_FOOTER,
     CREATE_COLOR,
@@ -34,6 +35,7 @@ from alphacogant.viz.plot_style import (
     apply_style,
     styled_figure,
 )
+from alphacogant.viz.value_decomposition import render_value_decomposition
 
 __all__ = [
     "ACTION_COLORS",
@@ -41,6 +43,7 @@ __all__ = [
     "ANNOTATION_FONTSIZE",
     "BOOTSTRAP_FOOTER",
     "CHANNEL_COLORS",
+    "CHANNEL_LABELS",
     "COASTING_COLOR",
     "COVER_ART_FOOTER",
     "CREATE_COLOR",
@@ -67,5 +70,6 @@ __all__ = [
     "WIDE_FIGSIZE",
     "add_provenance_footer",
     "apply_style",
+    "render_value_decomposition",
     "styled_figure",
 ]
