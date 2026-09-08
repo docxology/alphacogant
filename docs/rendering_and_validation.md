@@ -1,6 +1,7 @@
 # Rendering and Validation
 
-AlphaCOGANT is a private project rendered through the sibling template checkout.
+AlphaCOGANT lives in the public GitHub repo `docxology/alphacogant` and is
+rendered through the sibling template checkout.
 
 ## Project-root commands
 

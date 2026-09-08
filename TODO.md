@@ -1,7 +1,7 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Status as of 2026-08-31, Round 2 (verified by `uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q` → 200 passed, 98.70% coverage; full log in REVIEW_LOG_2026-08-31.md).
+Status as of 2026-08-31, Round 2 (verified by `uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q` → 200 passed, 98.70% coverage).
 
 ## Minor
 

@@ -44,4 +44,6 @@ changes how much evidence the firm can buy next cycle.
 - updated manuscript tokens when numbers change
 - regenerated figures
 - `scripts/pipeline/stage_04_validate.py --project ongoing/ActiveInference/alphacogant`
+  (pipeline stages live in the template checkout root, not this repo — run from
+  the template root)
 - copied-output parity after stage 05
