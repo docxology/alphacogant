@@ -61,9 +61,14 @@ def figure_registry_entries(
             # producer-missing check actually fire when a figure has no generator.
             script = _PROJECT_ROOT / "scripts" / "figures" / f"fig_{Path(filename).stem}.py"
             generated_by = script.relative_to(_PROJECT_ROOT).as_posix()
+            caption = " ".join(match.group("caption").split())
             entries.append(
                 {
-                    "caption": " ".join(match.group("caption").split()),
+                    "caption": caption,
+                    # Render/accessibility gates require explicit alt text per
+                    # registry record; the caption IS the figure's description,
+                    # with markdown backticks stripped for plain-text contexts.
+                    "alt_text": caption.replace("`", ""),
                     "filename": filename,
                     "generated_by": generated_by,
                     "label": match.group("label"),
