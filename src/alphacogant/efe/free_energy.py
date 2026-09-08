@@ -31,6 +31,20 @@ def _validate_action(action: int) -> None:
         raise ValueError(f"action must be in [0, {len(ACTIONS) - 1}], got {action}.")
 
 
+def predicted_belief(
+    model: EconomicWorldModel,
+    belief: Mapping[str, np.ndarray],
+    action: int,
+) -> dict[str, np.ndarray]:
+    """One-step predicted belief under ``action``: ``B_k[:, :, action] @ belief_k``.
+
+    Hot-path primitive shared by inference, simulation, and the bootstrap: the
+    caller is responsible for passing a validated/normalized belief (this
+    function performs no validation).
+    """
+    return {channel: model.B[channel][:, :, action] @ belief[channel] for channel in CHANNELS}
+
+
 def _reward_distribution(model: EconomicWorldModel, belief: Mapping[str, np.ndarray]) -> np.ndarray:
     return np.einsum("riut,i,u,t->r", model.A_R, belief["I"], belief["U"], belief["Theta"])
 
@@ -49,6 +63,8 @@ def _theta_prior_likelihood_terms(
 
 
 def _kl_divergence(posterior: np.ndarray, prior: np.ndarray) -> float:
+    """Scalar masked KL divergence — the independent reference used by the
+    differential epistemic-value test (not the production hot path)."""
     mask = posterior > 0.0
     return float(np.sum(posterior[mask] * np.log(posterior[mask] / prior[mask])))
 
@@ -71,7 +87,7 @@ def _epistemic_value(
     )
     observation_prob = joint.sum(axis=2)  # (R, L)
     valid = observation_prob > 0.0
-    safe_denominator = np.where(valid[..., None], joint.sum(axis=2, keepdims=True), 1.0)
+    safe_denominator = np.where(valid[..., None], observation_prob[..., None], 1.0)
     posterior = joint / safe_denominator  # (R, L, T); rows for invalid obs are meaningless
     positive = posterior > 0.0
     ratio = np.where(positive, posterior / theta_prior[None, None, :], 1.0)
@@ -96,9 +112,7 @@ def _efe_from_validated(
     validate once and reuse, which removes redundant validation from the bootstrap.
     """
     _validate_action(action)
-    predicted = {
-        channel: model.B[channel][:, :, action] @ validated_belief[channel] for channel in CHANNELS
-    }
+    predicted = predicted_belief(model, validated_belief, action)
     reward_distribution = _reward_distribution(model, predicted)
     loss_distribution = _loss_distribution(model, predicted)
     pragmatic = float(reward_distribution @ model.C_R + loss_distribution @ model.C_L)
@@ -136,29 +150,49 @@ def static_pragmatic_value(
     return float(reward_distribution @ model.C_R + loss_distribution @ model.C_L)
 
 
+def efe_vector(model: EconomicWorldModel, belief: Mapping[str, np.ndarray]) -> list[EFEResult]:
+    """EFE decomposition for every action, validating the belief exactly once.
+
+    Hot-path entry for callers that score several actions against one belief
+    (simulation cycles, policy scoring): one validation, one B-rollout sweep.
+    """
+    validated = validate_belief_map(belief, context="belief")
+    return [_efe_from_validated(model, validated, action) for action in range(len(ACTIONS))]
+
+
 def marginal_return_vector(
     model: EconomicWorldModel,
     belief: Mapping[str, np.ndarray],
 ) -> dict[int, float]:
     """Return the negative-EFE value for every action."""
-    validated = validate_belief_map(belief, context="belief")
-    values: dict[int, float] = {}
-    for action in range(len(ACTIONS)):
-        efe = _efe_from_validated(model, validated, action)
-        values[action] = -efe.total
-    return values
+    return {action: -result.total for action, result in enumerate(efe_vector(model, belief))}
+
+
+def greedy_action(model: EconomicWorldModel, belief: Mapping[str, np.ndarray]) -> int:
+    """Return the action with the highest marginal return (lowest total EFE)."""
+    returns = marginal_return_vector(model, belief)
+    return max(returns, key=lambda action: returns[action])
 
 
 def policy_posterior(
     model: EconomicWorldModel,
     belief: Mapping[str, np.ndarray],
     gamma: float = 1.0,
+    *,
+    values: Mapping[int, float] | None = None,
 ) -> np.ndarray:
-    """Return the precision-weighted softmax posterior over actions."""
+    """Return the precision-weighted softmax posterior over actions.
+
+    ``values`` may carry precomputed marginal returns (``-EFE`` per action) so a
+    caller that already scored every action against this belief does not pay a
+    second EFE sweep.
+    """
     if not np.isfinite(gamma) or gamma <= 0.0:
         raise ValueError("gamma must be a positive finite precision value.")
-    values = np.array(list(marginal_return_vector(model, belief).values()), dtype=float)
-    logits = gamma * values
+    if values is None:
+        values = marginal_return_vector(model, belief)
+    vals = np.array([values[action] for action in range(len(ACTIONS))], dtype=float)
+    logits = gamma * vals
     logits -= np.max(logits)
     weights = np.exp(logits)
     return weights / weights.sum()
@@ -166,8 +200,11 @@ def policy_posterior(
 
 __all__ = [
     "EFEResult",
+    "efe_vector",
     "expected_free_energy",
+    "greedy_action",
     "marginal_return_vector",
     "policy_posterior",
+    "predicted_belief",
     "static_pragmatic_value",
 ]

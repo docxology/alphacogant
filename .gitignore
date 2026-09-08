@@ -13,4 +13,3 @@ __pycache__/
 .DS_Store
 .codegraph/
 coverage_project.json
-.benchmarks/

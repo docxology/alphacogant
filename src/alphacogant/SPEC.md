@@ -43,11 +43,19 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   - `epistemic` = expected information gain about `Theta` (and `S`,`Z` via their
     effect on predicted obs): `D_KL[q(s'|o,a) || q(s'|a)]` summed over predicted
     observations, weighted by predicted obs probability. Must be ≥ 0.
+- `efe_vector(model, belief) -> list[EFEResult]`: the decomposition for every
+  action, validating the belief exactly once (hot path for simulation and
+  policy scoring).
 - `marginal_return_vector(model, belief) -> dict[action, float]`: `g_t` = the
   negative-EFE per action = expected log-equity growth per channel-dollar. The
   argmax is the channel the portfolio optimizer funds this cycle.
-- `policy_posterior(model, belief, gamma=1.0) -> np.ndarray (6,)`: softmax over
-  `-G` (precision gamma). Sums to 1.
+- `greedy_action(model, belief) -> int`: the argmax action itself.
+- `predicted_belief(model, belief, action) -> dict[channel, np.ndarray]`: the
+  one-step B-rollout `B_k[:, :, action] @ belief_k` (no validation; caller
+  passes a validated belief).
+- `policy_posterior(model, belief, gamma=1.0, *, values=None) -> np.ndarray (6,)`:
+  softmax over `-G` (precision gamma). Sums to 1. `values` may carry
+  precomputed marginal returns to avoid a second EFE sweep.
 
 ### `trsi/t_rsi.py`
 - `create_rate(model, belief) -> float`: pragmatic value of the best funded policy
@@ -55,9 +63,16 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
 - `decay_rate(model, belief) -> float`: expected pragmatic loss per cycle from the
   `B_Theta` fresh→stale leak under non-funding (alpha-decay).
 - `t_rsi(create_samples, decay_samples) -> float`: standardized distance
-  `(mean(create) - mean(decay)) / sqrt(se(create)**2 + se(decay)**2)`; `se` is
-  `std(x, ddof=1)/sqrt(n)`. Return `inf` only if both SEs are exactly 0 and
-  means differ; guard n<2.
+  `(mean(create) - mean(decay)) / se(create - decay)` where the samples are
+  **paired** (entry `i` of each array comes from the same perturbed trajectory,
+  as `paired_bootstrap_samples` produces) and `se(x)` is
+  `std(x, ddof=1)/sqrt(n)`. The independence-assuming pooled SE
+  `sqrt(se(create)**2 + se(decay)**2)` is deliberately NOT used: it understates
+  the margin's variability when the shared trajectory induces rate correlation
+  (`rho ~= -0.92` at IMPROVING), inflating `|t-RSI|` anti-conservatively.
+  Return signed `inf` only if the margin SE is exactly 0 and the margin mean is
+  nonzero; return 0 for n<2; raise if the arrays are non-empty but of unequal
+  length (unpaired input).
 - `bootstrap_t_rsi(model, belief, rng, n=500) -> dict` returning
   `{"t_rsi", "create_mean", "decay_mean", "create_se", "decay_se"}` from a
   deterministic-seeded bootstrap over per-channel belief perturbations.
@@ -85,7 +100,8 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   generator imports from here instead of re-declaring literals.
 - `IMPROVING_RAW` / `COASTING_RAW`: the same beliefs as `(weak, strong)` tuples,
   for figure scripts that need the raw form.
-- `as_belief(raw) -> dict`: convert a raw tuple spec into a validated belief map.
+- `as_belief(raw) -> dict`: convert a raw tuple spec into the channel→array
+  belief map (plain conversion; engine boundaries validate).
 - `BOOTSTRAP_SEED`, `BOOTSTRAP_N`, `BOOTSTRAP_CONCENTRATION`: the canonical
   bootstrap constants used by `manuscript_variables.generate_variables` and the
   `fig_trsi_densities` figure.
@@ -123,6 +139,8 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
 ### `stats/statistics.py`
 - `bootstrap_ci(samples, confidence) -> BootstrapCI`: percentile interval summary
   for generated rate samples.
+- `cohen_d(samples_a, samples_b) -> float`: pooled-std Cohen's d between two
+  sample sets.
 - `compute_regime_statistics(...) -> RegimeStatistics`: bootstrap CIs, EFE
   decomposition, funded action, and effect-size inputs for one operating point.
 - `compare_regimes(...) -> RegimeComparison`: improving-vs-coasting table and
@@ -139,8 +157,9 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   yields higher epistemic than `hold`; pragmatic is highest when production
   channels strong; `policy_posterior` sums to 1; `total == -(prag+epist)`.
 - `test_t_rsi.py`: t-RSI positive when create_mean > decay_mean; standardization
-  monotone in separation; certificate fires iff `t_rsi >= delta`; bootstrap
-  deterministic under fixed seed (two runs identical).
+  pairing-aware (same marginal means, tighter paired margins → larger |t-RSI|);
+  certificate fires iff `t_rsi >= delta`; bootstrap deterministic under fixed
+  seed (two runs identical).
 - `test_cogant_bridge.py`: richer firm structure → stronger channel priors;
   `model_to_gnn_summary` mentions all five channels and "ExpectedFreeEnergy".
 - `test_manuscript_variables.py`: every token is a non-empty string; a curated set

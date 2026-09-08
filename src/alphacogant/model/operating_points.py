@@ -40,10 +40,10 @@ COASTING_RAW: dict[str, tuple[float, float]] = {
 
 
 def as_belief(raw: dict[str, tuple[float, float]]) -> dict[str, np.ndarray]:
-    """Convert a ``(weak, strong)`` spec into a validated belief map.
+    """Convert a ``(weak, strong)`` spec into the channel→array belief map.
 
-    The returned dict is keyed by :data:`alphacogant.channels.CHANNELS` and
-    each value is a float64 array of shape ``(2,)``.
+    Plain conversion (no validation); the engine boundaries validate belief
+    maps via ``generative_model.validate_belief_map``.
     """
     return {channel: np.array(raw[channel], dtype=float) for channel in CHANNELS}
 
@@ -62,8 +62,9 @@ BOOTSTRAP_SEED: int = 20240623
 #: Canonical bootstrap sample count shared by manuscript variables and figures.
 BOOTSTRAP_N: int = 2560
 
-#: Bootstrap Dirichlet concentration — the firm's belief precision.
-#: Must match ``t_rsi.bootstrap_t_rsi``'s default.
+#: Bootstrap Dirichlet concentration — the firm's belief precision. Single
+#: source of truth: ``t_rsi.bootstrap_t_rsi`` and ``paired_bootstrap_samples``
+#: default to this value.
 BOOTSTRAP_CONCENTRATION: float = 12.0
 
 

@@ -14,8 +14,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from alphacogant.efe.free_energy import expected_free_energy, marginal_return_vector
-from alphacogant.model.channels import CHANNELS
+from alphacogant.efe.free_energy import efe_vector
+from alphacogant.model.channels import ACTIONS, CHANNELS
 from alphacogant.model.generative_model import (
     EconomicWorldModel,
     belief_prior,
@@ -28,11 +28,28 @@ from alphacogant.model.operating_points import (
     COASTING,
     IMPROVING,
 )
+from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
 from alphacogant.trsi.t_rsi import (
     DEFAULT_HORIZON,
     paired_bootstrap_samples,
     t_rsi,
 )
+
+
+def cohen_d(samples_a: np.ndarray, samples_b: np.ndarray) -> float:
+    """Pooled-standard-deviation Cohen's d between two sample sets (ddof=1)."""
+    std_a = float(np.std(samples_a, ddof=1))
+    std_b = float(np.std(samples_b, ddof=1))
+    return _cohen_d_from_moments(float(np.mean(samples_a)), std_a, float(np.mean(samples_b)), std_b)
+
+
+def _cohen_d_from_moments(
+    mean_a: float, std_a: float, mean_b: float, std_b: float
+) -> float:
+    pooled_std = np.sqrt((std_a**2 + std_b**2) / 2)
+    if pooled_std == 0:
+        return 0.0
+    return float((mean_a - mean_b) / pooled_std)
 
 
 @dataclass(frozen=True)
@@ -139,18 +156,22 @@ class RegimeComparison:
     @property
     def cohen_d_create(self) -> float:
         """Cohen's d effect size for the create-rate difference between regimes."""
-        pooled_std = np.sqrt((self.improving.create_ci.std**2 + self.coasting.create_ci.std**2) / 2)
-        if pooled_std == 0:
-            return 0.0
-        return float(self.create_rate_delta / pooled_std)
+        return _cohen_d_from_moments(
+            self.improving.create_ci.mean,
+            self.improving.create_ci.std,
+            self.coasting.create_ci.mean,
+            self.coasting.create_ci.std,
+        )
 
     @property
     def cohen_d_decay(self) -> float:
         """Cohen's d effect size for the decay-rate difference."""
-        pooled_std = np.sqrt((self.improving.decay_ci.std**2 + self.coasting.decay_ci.std**2) / 2)
-        if pooled_std == 0:
-            return 0.0
-        return float(self.decay_rate_delta / pooled_std)
+        return _cohen_d_from_moments(
+            self.improving.decay_ci.mean,
+            self.improving.decay_ci.std,
+            self.coasting.decay_ci.mean,
+            self.coasting.decay_ci.std,
+        )
 
     def as_table(self) -> str:
         """Render the comparison as a markdown table."""
@@ -292,25 +313,23 @@ def compute_regime_statistics(
     create_ci = bootstrap_ci(create_samples, confidence)
     decay_ci = bootstrap_ci(decay_samples, confidence)
 
-    # EFE per action
-    returns = marginal_return_vector(model, belief)
-    funded_action = max(returns, key=lambda a: returns[a])
-    funded_result = expected_free_energy(model, belief, funded_action)
-
-    from alphacogant.model.channels import ACTIONS
+    # One validated EFE sweep covers the funded-channel tokens and the per-action
+    # decomposition tables.
+    efe_results = efe_vector(model, belief)
+    funded_action = max(
+        range(len(ACTIONS)), key=lambda a: -efe_results[a].total
+    )
+    funded_result = efe_results[funded_action]
 
     efe_prag: dict[str, float] = {}
     efe_epis: dict[str, float] = {}
-    for action_idx in range(len(ACTIONS)):
-        efe = expected_free_energy(model, belief, action_idx)
+    for action_idx, efe in enumerate(efe_results):
         efe_prag[ACTIONS[action_idx]] = efe.pragmatic
         efe_epis[ACTIONS[action_idx]] = efe.epistemic
 
     # Exploration ratio: the fraction of greedy-trajectory CYCLES this regime spends
     # funding an epistemic channel (S or Z) — a behavioral, regime-discriminating
     # quantity, not the structural constant (epistemic actions / total actions).
-    from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
-
     trajectory = simulate_trajectory(model, belief, horizon=horizon, policy="greedy")
     exploration_ratio = float(summarize_trajectory(trajectory)["exploration_ratio"])
 
@@ -361,12 +380,13 @@ def compare_regimes(
 
 
 __all__ = [
-    "BreakEvenProfile",
     "BootstrapCI",
+    "BreakEvenProfile",
     "RegimeComparison",
     "RegimeStatistics",
     "break_even_profile",
     "bootstrap_ci",
+    "cohen_d",
     "compare_regimes",
     "compute_regime_statistics",
 ]
