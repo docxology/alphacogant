@@ -220,8 +220,16 @@ the belief-propagating `t_rsi.bootstrap_t_rsi`:
 $$
 \text{t-RSI}_{t:H}
   = \frac{\overline{\Delta\alpha}^{\text{create}}_{t:H} - \overline{\Delta\alpha}^{\text{decay}}_{t:H}}
-         {\sqrt{\mathrm{SE}^2(\Delta\alpha^{\text{create}}_{t:H}) + \mathrm{SE}^2(\Delta\alpha^{\text{decay}}_{t:H})}}.
+         {\mathrm{SE}\!\left(\Delta\alpha^{\text{create}}_{t:H} - \Delta\alpha^{\text{decay}}_{t:H}\right)}.
 $$ {#eq:trsi-formal}
+
+One deviation from AlphaFund's published form is deliberate: AlphaFund's pooled
+denominator assumes the two rate posteriors are estimated from independent data,
+but in the engine the two rates are **paired** — both are read off the same
+perturbed trajectory — and the induced rate correlation makes the pooled form
+anti-conservative (it inflates $|\text{t-RSI}|$ by roughly a fifth at the
+self-improving point). The engine standardizes by the paired SE of the per-draw
+differences, the honest denominator for a paired bootstrap ([@sec:value]).
 
 Because create and decay share no algebraic term, t-RSI is *not* constrained to be
 positive. The not-green-by-construction property shows up at the **point estimate**:
@@ -230,7 +238,8 @@ coasting point ([@fig:certificate]). Under bootstrapped belief uncertainty the
 reduced two-level model reports a create-rate mean of {{CREATE_RATE_MEAN}}, a
 decay-rate mean of {{DECAY_RATE_MEAN}}, and a headline t-RSI of {{HEADLINE_T_RSI}}
 standardized units — robust in *sign* on a modest raw gap, with a magnitude that
-scales with the bootstrap count n (the t-RSI is pooled-standard-error denominated):
+scales with the bootstrap count n (the t-RSI is a standard-error-denominated
+confidence statistic):
 the correct behavior of an honest instrument on a coarse encoding that does not
 *robustly* certify net improvement. The coasting
 point's standardized value, {{COASTING_T_RSI}}, is degenerate (its greedy policy is

@@ -44,7 +44,7 @@ cross-channel interaction. AlphaFund's Def 21 (supermodularity) is represented
 in the *likelihood* (reward depends on $I, U, \Theta$ jointly) but not in the
 *transition* (funding Sensors does not directly make Investments more
 productive). A coupled transition — $B(s_{t+1} \mid s_t, a_t)$ rather than
-\prod_k B_k$ would model supermodularity in the state dynamics, not just the
+$\prod_k B_k$ would model supermodularity in the state dynamics, not just the
 observation model [@milgrom1990; @kaelbling1998pomdp; @friston2017process]. The mean-field approximation is exact for the current factor
 graph but would become variational under coupling [@vandemeent2021ppl; @kaelbling1998pomdp].
 
@@ -123,6 +123,13 @@ show high value on $\Theta$ (stale, much to learn); later cycles show convergenc
 toward `hold` as the model freshens and the marginal value of further funding
 falls below the cost.
 
+The engine records more than the figure shows: over the {{PLANNING_HORIZON}}
+cycles of the self-improving trajectory the first funded action is
+{{TRAJ_FIRST_FUNDED}} and the last is {{TRAJ_LAST_FUNDED}} (an exploration ratio
+of {{TRAJ_EXPLORATION_RATIO}} over funded cycles, with {{TRAJ_DOMINANT_ACTION}}
+the modal action), and the belief in fresh $\Theta$ moves by
+{{TRAJ_THETA_DELTA}} over the run — the quantitative backbone of the
+explore-then-exploit reading above.
 
 
 ## Future directions

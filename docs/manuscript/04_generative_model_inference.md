@@ -74,6 +74,7 @@ $$
 \mathcal{L}_{\text{LLM}}(\Theta) = \sum_i \ell\big(\hat p_\Theta(x_i \mid \text{ctx}_i), x_i\big)
 \quad\text{(permutation-invariant over documents)},
 $$ {#eq:llm-loss}
+
 $$
 \mathcal{L}_{\text{EWM}}(\Theta) = \sum_{\tau \in I_{\text{eval}}} \ell\big(\widehat{P}_\tau(o_{\tau+1}, R_{\tau+1} \mid \mathcal{F}_\tau, a_\tau), (o_{\tau+1}, R_{\tau+1})\big)
 \quad\text{(information order matters)}
