@@ -1,0 +1,87 @@
+# AlphaCOGANT claim ledger — registered manuscript-facing facts.
+#
+# Every number below is flagged by the template evidence-registry gate when it
+# appears in docs/manuscript prose without an artifact-backed token. Each row
+# binds the value to a real, verifiable in-repo source so stage_04 validation
+# can trace it. In-repo engine-generated numbers are NOT claims about
+# AlphaFund's proprietary books (see docs/claim_boundaries.md).
+#
+# Schema: rows are consumed by the template evidence-registry collector
+# (claim_id, value, kind, source, artifact_path, source_tier, freshness).
+claims:
+  # Measured rate correlation induced by the paired bootstrap: both rates are
+  # read off the same perturbed trajectory, so the pooled (independence-
+  # assuming) SE understates the margin's variability. Documented in the
+  # t_rsi docstring from the paired-SE manuscript update (commit 40554c1).
+  - claim_id: rho_create_decay_paired
+    value: -0.92
+    kind: number
+    source: "Measured rho(create, decay) across the paired Dirichlet bootstrap at the IMPROVING operating point; documented in src/alphacogant/trsi/t_rsi.py (t_rsi docstring), introduced by the paired-SE update (commit 40554c1)."
+    artifact_path: "src/alphacogant/trsi/t_rsi.py"
+    source_tier: claim_ledger
+
+  # AlphaFund's published 3-month headline t-RSI on its proprietary surfaces.
+  # External reference point for what the full continuous marginal-return
+  # formalism targets; AlphaCOGANT deliberately does not reproduce it.
+  - claim_id: alphafund_headline_t_rsi
+    value: 9.61
+    kind: number
+    source: "AlphaFund published 3-month headline t-RSI; recorded in docs/whitepaper_concepts.md (t-RSI definition and headline t-RSI entries)."
+    artifact_path: "docs/whitepaper_concepts.md"
+    source_tier: claim_ledger
+
+  # AlphaFund Definition indices referenced by the manuscript's formalism
+  # mapping (D13 marginal-return vector, D14 per-channel chain rule, D21
+  # cross-channel supermodularity, D22 certified-commit continuation bound,
+  # D23 deployable-capital decomposition). The full 23-definition formalism is
+  # enumerated in docs/whitepaper_concepts.md.
+  - claim_id: alphafund_definition_d13
+    value: 13
+    kind: number
+    source: "AlphaFund Definition D13 (marginal-return vector) index in the 23-definition formalism; enumerated in docs/whitepaper_concepts.md and mapped in docs/manuscript/08_formalisms.md."
+    artifact_path: "docs/whitepaper_concepts.md"
+    source_tier: claim_ledger
+  - claim_id: alphafund_definition_d14
+    value: 14
+    kind: number
+    source: "AlphaFund Definition D14 (per-channel chain rule <-> path integral) index in the 23-definition formalism; enumerated in docs/whitepaper_concepts.md and mapped in docs/manuscript/08_formalisms.md."
+    artifact_path: "docs/whitepaper_concepts.md"
+    source_tier: claim_ledger
+  - claim_id: alphafund_definition_d21
+    value: 21
+    kind: number
+    source: "AlphaFund Definition D21 (cross-channel supermodularity, Milgrom-Roberts) index in the 23-definition formalism; enumerated in docs/whitepaper_concepts.md and mapped in docs/manuscript/08_formalisms.md."
+    artifact_path: "docs/whitepaper_concepts.md"
+    source_tier: claim_ledger
+  - claim_id: alphafund_definition_d22
+    value: 22
+    kind: number
+    source: "AlphaFund Definition D22 (certified-commit continuation bound) index in the 23-definition formalism; enumerated in docs/whitepaper_concepts.md and mapped in docs/manuscript/08_formalisms.md."
+    artifact_path: "docs/whitepaper_concepts.md"
+    source_tier: claim_ledger
+  - claim_id: alphafund_definition_d23
+    value: 23
+    kind: number
+    source: "AlphaFund Definition D23 (deployable-capital decomposition) index in the 23-definition formalism; enumerated in docs/whitepaper_concepts.md and mapped in docs/manuscript/08_formalisms.md and docs/manuscript/09_limitations.md."
+    artifact_path: "docs/whitepaper_concepts.md"
+    source_tier: claim_ledger
+
+  # Upper endpoint of the Dirichlet-concentration sweep in the t-RSI
+  # sensitivity analysis (concentrations 2..80); the manuscript's "alpha ~= 80"
+  # names that sweep endpoint, a property of the sensitivity experiment.
+  - claim_id: concentration_sweep_endpoint
+    value: 80
+    kind: number
+    source: "Upper endpoint of the Dirichlet-concentration sensitivity sweep (2.0, 4.0, 8.0, 12.0, 20.0, 40.0, 80.0) in src/alphacogant/stats/sensitivity.py::sweep_concentration."
+    artifact_path: "src/alphacogant/stats/sensitivity.py"
+    source_tier: claim_ledger
+
+  # Bootstrap confidence level for the reported create/decay CIs: the
+  # engine's bootstrap_ci defaults to 0.95 confidence, rendered in prose as
+  # "95% confidence intervals".
+  - claim_id: bootstrap_ci_confidence_level
+    value: 95
+    kind: number
+    source: "Bootstrap confidence level 0.95 (95% CIs) used by bootstrap_ci in src/alphacogant/stats/statistics.py."
+    artifact_path: "src/alphacogant/stats/statistics.py"
+    source_tier: claim_ledger
