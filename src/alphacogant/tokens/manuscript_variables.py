@@ -21,9 +21,13 @@ from pathlib import Path
 
 import numpy as np
 
-from alphacogant.efe.free_energy import expected_free_energy, marginal_return_vector
-from alphacogant.model.channels import CHANNEL_ROLES, CHANNELS
-from alphacogant.model.generative_model import belief_prior, default_model
+from alphacogant.efe.free_energy import efe_vector
+from alphacogant.model.channels import ACTIONS, CHANNEL_ROLES, CHANNELS
+from alphacogant.model.generative_model import (
+    EconomicWorldModel,
+    belief_prior,
+    default_model,
+)
 from alphacogant.model.operating_points import (
     BOOTSTRAP_CONCENTRATION,
     BOOTSTRAP_N,
@@ -31,9 +35,12 @@ from alphacogant.model.operating_points import (
     COASTING,
     IMPROVING,
 )
-from alphacogant.trsi.t_rsi import DEFAULT_HORIZON, bootstrap_t_rsi
+from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
+from alphacogant.stats.statistics import bootstrap_ci, cohen_d
+from alphacogant.trsi.t_rsi import DEFAULT_HORIZON, paired_bootstrap_samples, t_rsi
 
 PLANNING_HORIZON = DEFAULT_HORIZON
+
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _MANUSCRIPT_DIR = _PROJECT_ROOT / "docs" / "manuscript"
@@ -50,7 +57,7 @@ def _channels_with_role(role: str) -> str:
     return ", ".join(channel for channel in CHANNELS if CHANNEL_ROLES[channel] == role)
 
 
-def _theta_decay_leak_probability(model) -> float:
+def _theta_decay_leak_probability(model: EconomicWorldModel) -> float:
     """P(fresh Theta -> stale | currently fresh) under the passive ``hold`` action.
 
     This is ``B_Theta[stale, fresh, hold]``: the per-cycle freshness mass that
@@ -95,52 +102,44 @@ def generate_variables(n: int | None = None) -> dict[str, str]:
     count — only the bootstrap point values do, and those are reported at the
     published ``BOOTSTRAP_N``.
     """
-    from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
-    from alphacogant.stats.statistics import (
-        break_even_profile,
-        compare_regimes,
-        compute_regime_statistics,
-    )
-
     bootstrap_n = resolve_bootstrap_n(n)
     model = default_model()
 
-    # Exactly two bootstraps (improving + coasting); results reused for every
-    # t-RSI / create / decay token below. Fixed seeds keep this deterministic.
-    improving = bootstrap_t_rsi(
+    # Exactly one paired bootstrap per operating point; every t-RSI / CI /
+    # Cohen's-d / break-even token is derived from these two deterministic
+    # sample sets. Fixed seeds keep the output byte-identical across runs — and
+    # identical to the statistics module's own entry points at the same seed.
+    improving_create, improving_decay = paired_bootstrap_samples(
         model,
         IMPROVING,
         np.random.default_rng(BOOTSTRAP_SEED),
-        n=bootstrap_n,
-        concentration=BOOTSTRAP_CONCENTRATION,
+        bootstrap_n,
+        PLANNING_HORIZON,
+        BOOTSTRAP_CONCENTRATION,
     )
-    coasting = bootstrap_t_rsi(
+    coasting_create, coasting_decay = paired_bootstrap_samples(
         model,
         COASTING,
         np.random.default_rng(BOOTSTRAP_SEED),
-        n=bootstrap_n,
-        concentration=BOOTSTRAP_CONCENTRATION,
+        bootstrap_n,
+        PLANNING_HORIZON,
+        BOOTSTRAP_CONCENTRATION,
     )
+    improving_margins = improving_create - improving_decay
+    coasting_margins = coasting_create - coasting_decay
 
-    # Full regime statistics (bootstrap CIs + effect sizes)
-    stats_improving = compute_regime_statistics(
-        model,
-        IMPROVING,
-        "Improving",
-        n=bootstrap_n,
-    )
-    comparison = compare_regimes(model, n=bootstrap_n)
-    improving_break_even = break_even_profile(model, IMPROVING, n=bootstrap_n)
-    coasting_break_even = break_even_profile(model, COASTING, n=bootstrap_n)
+    create_ci = bootstrap_ci(improving_create)
+    decay_ci = bootstrap_ci(improving_decay)
 
     # The funded channel is reported at the neutral prior operating point. It comes
     # out epistemic (Sensors) with negative immediate pragmatic value — the firm
     # funds it to learn, not to earn this cycle, which is the explore behaviour the
     # epistemic/pragmatic split predicts.
+    fund_actions = [a for a, name in enumerate(ACTIONS) if name != "hold"]
     prior = belief_prior(model)
-    returns = marginal_return_vector(model, prior)
-    funded_action = max(range(5), key=lambda action: returns[action])
-    funded_result = expected_free_energy(model, prior, funded_action)
+    efe_results = efe_vector(model, prior)
+    funded_action = max(fund_actions, key=lambda a: -efe_results[a].total)
+    funded_result = efe_results[funded_action]
 
     # Trajectory summary: the firm running greedily from the self-improving
     # operating point for the full planning horizon.
@@ -157,10 +156,10 @@ def generate_variables(n: int | None = None) -> dict[str, str]:
         "FUNDED_CHANNEL": CHANNELS[funded_action],
         "FUNDED_EPISTEMIC": _format_float(funded_result.epistemic),
         "FUNDED_PRAGMATIC": _format_float(funded_result.pragmatic),
-        "HEADLINE_T_RSI": _format_float(improving["t_rsi"]),
-        "COASTING_T_RSI": _format_float(coasting["t_rsi"]),
-        "CREATE_RATE_MEAN": _format_float(improving["create_mean"]),
-        "DECAY_RATE_MEAN": _format_float(improving["decay_mean"]),
+        "HEADLINE_T_RSI": _format_float(t_rsi(improving_create, improving_decay)),
+        "COASTING_T_RSI": _format_float(t_rsi(coasting_create, coasting_decay)),
+        "CREATE_RATE_MEAN": _format_float(float(np.mean(improving_create))),
+        "DECAY_RATE_MEAN": _format_float(float(np.mean(improving_decay))),
         "B_THETA_LEAK_PROB": _format_float(_theta_decay_leak_probability(model)),
         "NUM_DEFINITIONS": str(_count_definitions()),
         "NUM_FIGURES": str(_count_figures()),
@@ -173,15 +172,15 @@ def generate_variables(n: int | None = None) -> dict[str, str]:
         "TRAJ_EXPLORATION_RATIO": traj_summary["exploration_ratio"],
         "TRAJ_DOMINANT_ACTION": traj_summary["dominant_action"],
         # Statistics tokens (bootstrap CIs + effect sizes)
-        "CREATE_CI_LOWER": _format_float(stats_improving.create_ci.ci_lower),
-        "CREATE_CI_UPPER": _format_float(stats_improving.create_ci.ci_upper),
-        "DECAY_CI_LOWER": _format_float(stats_improving.decay_ci.ci_lower),
-        "DECAY_CI_UPPER": _format_float(stats_improving.decay_ci.ci_upper),
-        "COHEN_D_CREATE": _format_float(comparison.cohen_d_create),
-        "COHEN_D_DECAY": _format_float(comparison.cohen_d_decay),
-        "BREAK_EVEN_PROB": _format_float(improving_break_even.probability),
-        "COASTING_BREAK_EVEN_PROB": _format_float(coasting_break_even.probability),
-        "BREAK_EVEN_MARGIN_MEAN": _format_float(improving_break_even.margin_mean),
+        "CREATE_CI_LOWER": _format_float(create_ci.ci_lower),
+        "CREATE_CI_UPPER": _format_float(create_ci.ci_upper),
+        "DECAY_CI_LOWER": _format_float(decay_ci.ci_lower),
+        "DECAY_CI_UPPER": _format_float(decay_ci.ci_upper),
+        "COHEN_D_CREATE": _format_float(cohen_d(improving_create, coasting_create)),
+        "COHEN_D_DECAY": _format_float(cohen_d(improving_decay, coasting_decay)),
+        "BREAK_EVEN_PROB": _format_float(float(np.mean(improving_margins > 0.0))),
+        "COASTING_BREAK_EVEN_PROB": _format_float(float(np.mean(coasting_margins > 0.0))),
+        "BREAK_EVEN_MARGIN_MEAN": _format_float(float(np.mean(improving_margins))),
     }
 
 

@@ -14,7 +14,7 @@ from collections.abc import Mapping
 import numpy as np
 
 from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
-from alphacogant.model.operating_points import BOOTSTRAP_N, BOOTSTRAP_SEED
+from alphacogant.model.operating_points import BOOTSTRAP_CONCENTRATION, BOOTSTRAP_N, BOOTSTRAP_SEED
 from alphacogant.trsi.t_rsi import bootstrap_t_rsi
 
 
@@ -71,7 +71,7 @@ def sweep_theta_freshness(
     theta_values: np.ndarray | None = None,
     seed: int = BOOTSTRAP_SEED,
     n: int = BOOTSTRAP_N,
-    concentration: float = 12.0,
+    concentration: float = BOOTSTRAP_CONCENTRATION,
 ) -> dict[str, np.ndarray]:
     """Bootstrap t-RSI as the Theta-freshness prior is swept.
 

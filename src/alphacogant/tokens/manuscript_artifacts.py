@@ -61,9 +61,14 @@ def figure_registry_entries(
             # producer-missing check actually fire when a figure has no generator.
             script = _PROJECT_ROOT / "scripts" / "figures" / f"fig_{Path(filename).stem}.py"
             generated_by = script.relative_to(_PROJECT_ROOT).as_posix()
+            caption = " ".join(match.group("caption").split())
             entries.append(
                 {
-                    "caption": " ".join(match.group("caption").split()),
+                    "caption": caption,
+                    # Render/accessibility gates require explicit alt text per
+                    # registry record; the caption IS the figure's description,
+                    # with markdown backticks stripped for plain-text contexts.
+                    "alt_text": caption.replace("`", ""),
                     "filename": filename,
                     "generated_by": generated_by,
                     "label": match.group("label"),
@@ -100,6 +105,11 @@ def artifact_manifest_issues(
     seen_labels: set[str] = set()
     seen_filenames: set[str] = set()
     figures_dir = output_dir / "figures"
+    # PNGs consumed outside the manuscript registry: cover_art via the
+    # docs/manuscript/config.yaml ``cover.image`` key, value_decomposition as the
+    # run_alphacogant_demo.py output. Everything else in output/figures/ must be
+    # embedded in the manuscript prose.
+    NON_REGISTRY_FIGURES = frozenset({"cover_art.png", "value_decomposition.png"})
 
     for entry in figure_entries:
         label = entry["label"]
@@ -125,6 +135,19 @@ def artifact_manifest_issues(
         producer = entry.get("generated_by", "")
         if producer and not (project_root / producer).exists():
             issues.append(f"registered figure producer missing: {label} -> {producer}")
+
+
+    # Reverse check: every rendered PNG must be known — registered via a
+    # manuscript embed (above) or explicitly whitelisted. Only enforced once the
+    # figure registry exists, so ad-hoc tmp output dirs without one stay quiet.
+    if figure_entries and figures_dir.is_dir():
+        for png in sorted(figures_dir.glob("*.png")):
+            if png.name in seen_filenames or png.name in NON_REGISTRY_FIGURES:
+                continue
+            issues.append(
+                f"orphan figure: {png.relative_to(project_root).as_posix()} "
+                "exists in output/figures but is not embedded in the manuscript"
+            )
 
     return issues
 

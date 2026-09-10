@@ -89,7 +89,7 @@ forecast-evaluation panel — the cost of *not* refreshing $\Theta$):
 $$
 \text{t-RSI}_{t:H}
   = \frac{\overline{\Delta\alpha}^{\,\text{create}}_{t:H} - \overline{\Delta\alpha}^{\,\text{decay}}_{t:H}}
-         {\sqrt{\mathrm{SE}^2(\Delta\alpha^{\text{create}}_{t:H}) + \mathrm{SE}^2(\Delta\alpha^{\text{decay}}_{t:H})}} .
+         {\mathrm{SE}\!\left(\Delta\alpha^{\text{create}}_{t:H} - \Delta\alpha^{\text{decay}}_{t:H}\right)} .
 $$ {#eq:trsi-certificate}
 
 In the AlphaCOGANT engine both rates are **path integrals over the planning
@@ -113,9 +113,17 @@ the headline reads a create-rate mean of {{CREATE_RATE_MEAN}}, a decay-rate mean
 {{DECAY_RATE_MEAN}}, and a headline t-RSI of {{HEADLINE_T_RSI}} standardized units.
 The *raw* alpha gap is modest ({{CREATE_RATE_MEAN}} versus {{DECAY_RATE_MEAN}}), but
 its *sign* is robust — create stays below decay across the n={{BOOTSTRAP_N}}
-bootstrap. The standardized t-RSI inherits AlphaFund's pooled-standard-error
-denominator, so its magnitude grows with the bootstrap count (it is a confidence
-statistic, not an n-free effect size); read for sign and confidence it robustly
+bootstrap. One methodological note on the denominator: AlphaFund's published form
+standardizes by the pooled SE $\sqrt{\mathrm{SE}^2_{\text{create}} +
+\mathrm{SE}^2_{\text{decay}}}$, which is correct when the two rate posteriors are
+estimated from independent data. In the engine the two rates are **paired** — both
+are read off the *same* Dirichlet-perturbed trajectory — and the induced rate
+correlation ($\rho \approx -0.92$ at this operating point) makes the pooled form
+understate the margin's variability and inflate $|\text{t-RSI}|$ by roughly a
+fifth. `t_rsi.t_rsi` therefore standardizes by the paired SE of the per-draw
+differences, the honest denominator for a paired bootstrap. Either way the
+magnitude grows with the bootstrap count (it is a confidence statistic, not an
+n-free effect size); read for sign and confidence it robustly
 declines to certify net improvement. That is the correct behavior of an honest
 instrument on a coarse encoding, not a defect: the two-level reduction lacks the
 dynamic range to
@@ -176,8 +184,9 @@ construction evidence.
 
 One subtlety the framing makes honest: t-RSI is a **standardized distance**, not a
 hypothesis-test instrument. The create and decay posteriors are beliefs over two
-different processes, not draws from one null. Reading t-RSI as "how many pooled
+different processes, not draws from one null. Reading t-RSI as "how many paired
 standard errors create sits above decay" is a calibrated effort-allocation signal,
-not a p-value. The engine reflects this — it reports the separation and the pooled
-standard error, and leaves the threshold $\delta$ as the firm's risk choice rather
-than baking in a significance level [@westenhaver2026rsi; @shannon1948].
+not a p-value. The engine reflects this — it reports the separation and the paired
+standard error of the create-minus-decay margin, and leaves the threshold $\delta$
+as the firm's risk choice rather than baking in a significance level
+[@westenhaver2026rsi; @shannon1948].

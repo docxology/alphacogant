@@ -20,6 +20,13 @@ authors:
     affiliation: "Atta Labs"
 version: "1.0.1"
 doi: "10.5281/zenodo.20976824"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20976824
+    description: Concept DOI (cites all versions)
+  - type: doi
+    value: 10.5281/zenodo.20977774
+    description: Version 1.0.1 DOI
 date-released: "2026-06-27"
 license: MIT
 repository-code: "https://github.com/docxology/alphacogant"

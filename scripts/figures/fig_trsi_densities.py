@@ -21,9 +21,8 @@ bootstrap, the residual decay rate sits above the create rate at this coarse
 two-level operating point. The figure reports that honestly rather than tuning the
 number favorable.
 
-Run:
-    cd projects/working/alphacogant && \
-        PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_trsi_densities.py
+Run (from the repository root):
+    PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_trsi_densities.py
 """
 
 from __future__ import annotations
@@ -63,15 +62,20 @@ from alphacogant.trsi.t_rsi import (  # noqa: E402
     decay_rate,
     t_rsi,
 )
+from alphacogant.viz.plot_style import (  # noqa: E402
+    BOOTSTRAP_FOOTER,
+    CREATE_COLOR,
+    DECAY_COLOR,
+    DPI,
+    add_provenance_footer,
+    apply_style,
+)
 
 # Deterministic figure parameters — IDENTICAL to the canonical bootstrap that
 # manuscript_variables.generate_variables() uses for the HEADLINE_T_RSI token, so the
 # number displayed here is byte-identical to the manuscript's headline (asserted in
 # main()). Do not diverge these from manuscript_variables._BOOTSTRAP_{SEED,N}.
 OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "trsi_densities.png"
-
-CREATE_COLOR = "#1f77b4"  # blue
-DECAY_COLOR = "#d62728"  # red
 
 
 def _bootstrap_samples(
@@ -117,6 +121,7 @@ def _gaussian_kde(samples: np.ndarray, grid: np.ndarray) -> np.ndarray:
 
 def main() -> Path:
     """Generate the t-RSI create/decay density figure and return its path."""
+    apply_style()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     model = default_model()
@@ -224,8 +229,9 @@ def main() -> Path:
     ax.legend(loc="upper right", fontsize=8, framealpha=0.9)
     ax.grid(True, alpha=0.25)
     fig.tight_layout()
+    add_provenance_footer(fig, BOOTSTRAP_FOOTER)  # Dirichlet bootstrap samples
 
-    fig.savefig(OUTPUT_PATH, dpi=150)
+    fig.savefig(OUTPUT_PATH, dpi=DPI)
     plt.close(fig)
 
     print(str(OUTPUT_PATH.resolve()))

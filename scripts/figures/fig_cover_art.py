@@ -14,6 +14,7 @@ from alphacogant.viz.plot_style import (  # noqa: E402
     CHANNEL_COLORS,
     EPISTEMIC_COLOR,
     PRAGMATIC_COLOR,
+    apply_style,
 )
 
 
@@ -21,6 +22,10 @@ def main() -> int:
     import matplotlib
 
     matplotlib.use("Agg")
+    # No provenance footer here by design: this is title-page art (consumed via
+    # docs/manuscript/config.yaml cover.image), not a data figure. Style is still
+    # applied for font consistency; DPI stays 240 deliberately for print cover use.
+    apply_style()
     import matplotlib.pyplot as plt
 
     output_dir = PROJECT_ROOT / "output" / "figures"

@@ -138,7 +138,10 @@ A_L={
 
 # Transition matrices: action index 0..5 = {fund_I, fund_S, fund_U, fund_Theta,
 # fund_Z, hold}. Each B_k[next][prev][action]. Funding channel k pushes it toward
-# strong; not funding it leaves it (mostly) put — except Theta, which decays.
+# strong; capital is exclusive, so any OTHER funding action actively drains k
+# toward weak (0.95 per cycle), while hold is the gentle no-capital-movement
+# baseline (0.10 drift). Theta decays toward stale under every non-refit action
+# (fresh->stale leak 0.35-0.40).
 B_I={
   ( (0.60,0.05), (0.95,0.95), (0.95,0.95), (0.95,0.95), (0.95,0.95), (0.90,0.10) ),
   ( (0.40,0.95), (0.05,0.05), (0.05,0.05), (0.05,0.05), (0.05,0.05), (0.10,0.90) )
@@ -188,8 +191,11 @@ D_Z={(0.5, 0.5)}
 # The marginal-return vector g_t = -dG/da_t equates the risk-adjusted shadow price
 # of capital across funded channels at the optimum (equimarginal identity).
 #
-# t-RSI (improvement signal-to-noise ratio):
-#   t-RSI = (mean[create-rate] - mean[decay-rate]) / sqrt(SE^2_create + SE^2_decay)
+# t-RSI (improvement signal-to-noise ratio). create and decay are PAIRED — both
+# are read off the same perturbed trajectory per draw — so the denominator is
+# the paired SE of the per-draw differences (the independence-assuming pooled
+# SE understates the margin's variability under the induced rate correlation):
+#   t-RSI = mean[create - decay] / SE[create - decay]
 # create-rate posterior <- g_pragmatic bootstrap over channel-row fits
 # decay-rate posterior  <- Theta fresh->stale leak (B_Theta) under non-funding
 # Certificate of monotone improvement: admit a candidate Theta update iff

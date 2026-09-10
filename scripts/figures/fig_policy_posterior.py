@@ -27,6 +27,14 @@ from alphacogant.model.channels import ACTIONS  # noqa: E402
 from alphacogant.model.generative_model import default_model  # noqa: E402
 from alphacogant.model.operating_points import IMPROVING  # noqa: E402
 from alphacogant.stats.simulation import simulate_trajectory  # noqa: E402
+from alphacogant.viz.plot_style import (  # noqa: E402
+    ACTION_COLORS,
+    DPI,
+    GRID_ALPHA,
+    REDUCED_SIM_FOOTER,
+    add_provenance_footer,
+    apply_style,
+)
 
 HORIZON = 12
 GAMMA = 1.0  # precision for the softmax
@@ -36,6 +44,7 @@ def main() -> int:
     import matplotlib
 
     matplotlib.use("Agg")
+    apply_style()
     import matplotlib.pyplot as plt
 
     out_fig = PROJECT_ROOT / "output" / "figures"
@@ -52,7 +61,7 @@ def main() -> int:
     fig, ax = plt.subplots(figsize=(9.0, 5.0))
 
     bottom = np.zeros(HORIZON)
-    colors = ["#b91c1c", "#2563eb", "#ea580c", "#7c3aed", "#0891b2", "#64748b"]
+    colors = ACTION_COLORS
     for action_idx in range(len(ACTIONS)):
         ax.bar(
             range(HORIZON),
@@ -74,12 +83,13 @@ def main() -> int:
     ax.set_xlim(-0.5, HORIZON - 0.5)
     ax.set_ylim(0, 1.0)
     ax.legend(loc="upper right", framealpha=0.95, fontsize=8, ncol=2)
-    ax.grid(True, alpha=0.2, axis="y")
+    ax.grid(True, alpha=GRID_ALPHA, axis="y")
 
     fig.tight_layout()
+    add_provenance_footer(fig, REDUCED_SIM_FOOTER)  # greedy-trajectory simulation
 
     out_path = out_fig / "policy_posterior.png"
-    fig.savefig(out_path, dpi=200)
+    fig.savefig(out_path, dpi=DPI)
     plt.close(fig)
 
     print(str(out_path.resolve()))

@@ -55,10 +55,13 @@ def _as_belief(raw: dict[str, tuple[float, float]]) -> dict[str, np.ndarray]:
 
 def main() -> None:
     from alphacogant.viz.plot_style import (
+        ANALYTIC_FOOTER,
         CREATE_COLOR,
         DECAY_COLOR,
+        DPI,
         NEGATIVE_COLOR,
         POSITIVE_COLOR,
+        add_provenance_footer,
         apply_style,
     )
 
@@ -134,7 +137,7 @@ def main() -> None:
         ax.text(
             x[i],
             ymax * 1.10,
-            f"{'ADMIT' if ok else 'REJECT'}\n(gap = {gap:+.3f})",
+            f"{'ADMIT ✓' if ok else 'REJECT ✗'}\n(gap = {gap:+.3f})",
             ha="center",
             va="bottom",
             fontsize=9,
@@ -159,7 +162,8 @@ def main() -> None:
     ax.axhline(0.0, color="black", linewidth=1.0)
 
     fig.tight_layout()
-    fig.savefig(output_path, dpi=200)
+    add_provenance_footer(fig, ANALYTIC_FOOTER)  # point estimates from the engine
+    fig.savefig(output_path, dpi=DPI)
     plt.close(fig)
     print(str(output_path))
 

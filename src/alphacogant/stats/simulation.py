@@ -18,10 +18,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from alphacogant.efe.free_energy import expected_free_energy, marginal_return_vector
+from alphacogant.efe.free_energy import efe_vector, policy_posterior, predicted_belief
 from alphacogant.model.channels import ACTIONS, CHANNELS, action_index
 from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
-from alphacogant.trsi.t_rsi import DEFAULT_HORIZON, _advance, _greedy_action
+from alphacogant.trsi.t_rsi import DEFAULT_HORIZON
 
 
 @dataclass(frozen=True)
@@ -113,38 +113,40 @@ def simulate_trajectory(
         for channel in CHANNELS:
             belief_history[channel].append(float(current[channel][1]))
 
+        # One validated EFE sweep serves policy selection AND the CycleRecord:
+        # recomputing per purpose tripled the EFE evaluations on the hot path.
+        efe_results = efe_vector(model, current)
+        returns = {a: -result.total for a, result in enumerate(efe_results)}
         if policy == "greedy":
-            action = _greedy_action(model, current)
+            action = max(returns, key=lambda a: returns[a])
         elif policy == "hold":
             action = action_index("hold")
         elif policy == "fund_theta":
             action = action_index("fund_Theta")
         else:  # stochastic
-            from alphacogant.efe.free_energy import policy_posterior
-
-            posterior = policy_posterior(model, current)
-            action = int(rng.choice(len(ACTIONS), p=posterior))  # type: ignore[union-attr]
+            assert rng is not None  # the seed check above guarantees a Generator
+            posterior = policy_posterior(model, current, values=returns)
+            action = int(rng.choice(len(ACTIONS), p=posterior))
 
         action_history.append(action)
-        returns = marginal_return_vector(model, current)
-        efe = expected_free_energy(model, current, action)
-        running_sum += efe.pragmatic
+        chosen = efe_results[action]
+        running_sum += chosen.pragmatic
 
         record = CycleRecord(
             cycle=cycle_idx,
             belief={channel: current[channel].copy() for channel in CHANNELS},
             action=action,
             action_name=ACTIONS[action],
-            efe_pragmatic=efe.pragmatic,
-            efe_epistemic=efe.epistemic,
-            efe_total=efe.total,
+            efe_pragmatic=chosen.pragmatic,
+            efe_epistemic=chosen.epistemic,
+            efe_total=chosen.total,
             marginal_returns=dict(returns),
             p_strong=_belief_p_strong(current),
         )
         cycles.append(record)
         cumulative_pragmatic.append(running_sum)
 
-        current = _advance(model, current, action)
+        current = predicted_belief(model, current, action)
 
     return TrajectoryResult(
         cycles=cycles,

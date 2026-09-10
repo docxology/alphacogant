@@ -27,8 +27,7 @@ positions never depend on a layout RNG). The two manuscript operating points
 funded channel and the pragmatic/epistemic split at each regime; this exercises
 the engine but does not change the deterministic geometry.
 
-Run:
-    cd projects/working/alphacogant
+Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_gnn_factor_graph.py
 """
 
@@ -60,6 +59,12 @@ from alphacogant.efe.free_energy import (  # noqa: E402
 from alphacogant.model.channels import ACTIONS, CHANNELS, action_index, channel_index  # noqa: E402
 from alphacogant.model.generative_model import default_model, validate_belief_map  # noqa: E402
 from alphacogant.model.operating_points import COASTING_RAW, IMPROVING_RAW  # noqa: E402
+from alphacogant.viz.plot_style import (  # noqa: E402
+    ANALYTIC_FOOTER,
+    DPI,
+    add_provenance_footer,
+    apply_style,
+)
 
 OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "gnn_factor_graph.png"
 
@@ -268,6 +273,7 @@ def build_figure(model, improving: dict[str, np.ndarray], coasting: dict[str, np
 
 def main() -> Path:
     """Render the GNN factor-graph figure and return its absolute path."""
+    apply_style()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     model = default_model()
@@ -275,7 +281,8 @@ def main() -> Path:
     coasting = _build_belief(COASTING_RAW)
 
     fig = build_figure(model, improving, coasting)
-    fig.savefig(OUTPUT_PATH, dpi=160, bbox_inches="tight")
+    add_provenance_footer(fig, ANALYTIC_FOOTER)  # deterministic schematic, not data
+    fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight")
     plt.close(fig)
 
     print(str(OUTPUT_PATH.resolve()))

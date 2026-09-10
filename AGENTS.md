@@ -23,7 +23,7 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   viz/                        # shared plot style and color palettes
 docs/manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variables, figures)
-tests/                        # 199 tests, 97.70% coverage (2026-08-31), no mocks
+tests/                        # 216 tests, 95.23% coverage (2026-09-08), no mocks
 ```
 
 ## Key Invariants
@@ -79,13 +79,13 @@ ActInfOntologyAnnotation. The engine's `default_model()` loads the same numeric
  values as the GNN file, and `bridge.cogant_bridge.model_to_gnn_summary()` re-emits a
 GNN-style block from the live arrays (round-trip).
 
-## Private Repo
+## Repo
 
-This project lives in the private GitHub repo `docxology/alphacogant` (this
+This project lives in the public GitHub repo `docxology/alphacogant` (this
 checkout: `/Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant`)
 and is symlinked into the template at
-`projects/ongoing/ActiveInference/alphacogant`. It is local-only and must
-never be committed to the public template repo.
+`projects/ongoing/ActiveInference/alphacogant`. It is local-only with respect
+to the template monorepo and must never be committed there.
 
 ## Not Financial Advice
 

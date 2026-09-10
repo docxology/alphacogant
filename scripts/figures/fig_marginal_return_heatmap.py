@@ -26,6 +26,12 @@ from alphacogant.model.channels import ACTIONS  # noqa: E402
 from alphacogant.model.generative_model import default_model  # noqa: E402
 from alphacogant.model.operating_points import IMPROVING  # noqa: E402
 from alphacogant.stats.simulation import simulate_trajectory  # noqa: E402
+from alphacogant.viz.plot_style import (  # noqa: E402
+    DPI,
+    REDUCED_SIM_FOOTER,
+    add_provenance_footer,
+    apply_style,
+)
 
 HORIZON = 12
 
@@ -34,6 +40,7 @@ def main() -> int:
     import matplotlib
 
     matplotlib.use("Agg")
+    apply_style()
     import matplotlib.pyplot as plt
 
     out_fig = PROJECT_ROOT / "output" / "figures"
@@ -90,9 +97,10 @@ def main() -> int:
 
     fig.colorbar(im, ax=ax, label="Negative EFE (value = pragmatic + epistemic)")
     fig.tight_layout()
+    add_provenance_footer(fig, REDUCED_SIM_FOOTER)  # greedy-trajectory simulation
 
     out_path = out_fig / "marginal_return_heatmap.png"
-    fig.savefig(out_path, dpi=200)
+    fig.savefig(out_path, dpi=DPI)
     plt.close(fig)
 
     print(str(out_path.resolve()))

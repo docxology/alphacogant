@@ -50,6 +50,7 @@ def test_figure_registry_entries_parse_captions_and_producers(tmp_path: Path) ->
     assert entries == [
         {
             "caption": "The $B_\\Theta$ decay law",
+            "alt_text": "The $B_\\Theta$ decay law",
             "filename": "theta_decay.png",
             "generated_by": "scripts/figures/fig_theta_decay.py",
             "label": "fig:thetadecay",

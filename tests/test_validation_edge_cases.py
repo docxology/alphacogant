@@ -1,8 +1,9 @@
 """Tests for defensive validation paths in the engine.
 
-These tests exercise the error-handling code paths that the main suite
-(the happy-path tests) does not cover: malformed matrices, negative
-probabilities, and the KL-nonnegativity guard.
+These tests exercise error-handling code paths that the main suite
+(the happy-path tests) does not cover: malformed observations and the
+KL-nonnegativity guard. The probability-validator matrix lives in
+test_validation_paths.py.
 """
 
 from __future__ import annotations
@@ -12,40 +13,7 @@ import pytest
 
 from alphacogant.efe.free_energy import _kl_divergence
 from alphacogant.model.channels import CHANNELS
-from alphacogant.model.generative_model import (
-    _validate_probability_columns,
-    _validate_probability_vector,
-    default_model,
-    infer_states,
-)
-
-
-def test_validate_probability_columns_rejects_negative():
-    """_validate_probability_columns raises on negative probabilities."""
-    bad = np.array([[1.2, 0.5], [-0.2, 0.5]])  # column 0 sums to 1, but has -0.2
-    with pytest.raises(ValueError, match="negative probabilities"):
-        _validate_probability_columns("test", bad)
-
-
-def test_validate_probability_columns_rejects_non_normalized():
-    """_validate_probability_columns raises on columns that don't sum to 1."""
-    bad = np.array([[0.5, 0.5], [0.3, 0.5]])  # column 0 sums to 0.8
-    with pytest.raises(ValueError, match="columns must sum to 1"):
-        _validate_probability_columns("test", bad)
-
-
-def test_validate_probability_vector_rejects_negative():
-    """_validate_probability_vector raises on negative probabilities."""
-    bad = np.array([1.5, -0.5])
-    with pytest.raises(ValueError, match="negative probabilities"):
-        _validate_probability_vector("test", bad)
-
-
-def test_validate_probability_vector_rejects_non_normalized():
-    """_validate_probability_vector raises on vectors that don't sum to 1."""
-    bad = np.array([0.3, 0.3])
-    with pytest.raises(ValueError, match="must sum to 1"):
-        _validate_probability_vector("test", bad)
+from alphacogant.model.generative_model import infer_states
 
 
 def test_kl_divergence_zero_for_identical():
@@ -70,9 +38,8 @@ def test_kl_divergence_handles_zeros():
     assert result > 0  # KL(1.0 || 0.5) = ln(2) > 0
 
 
-def test_infer_states_rejects_bad_observation():
+def test_infer_states_rejects_bad_observation(model):
     """infer_states rejects observation indices outside {0, 1, 2}."""
-    model = default_model()
     prior = {channel: model.D[channel].copy() for channel in CHANNELS}
     with pytest.raises(ValueError, match="obs_R"):
         infer_states(model, 5, 0, prior)

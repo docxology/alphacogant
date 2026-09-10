@@ -20,8 +20,7 @@ Mapping (left -> right):
     t-RSI                        -> EFE-improvement certificate
     filtration F_t               -> measurability / no-peeking
 
-Run:
-    cd projects/working/alphacogant
+Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_aif_dictionary.py
 
 Prints the absolute PNG path on success.
@@ -53,10 +52,17 @@ from alphacogant.efe.free_energy import (  # noqa: E402
 )
 from alphacogant.model.channels import ACTIONS, CHANNELS  # noqa: E402
 from alphacogant.model.generative_model import default_model  # noqa: E402
+from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
+from alphacogant.viz.plot_style import (  # noqa: E402
+    ANALYTIC_FOOTER,
+    DPI,
+    NEGATIVE_COLOR,
+    POSITIVE_COLOR,
+    add_provenance_footer,
+    apply_style,
+)
 
 OUTPUT_PNG = PROJECT_ROOT / "output" / "figures" / "aif_dictionary.png"
-
-from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
 
 # Dictionary rows: (AlphaFund construct, Active-Inference object, semantic tag).
 ROWS: tuple[tuple[str, str, str], ...] = (
@@ -71,15 +77,16 @@ ROWS: tuple[tuple[str, str, str], ...] = (
     ("filtration  $F_t$", "measurability / no-peeking", "measure"),
 )
 
-# Color per semantic tag (deterministic, colourblind-aware muted palette).
+# Color per semantic tag (deterministic palette with Okabe-Ito accents for the
+# green/red pragmatic/certificate pair, so it stays colourblind-safe).
 TAG_COLORS: dict[str, str] = {
     "model": "#3B5BA5",
     "state": "#4C8C99",
     "control": "#7A5BA5",
-    "pragmatic": "#2E7D5B",
+    "pragmatic": POSITIVE_COLOR,
     "marginal": "#B07A2E",
     "epistemic": "#A53B6B",
-    "certificate": "#A53B3B",
+    "certificate": NEGATIVE_COLOR,
     "measure": "#566573",
 }
 
@@ -259,11 +266,13 @@ def build_figure(facts: dict[str, float]) -> plt.Figure:
 
 def main() -> int:
     """Generate the AIF construct-dictionary figure deterministically."""
+    apply_style()
     OUTPUT_PNG.parent.mkdir(parents=True, exist_ok=True)
 
     facts = _operating_point_facts()
     fig = build_figure(facts)
-    fig.savefig(OUTPUT_PNG, dpi=150, bbox_inches="tight", facecolor="white")
+    add_provenance_footer(fig, ANALYTIC_FOOTER)  # schematic dictionary, not data
+    fig.savefig(OUTPUT_PNG, dpi=DPI, bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
     print(str(OUTPUT_PNG.resolve()))

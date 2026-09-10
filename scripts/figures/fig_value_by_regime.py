@@ -19,8 +19,7 @@ Deterministic: depends only on the engine's fixed default model and the two
 literal beliefs declared below. No RNG is required, but seeded generators would
 use ``np.random.default_rng(seed)`` rather than any global seed.
 
-Run:
-    cd projects/working/alphacogant
+Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_value_by_regime.py
 """
 
@@ -44,18 +43,21 @@ from alphacogant.efe.free_energy import expected_free_energy  # noqa: E402
 from alphacogant.model.channels import ACTIONS, CHANNELS, action_index  # noqa: E402
 from alphacogant.model.generative_model import default_model  # noqa: E402
 from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
+from alphacogant.viz.plot_style import (  # noqa: E402
+    ANALYTIC_FOOTER,
+    CHANNEL_LABELS,
+    DPI,
+    EPISTEMIC_COLOR,
+    GRID_ALPHA,
+    PRAGMATIC_COLOR,
+    add_provenance_footer,
+    apply_style,
+)
 
 OUTPUT_PATH = PROJECT_ROOT / "output" / "figures" / "value_by_regime.png"
 
 # Five capital channels in fixed order; their fund_* action and a display label.
 FUNDING_CHANNELS: tuple[str, ...] = CHANNELS  # ("I", "S", "U", "Theta", "Z")
-CHANNEL_LABELS: dict[str, str] = {
-    "I": "Investments (I)",
-    "S": "Sensors (S)",
-    "U": "Actuators (U)",
-    "Theta": "Theta (Θ)",
-    "Z": "R&D (Z)",
-}
 
 IMPROVING_BELIEF: dict[str, np.ndarray] = IMPROVING
 COASTING_BELIEF: dict[str, np.ndarray] = COASTING
@@ -88,7 +90,7 @@ def _plot_panel(ax, title: str, epistemic: np.ndarray, pragmatic: np.ndarray) ->
         epistemic,
         width,
         label="Epistemic value",
-        color="#1f6feb",
+        color=EPISTEMIC_COLOR,
         edgecolor="#0b2545",
     )
     ax.bar(
@@ -96,7 +98,7 @@ def _plot_panel(ax, title: str, epistemic: np.ndarray, pragmatic: np.ndarray) ->
         pragmatic,
         width,
         label="Pragmatic value",
-        color="#e8893a",
+        color=PRAGMATIC_COLOR,
         edgecolor="#5c3210",
     )
     ax.axhline(0.0, color="#444444", linewidth=0.8)
@@ -109,12 +111,13 @@ def _plot_panel(ax, title: str, epistemic: np.ndarray, pragmatic: np.ndarray) ->
         fontsize=9,
     )
     ax.set_ylabel("Value = -G (nats)")
-    ax.grid(axis="y", linestyle=":", alpha=0.4)
+    ax.grid(axis="y", linestyle=":", alpha=GRID_ALPHA)
 
 
 def main() -> Path:
     """Build the figure and return the written PNG path."""
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    apply_style()
 
     model = default_model()
 
@@ -151,9 +154,10 @@ def main() -> Path:
         fontsize=9,
         color="#333333",
     )
+    add_provenance_footer(fig, ANALYTIC_FOOTER, y=-0.05)  # below the explanatory caption
 
     fig.tight_layout()
-    fig.savefig(OUTPUT_PATH, dpi=150, bbox_inches="tight")
+    fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight")
     plt.close(fig)
 
     print(str(OUTPUT_PATH.resolve()))

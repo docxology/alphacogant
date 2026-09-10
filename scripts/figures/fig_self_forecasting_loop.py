@@ -23,8 +23,7 @@ The schematic is fully deterministic (no RNG draws affect geometry; the engine
 is queried only to label the PREDICT node with the real funded channel /
 action from a fixed operating-point belief). No engine data file is required.
 
-Run:
-    cd projects/working/alphacogant
+Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_self_forecasting_loop.py
 """
 
@@ -54,6 +53,12 @@ from alphacogant.model.generative_model import default_model  # noqa: E402
 # Two operating-point beliefs used in the manuscript. The self-improving regime
 # drives the PREDICT-node label so the schematic reflects a real engine output.
 from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
+from alphacogant.viz.plot_style import (  # noqa: E402
+    ANALYTIC_FOOTER,
+    DPI,
+    add_provenance_footer,
+    apply_style,
+)
 
 OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "self_forecasting_loop.png"
 
@@ -151,6 +156,7 @@ def _draw_arrow(ax, start, end, label, color, rad):
 
 def main() -> int:
     """Render the Self-Forecasting Loop schematic deterministically."""
+    apply_style()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     # Query the engine (real model outputs) for the PREDICT-node label.
@@ -281,7 +287,8 @@ def main() -> int:
     )
 
     fig.tight_layout()
-    fig.savefig(OUTPUT_PATH, dpi=150, bbox_inches="tight", facecolor="white")
+    add_provenance_footer(fig, ANALYTIC_FOOTER)  # deterministic schematic, not data
+    fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
     abs_path = OUTPUT_PATH.resolve()

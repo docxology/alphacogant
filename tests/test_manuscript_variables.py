@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from alphacogant.efe.free_energy import expected_free_energy, marginal_return_vector
 from alphacogant.model.channels import CHANNELS
-from alphacogant.model.generative_model import belief_prior, default_model
 from alphacogant.model.operating_points import BOOTSTRAP_N
 from alphacogant.tokens.manuscript_variables import (
     PLANNING_HORIZON,
@@ -43,7 +42,7 @@ def test_generate_variables_contains_required_non_empty_strings() -> None:
     assert all(isinstance(value, str) and value for value in variables.values())
 
 
-def test_generate_variables_is_deterministic_and_consistent() -> None:
+def test_generate_variables_is_deterministic_and_consistent(model, prior) -> None:
     first = generate_variables(n=FAST_N)
     second = generate_variables(n=FAST_N)
     assert first == second
@@ -53,8 +52,6 @@ def test_generate_variables_is_deterministic_and_consistent() -> None:
     assert first["PLANNING_HORIZON"] == str(PLANNING_HORIZON)
     assert first["BOOTSTRAP_N"] == str(FAST_N)
 
-    model = default_model()
-    prior = belief_prior(model)
     returns = marginal_return_vector(model, prior)
     funded_action = max(range(5), key=lambda action: returns[action])
     funded_result = expected_free_energy(model, prior, funded_action)

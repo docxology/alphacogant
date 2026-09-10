@@ -21,7 +21,6 @@ See ``SPEC.md`` for the module contract and ``models/alphafund_ewm.md`` for the 
 specification this package realizes.
 """
 
-# ── Model subpackage ─────────────────────────────────────────────────────────
 # ── Bridge subpackage ────────────────────────────────────────────────────────
 from alphacogant.bridge import (
     firm_structure_to_channels,
@@ -32,9 +31,12 @@ from alphacogant.bridge import (
 # ── EFE subpackage ───────────────────────────────────────────────────────────
 from alphacogant.efe import (
     EFEResult,
+    efe_vector,
     expected_free_energy,
+    greedy_action,
     marginal_return_vector,
     policy_posterior,
+    predicted_belief,
     static_pragmatic_value,
 )
 from alphacogant.model import (
@@ -119,9 +121,12 @@ __all__ = [
     "validate_belief_map",
     # efe
     "EFEResult",
+    "efe_vector",
     "expected_free_energy",
+    "greedy_action",
     "marginal_return_vector",
     "policy_posterior",
+    "predicted_belief",
     "static_pragmatic_value",
     # trsi
     "DEFAULT_HORIZON",

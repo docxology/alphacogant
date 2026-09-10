@@ -35,6 +35,7 @@ python_functions = ["test_*"]
 # --timeout is a hang-breaker: 300s is far above any healthy test (the slowest
 # real test is a ~20s figure subprocess) so it only fires on a genuine stall.
 addopts = "-v --tb=short --strict-markers --timeout=300"
+markers = ["figures: end-to-end figure-script subprocess tests (slow)"]
 
 [tool.coverage.run]
 source = ["src"]

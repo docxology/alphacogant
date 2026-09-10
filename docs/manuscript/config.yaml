@@ -1,6 +1,6 @@
 # AlphaCOGANT manuscript configuration.
 # Links the prose to the execution layer: numeric {{TOKEN}}s come from
-# scripts/z_generate_manuscript_variables.py -> src/alphacogant/manuscript_variables.py.
+# scripts/z_generate_manuscript_variables.py -> src/alphacogant/tokens/manuscript_variables.py.
 
 paper:
   title: "AlphaCOGANT: Recursive Corporate Self-Improvement as Active Inference"

@@ -22,6 +22,15 @@ CHANNEL_COLORS: dict[str, str] = {
     "Z": "#0891b2",  # cyan — epistemic (R&D)
 }
 
+# Human-readable channel labels, keyed like CHANNEL_COLORS (display only).
+CHANNEL_LABELS: dict[str, str] = {
+    "I": "Investments",
+    "S": "Sensors",
+    "U": "Actuators",
+    "Theta": "Theta",
+    "Z": "R&D",
+}
+
 # Action colors (same ordering as ACTIONS tuple)
 ACTION_COLORS: list[str] = [
     "#b91c1c",  # fund_I
@@ -37,13 +46,13 @@ CREATE_COLOR: str = "#1d4ed8"  # blue for create-rate
 DECAY_COLOR: str = "#dc2626"  # red for decay-rate
 EPISTEMIC_COLOR: str = "#7c3aed"  # purple for epistemic value
 PRAGMATIC_COLOR: str = "#f59e0b"  # amber for pragmatic value
-POSITIVE_COLOR: str = "#16a34a"  # green for positive / admit
-NEGATIVE_COLOR: str = "#dc2626"  # red for negative / reject
+POSITIVE_COLOR: str = "#0072B2"  # Okabe-Ito blue for positive / admit
+NEGATIVE_COLOR: str = "#E69F00"  # Okabe-Ito orange for negative / reject
 NEUTRAL_COLOR: str = "#64748b"  # gray for neutral / hold
 
-# Regime colors
-IMPROVING_COLOR: str = "#dc2626"  # red — stale, needs improvement
-COASTING_COLOR: str = "#16a34a"  # green — fresh, coasting
+# Regime colors (Okabe-Ito pair: distinguishable without hue discrimination)
+IMPROVING_COLOR: str = "#0072B2"  # blue — stale, needs improvement
+COASTING_COLOR: str = "#E69F00"  # orange — fresh, coasting
 
 # Figure quality constants
 DPI: int = 200
@@ -86,7 +95,7 @@ def apply_style() -> None:
             "figure.dpi": DPI,
             "savefig.dpi": DPI,
             "font.family": "sans-serif",
-            "font.sans-serif": ["Helvetica", "Arial", "DejaVu Sans"],
+            "font.sans-serif": ["Arial", "DejaVu Sans"],  # Helvetica omitted: unavailable on Linux
             "font.size": TICK_FONTSIZE,
             "axes.titlesize": TITLE_FONTSIZE,
             "axes.labelsize": LABEL_FONTSIZE,
@@ -145,6 +154,7 @@ __all__ = [
     "ANNOTATION_FONTSIZE",
     "BOOTSTRAP_FOOTER",
     "CHANNEL_COLORS",
+    "CHANNEL_LABELS",
     "COASTING_COLOR",
     "COVER_ART_FOOTER",
     "CREATE_COLOR",

@@ -26,8 +26,11 @@ from alphacogant.model.channels import ACTIONS  # noqa: E402
 from alphacogant.model.generative_model import default_model  # noqa: E402
 from alphacogant.model.operating_points import IMPROVING  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
+    ANALYTIC_FOOTER,
+    DPI,
     EPISTEMIC_COLOR,
     PRAGMATIC_COLOR,
+    add_provenance_footer,
     apply_style,
 )
 
@@ -143,9 +146,10 @@ def main() -> int:
     ax.legend(loc="upper right", fontsize=8)
 
     fig.tight_layout()
+    add_provenance_footer(fig, ANALYTIC_FOOTER)  # direct engine EFE evaluation
 
     out_path = out_fig / "efe_waterfall.png"
-    fig.savefig(out_path, dpi=200)
+    fig.savefig(out_path, dpi=DPI)
     plt.close(fig)
 
     print(str(out_path.resolve()))

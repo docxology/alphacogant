@@ -10,7 +10,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.model.generative_model import EconomicWorldModel, default_model
+from alphacogant.model.generative_model import (
+    EconomicWorldModel,
+    _validate_probability_columns,
+    _validate_probability_vector,
+    default_model,
+)
 
 
 def _valid_matrices(model):
@@ -52,6 +57,37 @@ def test_validate_probability_vector_rejects_zero_sum(model) -> None:
     bad_d["Z"] = np.array([0.0, 0.0], dtype=float)
     with pytest.raises(ValueError, match="D\\[Z\\]"):
         default_model(D=bad_d)
+
+
+@pytest.mark.parametrize(
+    ("validator", "bad", "match"),
+    [
+        (
+            _validate_probability_columns,
+            np.array([[1.2, 0.5], [-0.2, 0.5]]),
+            "negative probabilities",
+        ),
+        (
+            _validate_probability_columns,
+            np.array([[0.5, 0.5], [0.3, 0.5]]),
+            "columns must sum to 1",
+        ),
+        (
+            _validate_probability_vector,
+            np.array([1.5, -0.5]),
+            "negative probabilities",
+        ),
+        (
+            _validate_probability_vector,
+            np.array([0.3, 0.3]),
+            "must sum to 1",
+        ),
+    ],
+)
+def test_probability_validators_reject_bad_input(validator, bad, match) -> None:
+    """Probability validators raise on negative or non-normalized input."""
+    with pytest.raises(ValueError, match=match):
+        validator("test", bad)
 
 
 def test_validate_belief_map_rejects_negative(model, prior) -> None:

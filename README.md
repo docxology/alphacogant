@@ -5,10 +5,11 @@
 
 **Recursive corporate self-improvement as Active Inference, rendered in GNN via COGANT.**
 
-**Status (2026-08-31, verified by the commands shown):** research artifact, phase
-complete per `ISA.md` (16/16). 199 tests collected (`pytest tests/ --collect-only -q`),
-coverage 97.70%, 5 known failures pending the `manuscript/` → `docs/manuscript/`
-migration commit — current state and open work: [`TODO.md`](TODO.md).
+**Status (2026-09-08, verified by the commands shown):** research artifact, phase
+complete per `ISA.md` (17/17). 216 tests, coverage 95.23% (`uv run --no-project
+pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q`, all passing); figure
+scripts regenerate into `output/figures/`. Fast inner loop: `pytest tests/ -m
+"not figures"`. Current backlog: [`TODO.md`](TODO.md).
 
 The [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) reframes recursive
 self-improvement (RSI) as a portfolio-optimization problem: a corporation recursively

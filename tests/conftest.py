@@ -1,4 +1,10 @@
-"""Shared fixtures for deterministic AlphaCOGANT tests."""
+"""Shared fixtures for deterministic AlphaCOGANT tests.
+
+Seeding convention: tests that need randomness construct their own
+``np.random.default_rng(<explicit seed>)`` at the call site so each test's
+stream is independent and auditable; the ``seeded_rng`` fixture exists for
+tests that want one shared fixed-seed generator without picking a seed.
+"""
 
 from __future__ import annotations
 

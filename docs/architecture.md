@@ -28,11 +28,14 @@ docs consume generated artifacts.
    - `output/reports/artifact_manifest.json`
 5. The template renderer builds `output/pdf/alphacogant_combined.pdf`.
 6. `scripts/pipeline/stage_05_copy.py` copies the validated output tree to
-   `template/output/ongoing/ActiveInference/alphacogant/` (verify the live output path: `ls /Volumes/external_drive/Git/template/output/ongoing/ActiveInference/ 2>/dev/null`).
+   `template/output/ongoing/ActiveInference/alphacogant/` (pipeline stages live
+   in the template checkout root, not this repo — run from the template root;
+   verify the live output path: `ls /Volumes/external_drive/Git/template/output/ongoing/ActiveInference/ 2>/dev/null`).
 
 ## Boundary
 
-The project is a local private project. It is edited in this repo
+The project is a public GitHub repo (`docxology/alphacogant`), local-only with
+respect to the template monorepo. It is edited in this repo
 (`/Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant`), which is
 symlinked into the template checkout as `projects/ongoing/ActiveInference/alphacogant`
 and rendered through the template as `ongoing/ActiveInference/alphacogant`.

@@ -27,12 +27,15 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from alphacogant.stats.statistics import compare_regimes  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
+    BOOTSTRAP_FOOTER,
     COASTING_COLOR,
     CREATE_COLOR,
     DECAY_COLOR,
+    DPI,
     EPISTEMIC_COLOR,
     IMPROVING_COLOR,
     PRAGMATIC_COLOR,
+    add_provenance_footer,
     apply_style,
 )
 
@@ -51,6 +54,7 @@ def main() -> int:
     # ── Panel (a): Create vs Decay with CIs ──
     regimes = [comparison.improving, comparison.coasting]
     regime_names = ["Improving", "Coasting"]
+    regime_markers = ["▲", "●"]  # redundant encoding beside IMPROVING/COASTING colors
     regime_colors = [IMPROVING_COLOR, COASTING_COLOR]
     x = np.arange(len(regimes))
     w = 0.35
@@ -96,7 +100,7 @@ def main() -> int:
         ax1.text(
             x[i],
             max(create_means[i], decay_means[i]) + 0.08,
-            f"t-RSI = {reg.t_rsi:.2f}",
+            f"{regime_markers[i]} t-RSI = {reg.t_rsi:.2f}",
             ha="center",
             va="bottom",
             fontsize=8,
@@ -174,9 +178,10 @@ def main() -> int:
         fontweight="bold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.94))
+    add_provenance_footer(fig, BOOTSTRAP_FOOTER)  # 95% bootstrap CIs
 
     out_path = out_fig / "regime_comparison.png"
-    fig.savefig(out_path, dpi=200)
+    fig.savefig(out_path, dpi=DPI)
     plt.close(fig)
 
     print(str(out_path.resolve()))

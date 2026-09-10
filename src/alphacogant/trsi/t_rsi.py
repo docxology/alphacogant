@@ -25,9 +25,10 @@ from collections.abc import Mapping, Sequence
 
 import numpy as np
 
-from alphacogant.efe.free_energy import marginal_return_vector, static_pragmatic_value
-from alphacogant.model.channels import ACTIONS, CHANNELS, action_index
+from alphacogant.efe.free_energy import greedy_action, predicted_belief, static_pragmatic_value
+from alphacogant.model.channels import CHANNELS, action_index
 from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
+from alphacogant.model.operating_points import BOOTSTRAP_CONCENTRATION
 
 DEFAULT_HORIZON = 12
 
@@ -47,17 +48,6 @@ def _standard_error(samples: np.ndarray) -> float:
     return float(np.std(samples, ddof=1) / np.sqrt(samples.size))
 
 
-def _advance(
-    model: EconomicWorldModel, belief: Mapping[str, np.ndarray], action: int
-) -> dict[str, np.ndarray]:
-    return {channel: model.B[channel][:, :, action] @ belief[channel] for channel in CHANNELS}
-
-
-def _greedy_action(model: EconomicWorldModel, belief: Mapping[str, np.ndarray]) -> int:
-    values = marginal_return_vector(model, belief)
-    return max(range(len(ACTIONS)), key=lambda action: values[action])
-
-
 def _greedy_trajectory(
     model: EconomicWorldModel,
     belief: Mapping[str, np.ndarray],
@@ -67,7 +57,7 @@ def _greedy_trajectory(
     trajectory: list[dict[str, np.ndarray]] = []
     for _ in range(horizon):
         trajectory.append({channel: current[channel].copy() for channel in CHANNELS})
-        current = _advance(model, current, _greedy_action(model, current))
+        current = predicted_belief(model, current, greedy_action(model, current))
     return trajectory
 
 
@@ -81,7 +71,7 @@ def _hold_mean_pragmatic(
     values: list[float] = []
     for _ in range(horizon):
         values.append(static_pragmatic_value(model, current))
-        current = _advance(model, current, hold)
+        current = predicted_belief(model, current, hold)
     return float(np.mean(values))
 
 
@@ -139,22 +129,36 @@ def t_rsi(
     create_samples: Sequence[float] | np.ndarray,
     decay_samples: Sequence[float] | np.ndarray,
 ) -> float:
-    """Return the standardized create-minus-decay separation."""
+    """Return the standardized create-minus-decay separation.
+
+    The two sample arrays are **paired**: entry ``i`` of each holds the create-
+    and decay-rate read off the *same* perturbed trajectory, as
+    ``paired_bootstrap_samples`` produces. The denominator is therefore the
+    standard error of the elementwise differences ``create - decay`` — the
+    pairing-aware SE. The independence-assuming pooled SE
+    ``sqrt(SE_create^2 + SE_decay^2)`` understates the margin's variability when
+    the shared trajectory induces rate correlation (measured
+    ``rho(create, decay) ~= -0.92`` at the IMPROVING operating point), which
+    inflates ``|t-RSI|`` and makes the certificate anti-conservative.
+    """
     create = _as_sample_array("create_samples", create_samples)
     decay = _as_sample_array("decay_samples", decay_samples)
     if create.size < 2 or decay.size < 2:
         return 0.0
+    if create.size != decay.size:
+        raise ValueError(
+            "create_samples and decay_samples must be paired (same length); "
+            f"got {create.size} and {decay.size}."
+        )
 
-    create_mean = float(np.mean(create))
-    decay_mean = float(np.mean(decay))
-    create_se = _standard_error(create)
-    decay_se = _standard_error(decay)
-    pooled_se = float(np.sqrt(create_se**2 + decay_se**2))
-    if pooled_se == 0.0:
-        if create_mean == decay_mean:
+    margins = create - decay
+    margin_mean = float(np.mean(margins))
+    margin_se = _standard_error(margins)
+    if margin_se == 0.0:
+        if margin_mean == 0.0:
             return 0.0
-        return float(np.inf)
-    return float((create_mean - decay_mean) / pooled_se)
+        return float(np.sign(margin_mean) * np.inf)
+    return float(margin_mean / margin_se)
 
 
 def paired_bootstrap_samples(
@@ -163,7 +167,7 @@ def paired_bootstrap_samples(
     rng: np.random.Generator,
     n: int,
     horizon: int = DEFAULT_HORIZON,
-    concentration: float = 12.0,
+    concentration: float = BOOTSTRAP_CONCENTRATION,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Per-perturbation ``(create, decay)`` rate samples sharing one greedy trajectory.
 
@@ -202,7 +206,7 @@ def bootstrap_t_rsi(
     rng: np.random.Generator,
     n: int = 500,
     horizon: int = DEFAULT_HORIZON,
-    concentration: float = 12.0,
+    concentration: float = BOOTSTRAP_CONCENTRATION,
 ) -> dict[str, float]:
     """Bootstrap t-RSI from deterministic belief perturbations drawn from ``rng``.
 

@@ -61,7 +61,12 @@ def main() -> int:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    from alphacogant.viz.plot_style import apply_style
+    from alphacogant.viz.plot_style import (
+        ANALYTIC_FOOTER,
+        DPI,
+        add_provenance_footer,
+        apply_style,
+    )
 
     apply_style()
     out_fig = PROJECT_ROOT / "output" / "figures"
@@ -150,9 +155,10 @@ def main() -> int:
     ax.set_xticks(cycles)
     ax.legend(loc="center right", framealpha=0.95, fontsize=8)
     fig.tight_layout()
+    add_provenance_footer(fig, ANALYTIC_FOOTER)  # deterministic forward roll of model.B
 
     out_path = out_fig / "theta_decay.png"
-    fig.savefig(out_path, dpi=200)
+    fig.savefig(out_path, dpi=DPI)
     plt.close(fig)
 
     print(str(out_path.resolve()))
