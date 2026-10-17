@@ -1,13 +1,17 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Current release: **1.2.0 (2026-10-16)**. Python 3.15 full validation: 352 passed,
+Current release: **1.2.1 (2026-10-16)**. Python 3.15 full validation: 352 passed,
 one optional upstream integration skipped in the base environment, 94.12% coverage.
-Fast suites pass on Python 3.10 and 3.14 (332 passed each); 77 focused checks
-pass again on each after the final log-space KL change. The real pinned COGANT
+Fast suites pass on Python 3.10 and 3.14 (333 passed each). Native Linux wheel
+admission passes for Python 3.10, 3.12, 3.14 and 3.15. The real pinned COGANT
 integration passes separately. All 30 generated manuscript values match v1.1.1.
 See [CHANGELOG.md](CHANGELOG.md), [agent API](docs/agent_api.md), and
 [profiling](docs/performance.md) for scope and repeatable commands.
+
+## Completed for 1.2.1
+
+- [x] Native wheel dependency refresh and explicit no-build gates for Python 3.15 Linux (`uv.lock`, `.github/workflows/ci.yml`).
 
 ## Completed for 1.2.0
 

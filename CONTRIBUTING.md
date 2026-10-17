@@ -28,7 +28,7 @@ undeclared imports, and accidental reliance on the repository layout:
 # Replace /absolute/path/alphacogant with your checkout.
 cd /tmp
 uv run --isolated --no-project \
-  --with /absolute/path/alphacogant/dist/alphacogant-1.2.0-py3-none-any.whl \
+  --with /absolute/path/alphacogant/dist/alphacogant-1.2.1-py3-none-any.whl \
   python -c 'import alphacogant; from importlib.metadata import version; assert alphacogant.__version__ == version("alphacogant"); from alphacogant.bridge.gnn import model_from_gnn, model_to_gnn; model_from_gnn(model_to_gnn(alphacogant.default_model()))'
 ```
 

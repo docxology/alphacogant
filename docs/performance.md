@@ -74,16 +74,20 @@ absence is recorded separately and is not a zero-cost observation.
 
 ## Release measurement
 
-A matched local Python 3.15.0 / NumPy 2.5.0 macOS arm64 run, with all three
+A matched local Python 3.15.0 / NumPy 2.5.4 macOS arm64 run, with all three
 recorded BLAS/OpenMP thread settings set to 1 and five wall samples per workload,
-compared v1.1.1 against v1.2.0:
+compared v1.1.1 against v1.2.1:
 
-| Workload | v1.1.1 median | v1.2.0 median | Ratio |
+| Workload | v1.1.1 median | v1.2.1 median | Ratio |
 | --- | ---: | ---: | ---: |
-| 32-sample, 12-cycle bootstrap | 117.65 ms | 44.09 ms | 2.67× |
-| 32-step inference | 9.06 ms | 4.73 ms | 1.91× |
-| Fresh-process package import | 325.55 ms | 73.24 ms | 4.44× |
+| 32-sample, 12-cycle bootstrap | 76.75 ms | 33.69 ms | 2.28× |
+| 32-step inference | 5.76 ms | 4.75 ms | 1.21× |
+| Fresh-process package import | 192.93 ms | 59.67 ms | 3.23× |
 
 These measurements describe this host and workload. They are not CI thresholds or
 performance guarantees. The profiling command above produces source-bound raw
 samples for new environments.
+
+CI requires wheels for NumPy, Matplotlib, Pillow, ContourPy and KiwiSolver.
+Version 1.2.1 refreshes these locks for Linux CPython 3.15 rather than compiling
+native plotting dependencies with missing system image headers.

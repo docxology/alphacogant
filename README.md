@@ -5,7 +5,7 @@
 
 **Recursive corporate self-improvement as Active Inference, rendered in GNN via COGANT.**
 
-**Version 1.2.0 (2026-10-16).** Standalone NumPy research package with lossless
+**Version 1.2.1 (2026-10-16).** Standalone NumPy research package with lossless
 finite GNN serialization, complete COGANT joint-matrix export, and replayable
 observation-conditioned inference, batched action scoring and a versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
 [pinned upstream contract](docs/upstream_compatibility.md). CI runs lint, the full

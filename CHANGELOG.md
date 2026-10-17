@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 — 2026-10-16
+
+- Refresh native dependency locks for Python 3.15 Linux wheels. The prior Pillow
+  lock fell back to a source build without JPEG headers on GitHub runners.
+- Require wheels for the native numerical/plotting dependencies in CI so missing
+  platform support cannot silently trigger compilation.
+
 ## 1.2.0 — 2026-10-16
 
 - Batch EFE action scoring and masked information gain; remove repeated admission
