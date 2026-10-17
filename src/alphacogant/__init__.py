@@ -98,7 +98,7 @@ from alphacogant.trsi import (
 )
 from alphacogant.viz import plot_style as plot_style
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 __all__ = [
     # model

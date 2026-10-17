@@ -62,7 +62,9 @@ establish equal posteriors, policy scores, or selected action sequences.
 
 `bridge.inference.run_inference()` conditions on the current observation before
 scoring an action and predicting the next belief. Without supplied observations,
-it chooses modal model predictions and labels the trace `model_rollout`.
+it chooses the modal joint reward/loss prediction and labels the trace
+`model_rollout`. Joint selection avoids impossible pairs when the two marginal
+modes disagree under deterministic likelihoods.
 The trace records exact UTF-8 source and coefficient digests, the filtering
 approximation, one-step policy horizon, beliefs, observation pairs, all EFE
 components, actions and next predictions. `verify_inference()` replays all fields;

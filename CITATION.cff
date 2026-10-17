@@ -18,7 +18,7 @@ authors:
   - family-names: Chambers
     given-names: Tucker Cahill
     affiliation: "Atta Labs"
-version: "1.1.0"
+version: "1.1.1"
 doi: "10.5281/zenodo.20976824"
 identifiers:
   - type: doi

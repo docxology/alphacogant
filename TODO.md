@@ -1,8 +1,8 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Current release: **1.1.0 (2026-10-16)**. Full validation: 293 passed, one optional
-upstream integration skipped in the base environment, 96.45% coverage. The real
+Current release: **1.1.1 (2026-10-16)**. Full validation: 294 passed, one optional
+upstream integration skipped in the base environment, 96.46% coverage. The real
 pinned COGANT integration passes separately. All 30 generated manuscript values
 are unchanged from the previous main. See [CHANGELOG.md](CHANGELOG.md) for scope
 and [CONTRIBUTING.md](CONTRIBUTING.md) for repeatable validation commands.

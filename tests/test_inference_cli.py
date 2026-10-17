@@ -21,17 +21,25 @@ def test_trace_orders_filter_score_predict_and_replays(model):
     trace = run_inference(source, steps=2, observations=[(2, 1), (0, 2)])
     verify_inference(source, json.loads(json.dumps(trace)))
     assert trace == run_inference(source, steps=2, observations=[(2, 1), (0, 2)])
+    # The reference model has different array strides from the parsed model;
+    # BLAS kernels can differ by one ulp while preserving the same coefficients.
     current = model.D
     for record in trace["trace"]:
         posterior = infer_states(model, *record["observation"], current)
         scores = efe_vector(model, posterior)
         assert record["action"] == min(range(6), key=lambda a: scores[a].total)
         for channel in current:
-            np.testing.assert_array_equal(record["prior"][channel], current[channel])
-            np.testing.assert_array_equal(record["posterior"][channel], posterior[channel])
+            np.testing.assert_allclose(
+                record["prior"][channel], current[channel], atol=1e-15, rtol=0
+            )
+            np.testing.assert_allclose(
+                record["posterior"][channel], posterior[channel], atol=1e-15, rtol=0
+            )
         current = predicted_belief(model, posterior, record["action"])
         for channel in current:
-            np.testing.assert_array_equal(record["prediction"][channel], current[channel])
+            np.testing.assert_allclose(
+                record["prediction"][channel], current[channel], atol=1e-15, rtol=0
+            )
 
 
 @pytest.mark.parametrize("mutation", ["posterior", "hash", "mode", "field", "missing"])
@@ -134,3 +142,24 @@ def test_cli_in_process_runs_every_command_and_checks_errors(tmp_path, capsys):
     observations.write_text("broken")
     assert main(["infer", str(source), "--observations", str(observations)]) == 2
     assert "alphacogant:" in capsys.readouterr().err
+
+
+def test_model_rollout_chooses_supported_joint_observation():
+    from alphacogant.model.generative_model import default_model
+
+    reward = np.zeros((3, 2, 2, 2))
+    loss = np.zeros((3, 2, 2))
+    reward[0, :, :, 0] = 1.0
+    reward[1, :, :, 1] = 1.0
+    loss[1, :, 0] = 1.0
+    loss[0, :, 1] = 1.0
+    base = default_model()
+    model = default_model(A_R=reward, A_L=loss, D={**base.D, "Theta": [0.5, 0.5]})
+    source = model_to_gnn(model)
+    # Both marginal modes select bucket0, but (0,0) has zero joint mass.
+    with pytest.raises(ValueError, match="positive total probability"):
+        run_inference(source, steps=1, observations=[(0, 0)])
+    trace = run_inference(source, steps=2)
+    assert trace["trace"][0]["observation"] == [0, 1]
+    assert all(tuple(record["observation"]) in {(0, 1), (1, 0)} for record in trace["trace"])
+    verify_inference(source, trace)

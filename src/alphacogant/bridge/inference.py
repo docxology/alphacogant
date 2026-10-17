@@ -10,8 +10,7 @@ import numpy as np
 
 from alphacogant.bridge.gnn import model_from_gnn, model_parameters
 from alphacogant.efe.free_energy import (
-    _loss_distribution,
-    _reward_distribution,
+    _theta_prior_likelihood_terms,
     efe_vector,
     predicted_belief,
 )
@@ -33,7 +32,7 @@ def run_inference(
 ) -> dict[str, object]:
     """Filter current observations, score actions, then predict the next belief.
 
-    Without supplied observations, condition on modal model predictions. This
+    Without supplied observations, condition on the modal joint reward/loss prediction. This
     is a synthetic model rollout with one mean-field filtering sweep, not market
     evidence or exact joint filtering. Ties choose the lowest action index.
     """
@@ -65,13 +64,12 @@ def run_inference(
         digest.update(np.asarray(array, dtype="<f8").tobytes())
     records = []
     for t in range(steps):
-        reward = _reward_distribution(model, current)
-        loss = _loss_distribution(model, current)
-        obs = (
-            (int(np.argmax(reward)), int(np.argmax(loss)))
-            if observations is None
-            else (int(observations[t][0]), int(observations[t][1]))
-        )
+        if observations is None:
+            reward, loss = _theta_prior_likelihood_terms(model, current)
+            joint = np.einsum("t,rt,lt->rl", current["Theta"], reward, loss)
+            obs = divmod(int(np.argmax(joint)), joint.shape[1])
+        else:
+            obs = (int(observations[t][0]), int(observations[t][1]))
         posterior = infer_states(model, obs[0], obs[1], current)
         scores = efe_vector(model, posterior)
         action = min(range(len(ACTIONS)), key=lambda a: scores[a].total)

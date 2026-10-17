@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.1 — 2026-10-16
+
+- Select the modal joint reward/loss observation during synthetic rollouts so
+  deterministic likelihoods cannot generate impossible marginal-mode pairs.
+
+- Correct the inference reference test to admit floating-point differences up
+  to 1e-15 between NumPy kernels operating on differently strided arrays.
+  Linux CI exposed a one-ulp (1.1e-16) prediction difference. Coefficient
+  preservation and deterministic trace replay continue to require exact equality.
+
 ## 1.1.0 — 2026-10-16
 
 - Replace shape-only GNN summaries with lossless serialization of every A/B/C/D
