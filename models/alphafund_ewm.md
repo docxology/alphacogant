@@ -3,7 +3,7 @@
 # AlphaCOGANT — the self-improving corporation rendered as a partially-observed
 # Active Inference generative model. The firm's five capital channels are hidden
 # state factors; capital allocation is the control vector; Expected Free Energy is
-# the marginal-return objective the portfolio optimizer maximizes; the t-RSI
+# the negated marginal-return objective the portfolio optimizer minimizes; the t-RSI
 # certificate is the EFE-improvement gate on each commit.
 
 ## GNNSection
@@ -76,9 +76,9 @@ o_R[3,1,type=int]       # realized log-equity reward, bucketed {low, mid, high}
 o_L[3,1,type=int]       # EWM predictive loss, bucketed {high, mid, low}
 pi[6,type=float]        # policy: allocate to {I, S, U, Theta, Z, hold}
 u[1,type=int]           # committed capital-allocation action
-G[pi,type=float]        # Expected Free Energy per policy (the marginal-return vector)
-g_epistemic[pi,type=float] # epistemic component of G (Sensors+R&D information gain)
-g_pragmatic[pi,type=float] # pragmatic component of G (expected log-equity = create-rate)
+G[6,type=float]        # Expected Free Energy per policy (the marginal-return vector)
+g_epistemic[6,type=float] # epistemic component of G (Sensors+R&D information gain)
+g_pragmatic[6,type=float] # pragmatic component of G (expected log-equity = create-rate)
 tRSI[1,type=float]      # standardized create-vs-decay distance (EFE improvement gate)
 
 ## Connections
@@ -142,28 +142,13 @@ A_L={
 # toward weak (0.95 per cycle), while hold is the gentle no-capital-movement
 # baseline (0.10 drift). Theta decays toward stale under every non-refit action
 # (fresh->stale leak 0.35-0.40).
-B_I={
-  ( (0.60,0.05), (0.95,0.95), (0.95,0.95), (0.95,0.95), (0.95,0.95), (0.90,0.10) ),
-  ( (0.40,0.95), (0.05,0.05), (0.05,0.05), (0.05,0.05), (0.05,0.05), (0.10,0.90) )
-}
-B_S={
-  ( (0.90,0.90), (0.55,0.05), (0.90,0.90), (0.90,0.90), (0.90,0.90), (0.90,0.10) ),
-  ( (0.10,0.10), (0.45,0.95), (0.10,0.10), (0.10,0.10), (0.10,0.10), (0.10,0.90) )
-}
-B_U={
-  ( (0.90,0.90), (0.90,0.90), (0.55,0.05), (0.90,0.90), (0.90,0.90), (0.90,0.10) ),
-  ( (0.10,0.10), (0.10,0.10), (0.45,0.95), (0.10,0.10), (0.10,0.10), (0.10,0.90) )
-}
+B_I={((0.6, 0.95, 0.95, 0.95, 0.95, 0.9), (0.05, 0.95, 0.95, 0.95, 0.95, 0.1)), ((0.4, 0.05, 0.05, 0.05, 0.05, 0.1), (0.95, 0.05, 0.05, 0.05, 0.05, 0.9))}
+B_S={((0.9, 0.55, 0.9, 0.9, 0.9, 0.9), (0.9, 0.05, 0.9, 0.9, 0.9, 0.1)), ((0.1, 0.45, 0.1, 0.1, 0.1, 0.1), (0.1, 0.95, 0.1, 0.1, 0.1, 0.9))}
+B_U={((0.9, 0.9, 0.55, 0.9, 0.9, 0.9), (0.9, 0.9, 0.05, 0.9, 0.9, 0.1)), ((0.1, 0.1, 0.45, 0.1, 0.1, 0.1), (0.1, 0.1, 0.95, 0.1, 0.1, 0.9))}
 # Theta decays: under any non-Theta action the fresh->stale leak is large
 # (the empirically small-but-nonzero alpha-decay); funding Theta refreshes it.
-B_Theta={
-  ( (0.85,0.35), (0.85,0.35), (0.85,0.35), (0.50,0.02), (0.85,0.35), (0.85,0.40) ),
-  ( (0.15,0.65), (0.15,0.65), (0.15,0.65), (0.50,0.98), (0.15,0.65), (0.15,0.60) )
-}
-B_Z={
-  ( (0.90,0.90), (0.90,0.90), (0.90,0.90), (0.90,0.90), (0.55,0.05), (0.90,0.10) ),
-  ( (0.10,0.10), (0.10,0.10), (0.10,0.10), (0.10,0.10), (0.45,0.95), (0.10,0.90) )
-}
+B_Theta={((0.85, 0.85, 0.85, 0.5, 0.85, 0.85), (0.35, 0.35, 0.35, 0.02, 0.35, 0.4)), ((0.15, 0.15, 0.15, 0.5, 0.15, 0.15), (0.65, 0.65, 0.65, 0.98, 0.65, 0.6))}
+B_Z={((0.9, 0.9, 0.9, 0.9, 0.55, 0.9), (0.9, 0.9, 0.9, 0.9, 0.05, 0.1)), ((0.1, 0.1, 0.1, 0.1, 0.45, 0.1), (0.1, 0.1, 0.1, 0.1, 0.95, 0.9))}
 
 # Preferences (log scale, unnormalized). Strongly prefer high reward and low loss.
 C_R={(-2.0, 0.0, 3.0)}
@@ -202,7 +187,6 @@ D_Z={(0.5, 0.5)}
 #   t-RSI >= delta (Sharpe-margin) on every active channel.
 
 ## Time
-Time=t
 Dynamic
 Discrete
 ModelTimeHorizon=Finite
@@ -243,6 +227,7 @@ num_reward_levels: 3
 num_loss_levels: 3
 num_actions: 6
 planning_horizon: 12
+policy_horizon: 1
 
 ## Footer
 AlphaFund Economic World Model v1 — GNN representation produced for AlphaCOGANT.

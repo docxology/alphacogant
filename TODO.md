@@ -1,7 +1,21 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Status as of 2026-09-08 (verified by `uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q` → 216 passed, 95.23% coverage). Historical round records below retain their as-of dates.
+Current release: **1.1.0 (2026-10-16)**. Full validation: 293 passed, one optional
+upstream integration skipped in the base environment, 96.45% coverage. The real
+pinned COGANT integration passes separately. All 30 generated manuscript values
+are unchanged from the previous main. See [CHANGELOG.md](CHANGELOG.md) for scope
+and [CONTRIBUTING.md](CONTRIBUTING.md) for repeatable validation commands.
+
+## Completed for 1.1.0
+
+- [x] Numeric GNN import/export, complete joint matrices, source-bound inference and replay (`src/alphacogant/bridge/`).
+- [x] Real COGANT handoff and coefficient-level authored-model parity (`tests/test_cogant_integration.py`, `tests/test_gnn_numeric.py`).
+- [x] Numerical boundary fixes and regression coverage (`tests/test_numerical_admission.py`).
+- [x] Standalone packaging, refreshed lockfile, release identity and CI (`pyproject.toml`, `.github/workflows/ci.yml`).
+- [x] Accurate installation, upstream scope and release documentation (`CONTRIBUTING.md`, `docs/upstream_compatibility.md`).
+
+Historical round records below retain their as-of dates.
 
 ## Minor
 

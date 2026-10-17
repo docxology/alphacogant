@@ -6,7 +6,7 @@ figure generators with deterministic seeds.
 ## Core suite
 
 ```bash
-uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
+uv run --locked pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
 ```
 
 The suite covers:

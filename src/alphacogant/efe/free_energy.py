@@ -1,7 +1,8 @@
 """Expected Free Energy computations for AlphaCOGANT.
 
 Active Inference minimizes Expected Free Energy ``G``. This module reports
-``pragmatic`` and ``epistemic`` as positive values, and ``EFEResult.total`` is
+``pragmatic`` as signed expected log preference and ``epistemic`` as nonnegative
+information gain. ``EFEResult.total`` is
 the minimized quantity itself: ``G = -(pragmatic + epistemic)``. The negative-EFE
 value used for action ranking is therefore ``-G = pragmatic + epistemic``.
 """
@@ -27,7 +28,12 @@ class EFEResult:
 
 
 def _validate_action(action: int) -> None:
-    if action < 0 or action >= len(ACTIONS):
+    if (
+        isinstance(action, (bool, np.bool_))
+        or not isinstance(action, (int, np.integer))
+        or action < 0
+        or action >= len(ACTIONS)
+    ):
         raise ValueError(f"action must be in [0, {len(ACTIONS) - 1}], got {action}.")
 
 
@@ -42,6 +48,7 @@ def predicted_belief(
     caller is responsible for passing a validated/normalized belief (this
     function performs no validation).
     """
+    _validate_action(action)
     return {channel: model.B[channel][:, :, action] @ belief[channel] for channel in CHANNELS}
 
 
@@ -90,7 +97,8 @@ def _epistemic_value(
     safe_denominator = np.where(valid[..., None], observation_prob[..., None], 1.0)
     posterior = joint / safe_denominator  # (R, L, T); rows for invalid obs are meaningless
     positive = posterior > 0.0
-    ratio = np.where(positive, posterior / theta_prior[None, None, :], 1.0)
+    ratio = np.ones_like(posterior)
+    np.divide(posterior, theta_prior[None, None, :], out=ratio, where=positive)
     kl = np.sum(np.where(positive, posterior * np.log(ratio), 0.0), axis=2)  # (R, L)
     if np.any(kl < -1e-12):
         raise ValueError(
@@ -191,10 +199,15 @@ def policy_posterior(
         raise ValueError("gamma must be a positive finite precision value.")
     if values is None:
         values = marginal_return_vector(model, belief)
+    if set(values) != set(range(len(ACTIONS))):
+        raise ValueError("values must contain exactly the action indices.")
     vals = np.array([values[action] for action in range(len(ACTIONS))], dtype=float)
-    logits = gamma * vals
-    logits -= np.max(logits)
-    weights = np.exp(logits)
+    if not np.all(np.isfinite(vals)):
+        raise ValueError("values must be finite.")
+    # Center first; legitimate extreme score gaps tend to zero probability.
+    with np.errstate(over="ignore", under="ignore"):
+        logits = gamma * (vals - np.max(vals))
+        weights = np.exp(logits)
     return weights / weights.sum()
 
 

@@ -45,3 +45,19 @@ manuscript.
 ## Tokens
 
 - `generate_variables()` returns the full manuscript token dictionary.
+
+## Finite GNN and replayable inference (1.1.0)
+
+Public imports from `alphacogant` now include `model_from_gnn`,
+`model_to_cogant_gnn`, `joint_matrices`, `run_inference` and `verify_inference`.
+`model_to_gnn_summary` now preserves every numeric coefficient; the lightweight
+`parse_gnn_summary` structural return type is unchanged. Read the
+[bridge contract](cogant_bridge.md) for axes, budgets, observation modes and
+policy differences from COGANT. CLI: `uv run --locked alphacogant --help`.
+
+`generate_variables(n=None, *, manuscript_dir=None)` requires actual manuscript
+sources for definition/figure counts. In a source checkout it uses
+`docs/manuscript/`; installed-wheel callers must supply that directory explicitly.
+Missing manuscript sources raise `FileNotFoundError` before computation or artifact
+writes, rather than producing zero counts. Artifact generation scripts require
+the source checkout.

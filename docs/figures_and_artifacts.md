@@ -7,7 +7,7 @@ Figures are source-owned by scripts, not by binary edits under `output/`.
 Run all figure scripts from the project root:
 
 ```bash
-uv run --no-project python scripts/y_generate_figures.py
+uv run --locked python scripts/y_generate_figures.py
 ```
 
 Each script writes one PNG under `output/figures/`. The aggregate script sets
@@ -40,6 +40,6 @@ The manifest `issues` array must be empty before render closeout.
 
 ## Root copy
 
-After validation, template stage 05 copies the project output tree to
-`/Volumes/external_drive/Git/template/output/ongoing/ActiveInference/alphacogant/`.
+When using the optional template integration, stage 05 copies the project
+output tree to the template's configured publication directory.
 The copied PDF should hash-match the project-local PDF.

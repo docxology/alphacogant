@@ -41,7 +41,7 @@ def _normalize_probability_columns(name: str, values: object, shape: tuple[int, 
     if np.any(array < 0.0):
         raise ValueError(f"{name} must not contain negative probabilities.")
     column_sums = array.sum(axis=0, keepdims=True)
-    if np.any(column_sums <= 0.0):
+    if not np.all(np.isfinite(column_sums)) or np.any(column_sums <= 0.0):
         raise ValueError(f"{name} has a zero-sum probability column.")
     return array / column_sums
 
@@ -51,23 +51,23 @@ def _normalize_probability_vector(name: str, values: object) -> np.ndarray:
     if np.any(vector < 0.0):
         raise ValueError(f"{name} must not contain negative probabilities.")
     total = float(vector.sum())
-    if total <= 0.0:
+    if not np.isfinite(total) or total <= 0.0:
         raise ValueError(f"{name} must have positive total probability mass.")
     return vector / total
 
 
 def _validate_probability_columns(name: str, array: np.ndarray) -> None:
-    if np.any(array < -1e-12):
+    if np.any(array < 0.0):
         raise ValueError(f"{name} must not contain negative probabilities.")
     sums = array.sum(axis=0)
-    if not np.allclose(sums, 1.0, atol=1e-8):
+    if not np.allclose(sums, 1.0, atol=1e-8, rtol=0.0):
         raise ValueError(f"{name} columns must sum to 1.")
 
 
 def _validate_probability_vector(name: str, vector: np.ndarray) -> None:
-    if np.any(vector < -1e-12):
+    if np.any(vector < 0.0):
         raise ValueError(f"{name} must not contain negative probabilities.")
-    if not np.allclose(vector.sum(), 1.0, atol=1e-8):
+    if not np.allclose(vector.sum(), 1.0, atol=1e-8, rtol=0.0):
         raise ValueError(f"{name} must sum to 1.")
 
 
@@ -76,6 +76,10 @@ def _validate_belief_map(
     *,
     context: str,
 ) -> dict[str, np.ndarray]:
+    if not isinstance(prior, Mapping):
+        raise ValueError(f"{context} must be a channel mapping.")
+    if set(prior) - set(CHANNELS):
+        raise ValueError(f"{context} contains unknown channel keys.")
     missing = [channel for channel in CHANNELS if channel not in prior]
     if missing:
         raise ValueError(f"{context} is missing channel priors for {missing}.")
@@ -85,7 +89,7 @@ def _validate_belief_map(
         if np.any(vector < 0.0):
             raise ValueError(f"{context}[{channel}] must not contain negative probabilities.")
         total = float(vector.sum())
-        if total <= 0.0:
+        if not np.isfinite(total) or total <= 0.0:
             raise ValueError(f"{context}[{channel}] must have positive total probability mass.")
         validated[channel] = vector / total
     return validated
@@ -274,6 +278,8 @@ def default_model(
     )
     normalized_B = _build_default_B()
     if B is not None:
+        if set(B) - set(CHANNELS):
+            raise ValueError("B override contains unknown channel keys.")
         missing = [channel for channel in CHANNELS if channel not in B]
         if missing:
             raise ValueError(f"B override is missing channels {missing}.")
@@ -286,6 +292,8 @@ def default_model(
             for channel in CHANNELS
         }
     if D is not None:
+        if set(D) - set(CHANNELS):
+            raise ValueError("D override contains unknown channel keys.")
         missing = [channel for channel in CHANNELS if channel not in D]
         if missing:
             raise ValueError(f"D override is missing channels {missing}.")
@@ -323,9 +331,17 @@ def infer_states(
     prior: Mapping[str, np.ndarray],
 ) -> dict[str, np.ndarray]:
     """Perform a single mean-field Bayesian state update from reward and loss observations."""
-    if obs_R not in {0, 1, 2}:
+    if (
+        isinstance(obs_R, (bool, np.bool_))
+        or not isinstance(obs_R, (int, np.integer))
+        or obs_R not in {0, 1, 2}
+    ):
         raise ValueError("obs_R must be one of the reward buckets {0, 1, 2}.")
-    if obs_L not in {0, 1, 2}:
+    if (
+        isinstance(obs_L, (bool, np.bool_))
+        or not isinstance(obs_L, (int, np.integer))
+        or obs_L not in {0, 1, 2}
+    ):
         raise ValueError("obs_L must be one of the loss buckets {0, 1, 2}.")
     beliefs = _validate_belief_map(prior, context="prior")
     posterior: dict[str, np.ndarray] = {}

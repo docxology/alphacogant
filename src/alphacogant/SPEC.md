@@ -89,9 +89,26 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   ActInfOntologyAnnotation) from an `EconomicWorldModel`, proving the round-trip
   from NumPy arrays back to GNN text. Every section a GNN processor needs is
   present.
-- `parse_gnn_summary(text) -> dict`: the inverse direction — parse a GNN
-  summary block back into structured data (factors, connections, ontology).
-  Used to verify round-trip fidelity in tests.
+- `parse_gnn_summary(text) -> dict`: lightweight structural inspection (factors,
+  connections, ontology); this function does not validate or reconstruct arrays.
+- `bridge.gnn.model_from_gnn(text) -> EconomicWorldModel`: reconstruct all arrays
+  from this project's finite literal-only GNN profile without renormalization.
+  Reject missing/duplicate sections and parameters, wrong shapes, nonfinite or
+  nonstochastic values and inputs over one megabyte. All B tensors use
+  `[next,current,action]` axes. Tests compare every authored coefficient to the engine.
+- `bridge.gnn.joint_matrices(model) -> dict`: exact product compilation over the
+  lexicographic `(I,S,U,Theta,Z)` state axis and `(reward,loss)` observation axis.
+  Return complete A[9,32], B[32,32,6], C[9], D[32].
+- `bridge.gnn.model_to_cogant_gnn(model) -> str`: add the complete joint matrices
+  in COGANT's authoritative `gnn-matrices` fence. Real upstream integration
+  checks coefficient equality and execution, not policy equivalence.
+- `bridge.inference.run_inference(source, *, steps=8, observations=None) -> dict`:
+  filter current observations, select the lowest-EFE action, and predict next
+  beliefs. Record exact source/parameter digests and the single-sweep mean-field
+  approximation. Modal model rollout without observations is explicitly labeled.
+- `bridge.inference.verify_inference(source, trace) -> None`: replay all fields
+  and reject stale source or changed computation. Traces admit 1–10,000 steps.
+  t-RSI remains a separately evaluated certificate, not a gate enforced by this loop.
 
 ### `model/operating_points.py`
 - `IMPROVING` / `COASTING`: the two canonical operating-point belief maps (weak

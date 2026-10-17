@@ -34,3 +34,13 @@ how mass shifts from exploration to exploitation as beliefs change.
 
 This is a discrete action scorer. It is the reduced-model image of AlphaFund's
 continuous marginal-return formalism, not a continuous optimizer.
+
+## Numerical admission
+
+Actions and observations must be integer indices (booleans and floats are
+rejected). Precomputed policy values must cover all six actions and be finite.
+The softmax centers before scaling so extreme finite scores produce valid
+probabilities. KL calculations mask impossible Theta entries before division;
+point-mass beliefs therefore produce finite, nonnegative information gain
+without invalid floating-point warnings. Loop horizons and bootstrap draw
+counts must be positive integers; Dirichlet concentration must also be finite.

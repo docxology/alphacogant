@@ -43,9 +43,7 @@ def cohen_d(samples_a: np.ndarray, samples_b: np.ndarray) -> float:
     return _cohen_d_from_moments(float(np.mean(samples_a)), std_a, float(np.mean(samples_b)), std_b)
 
 
-def _cohen_d_from_moments(
-    mean_a: float, std_a: float, mean_b: float, std_b: float
-) -> float:
+def _cohen_d_from_moments(mean_a: float, std_a: float, mean_b: float, std_b: float) -> float:
     pooled_std = np.sqrt((std_a**2 + std_b**2) / 2)
     if pooled_std == 0:
         return 0.0
@@ -221,6 +219,9 @@ def bootstrap_ci(
     confidence: float = 0.95,
 ) -> BootstrapCI:
     """Compute a bootstrap confidence interval from a sample array."""
+    samples = np.asarray(samples, dtype=float)
+    if samples.ndim != 1 or not np.all(np.isfinite(samples)):
+        raise ValueError("samples must be a finite one-dimensional sequence.")
     if samples.size < 2:
         raise ValueError("Need at least 2 samples for a confidence interval.")
     if not (0.0 < confidence < 1.0):
@@ -316,9 +317,7 @@ def compute_regime_statistics(
     # One validated EFE sweep covers the funded-channel tokens and the per-action
     # decomposition tables.
     efe_results = efe_vector(model, belief)
-    funded_action = max(
-        range(len(ACTIONS)), key=lambda a: -efe_results[a].total
-    )
+    funded_action = max(range(len(ACTIONS)), key=lambda a: -efe_results[a].total)
     funded_result = efe_results[funded_action]
 
     efe_prag: dict[str, float] = {}

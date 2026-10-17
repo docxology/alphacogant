@@ -5,7 +5,7 @@ machinery into a single deterministic trajectory recorder.  It exists so
 that the manuscript can show — not just describe — what happens when the
 firm runs for ``H`` cycles: beliefs move from weak to strong, the funded
 channel shifts from exploration to exploitation, and the t-RSI certificate
-gates commits.
+is evaluated separately; this recorder does not gate actions.
 
 All computation comes from the engine modules; this module only orchestrates
 and records.
@@ -22,6 +22,7 @@ from alphacogant.efe.free_energy import efe_vector, policy_posterior, predicted_
 from alphacogant.model.channels import ACTIONS, CHANNELS, action_index
 from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
 from alphacogant.trsi.t_rsi import DEFAULT_HORIZON
+from alphacogant.validation import positive_integer
 
 
 @dataclass(frozen=True)
@@ -89,8 +90,7 @@ def simulate_trajectory(
     seed
         Required when ``policy="stochastic"``; ignored otherwise.
     """
-    if horizon <= 0:
-        raise ValueError("horizon must be a positive integer.")
+    positive_integer(horizon, "horizon")
     if policy not in {"greedy", "hold", "fund_theta", "stochastic"}:
         raise ValueError(
             f"Unknown policy {policy!r}; expected one of "

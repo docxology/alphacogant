@@ -1,0 +1,8 @@
+include README.md LICENSE CHANGELOG.md CONTRIBUTING.md CITATION.cff codemeta.json uv.lock
+include AGENTS.md ISA.md TODO.md
+recursive-include models *.md
+recursive-include docs *.md *.yaml *.bib
+recursive-include data *.yaml
+recursive-include scripts *.py *.md
+recursive-include tests *.py
+recursive-include src *.md

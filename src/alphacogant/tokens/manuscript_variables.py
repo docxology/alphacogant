@@ -71,18 +71,18 @@ def _theta_decay_leak_probability(model: EconomicWorldModel) -> float:
     return float(theta[stale, fresh, action_index("hold")])
 
 
-def _count_definitions() -> int:
+def _count_definitions(manuscript_dir: Path | None = None) -> int:
     """Number of distinct numbered Definitions (D1, D2, ...) in the manuscript."""
     ids: set[int] = set()
-    for md in sorted(_MANUSCRIPT_DIR.glob("*.md")):
+    for md in sorted((manuscript_dir or _MANUSCRIPT_DIR).glob("*.md")):
         ids.update(int(match) for match in _DEFINITION_RE.findall(md.read_text(encoding="utf-8")))
     return len(ids)
 
 
-def _count_figures() -> int:
+def _count_figures(manuscript_dir: Path | None = None) -> int:
     """Number of distinct engine-generated figures ({#fig:...}) in the manuscript."""
     labels: set[str] = set()
-    for md in sorted(_MANUSCRIPT_DIR.glob("*.md")):
+    for md in sorted((manuscript_dir or _MANUSCRIPT_DIR).glob("*.md")):
         labels.update(_FIGURE_RE.findall(md.read_text(encoding="utf-8")))
     return len(labels)
 
@@ -92,7 +92,9 @@ def resolve_bootstrap_n(n: int | None) -> int:
     return BOOTSTRAP_N if n is None else n
 
 
-def generate_variables(n: int | None = None) -> dict[str, str]:
+def generate_variables(
+    n: int | None = None, *, manuscript_dir: Path | None = None
+) -> dict[str, str]:
     """Generate every manuscript token from the live deterministic model.
 
     ``n`` overrides the bootstrap resample count. It defaults to the published
@@ -102,6 +104,12 @@ def generate_variables(n: int | None = None) -> dict[str, str]:
     count — only the bootstrap point values do, and those are reported at the
     published ``BOOTSTRAP_N``.
     """
+    active_manuscript = _MANUSCRIPT_DIR if manuscript_dir is None else Path(manuscript_dir)
+    if not any(active_manuscript.glob("[0-9][0-9]_*.md")):
+        raise FileNotFoundError(
+            "Manuscript sources are required to generate evidence tokens. "
+            "Use the source checkout or supply manuscript_dir explicitly."
+        )
     bootstrap_n = resolve_bootstrap_n(n)
     model = default_model()
 
@@ -161,8 +169,8 @@ def generate_variables(n: int | None = None) -> dict[str, str]:
         "CREATE_RATE_MEAN": _format_float(float(np.mean(improving_create))),
         "DECAY_RATE_MEAN": _format_float(float(np.mean(improving_decay))),
         "B_THETA_LEAK_PROB": _format_float(_theta_decay_leak_probability(model)),
-        "NUM_DEFINITIONS": str(_count_definitions()),
-        "NUM_FIGURES": str(_count_figures()),
+        "NUM_DEFINITIONS": str(_count_definitions(active_manuscript)),
+        "NUM_FIGURES": str(_count_figures(active_manuscript)),
         # Trajectory tokens
         "TRAJ_FIRST_FUNDED": traj_summary["first_funded"],
         "TRAJ_LAST_FUNDED": traj_summary["last_funded"],

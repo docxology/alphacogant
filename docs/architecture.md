@@ -12,7 +12,7 @@ docs consume generated artifacts.
 | `efe/` | Expected Free Energy decomposition, action values, policy posterior. | t-RSI bootstrapping or regime comparison tables. |
 | `trsi/` | Create-rate, decay-rate, standardized t-RSI, certificate predicate. | Confidence intervals or figure rendering. |
 | `stats/` | Bootstrap CIs, effect sizes, paired break-even profiles, trajectories. | Low-level model normalization. |
-| `bridge/` | Firm-structure priors and GNN round-trip summaries. | General COGANT indexing beyond this reduced project. |
+| `bridge/` | Firm priors, numeric GNN round trips, joint export and source-bound traces. | General COGANT indexing beyond this reduced project. |
 | `tokens/` | Manuscript token generation from live model computations. | Direct rendering to PDF. |
 | `viz/` | Shared figure style constants and utility helpers. | Per-figure scientific computation. |
 
@@ -26,16 +26,15 @@ docs consume generated artifacts.
    - injected Markdown under `output/manuscript/`
    - `output/figures/figure_registry.json`
    - `output/reports/artifact_manifest.json`
-5. The template renderer builds `output/pdf/alphacogant_combined.pdf`.
-6. `scripts/pipeline/stage_05_copy.py` copies the validated output tree to
-   `template/output/ongoing/ActiveInference/alphacogant/` (pipeline stages live
-   in the template checkout root, not this repo — run from the template root;
-   verify the live output path: `ls /Volumes/external_drive/Git/template/output/ongoing/ActiveInference/ 2>/dev/null`).
+5. The standalone CLI validates/exports GNN and produces replayable traces.
+6. Optionally, a separately configured template renderer produces the PDF and
+   copies validated outputs to its configured publication directory. See
+   [rendering_and_validation.md](rendering_and_validation.md).
 
 ## Boundary
 
-The project is a public GitHub repo (`docxology/alphacogant`), local-only with
-respect to the template monorepo. It is edited in this repo
-(`/Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant`), which is
-symlinked into the template checkout as `projects/ongoing/ActiveInference/alphacogant`
-and rendered through the template as `ongoing/ActiveInference/alphacogant`.
+The project is a standalone public repository (`docxology/alphacogant`).
+Installation, model computation, CLI execution, tests and artifact generation
+use the repository's own `pyproject.toml` and `uv.lock`. Template rendering is an
+optional external integration. No absolute workstation path is part of the
+runtime contract.

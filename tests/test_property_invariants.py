@@ -140,7 +140,8 @@ def test_belief_validation_normalizes(execution_number):
 def test_t_rsi_returns_zero_for_small_samples():
     """t-RSI returns 0 for samples with fewer than 2 elements."""
     assert t_rsi([1.0], [2.0]) == 0.0
-    assert t_rsi([1.0, 2.0], [3.0]) == 0.0
+    with pytest.raises(ValueError, match="paired"):
+        t_rsi([1.0, 2.0], [3.0])
 
 
 def test_t_rsi_inf_when_zero_variance_different_means():

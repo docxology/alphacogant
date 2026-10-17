@@ -29,6 +29,7 @@ from alphacogant.efe.free_energy import greedy_action, predicted_belief, static_
 from alphacogant.model.channels import CHANNELS, action_index
 from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
 from alphacogant.model.operating_points import BOOTSTRAP_CONCENTRATION
+from alphacogant.validation import positive_integer
 
 DEFAULT_HORIZON = 12
 
@@ -105,8 +106,7 @@ def create_rate(
     horizon: int = DEFAULT_HORIZON,
 ) -> float:
     """Pragmatic value the greedy policy creates over passive holding (signed)."""
-    if horizon <= 0:
-        raise ValueError("horizon must be a positive integer.")
+    positive_integer(horizon, "horizon")
     normalized = validate_belief_map(belief, context="belief")
     trajectory = _greedy_trajectory(model, normalized, horizon)
     return _create_from_trajectory(model, normalized, trajectory, horizon)
@@ -118,8 +118,7 @@ def decay_rate(
     horizon: int = DEFAULT_HORIZON,
 ) -> float:
     """Residual Theta-staleness erosion remaining along the greedy trajectory (>=0)."""
-    if horizon <= 0:
-        raise ValueError("horizon must be a positive integer.")
+    positive_integer(horizon, "horizon")
     normalized = validate_belief_map(belief, context="belief")
     trajectory = _greedy_trajectory(model, normalized, horizon)
     return _decay_from_trajectory(model, trajectory)
@@ -143,13 +142,14 @@ def t_rsi(
     """
     create = _as_sample_array("create_samples", create_samples)
     decay = _as_sample_array("decay_samples", decay_samples)
-    if create.size < 2 or decay.size < 2:
-        return 0.0
     if create.size != decay.size:
         raise ValueError(
             "create_samples and decay_samples must be paired (same length); "
             f"got {create.size} and {decay.size}."
         )
+
+    if create.size < 2:
+        return 0.0
 
     margins = create - decay
     margin_mean = float(np.mean(margins))
@@ -179,12 +179,10 @@ def paired_bootstrap_samples(
     """
     if not isinstance(rng, np.random.Generator):
         raise ValueError("rng must be a numpy.random.Generator instance.")
-    if n <= 0:
-        raise ValueError("n must be a positive integer.")
-    if concentration <= 0.0:
+    positive_integer(n, "n")
+    if not np.isfinite(concentration) or concentration <= 0.0:
         raise ValueError("concentration must be a positive number.")
-    if horizon <= 0:
-        raise ValueError("horizon must be a positive integer.")
+    positive_integer(horizon, "horizon")
     normalized_belief = validate_belief_map(belief, context="belief")
     create_samples = np.empty(n, dtype=float)
     decay_samples = np.empty(n, dtype=float)

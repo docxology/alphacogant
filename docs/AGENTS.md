@@ -15,15 +15,15 @@ Documentation in this directory is authored source, not generated output.
 Run these from the project root:
 
 ```bash
-uv run --no-project pytest tests/test_docs_contract.py tests/test_manuscript_contract.py -q
+uv run --locked pytest tests/test_docs_contract.py tests/test_manuscript_contract.py -q
 uvx ruff check scripts src tests
 ```
 
 For PDF-facing changes, also regenerate:
 
 ```bash
-uv run --no-project python scripts/y_generate_figures.py
-uv run --no-project python scripts/z_generate_manuscript_variables.py
+uv run --locked python scripts/y_generate_figures.py
+uv run --locked python scripts/z_generate_manuscript_variables.py
 ```
 
 Then render from the template root with:

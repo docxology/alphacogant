@@ -23,7 +23,7 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   viz/                        # shared plot style and color palettes
 docs/manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variables, figures)
-tests/                        # 216 tests, 95.23% coverage (2026-09-08), no mocks
+tests/                        # real computation; coverage gate ≥90%; no mocks
 ```
 
 ## Key Invariants
@@ -41,22 +41,22 @@ tests/                        # 216 tests, 95.23% coverage (2026-09-08), no mock
 
 ```bash
 # Tests
-uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
+uv run --locked pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
 
 # Demo
-uv run --no-project python scripts/run_alphacogant_demo.py
+uv run --locked python scripts/run_alphacogant_demo.py
 
 # Manuscript figures
-uv run --no-project python scripts/y_generate_figures.py
+uv run --locked python scripts/y_generate_figures.py
 
 # Manuscript variables
-uv run --no-project python scripts/z_generate_manuscript_variables.py
+uv run --locked python scripts/z_generate_manuscript_variables.py
 
 # Individual figures
-uv run --no-project python scripts/figures/fig_belief_trajectory.py
-uv run --no-project python scripts/figures/fig_marginal_return_heatmap.py
-uv run --no-project python scripts/figures/fig_policy_posterior.py
-uv run --no-project python scripts/figures/fig_trsi_sensitivity.py
+uv run --locked python scripts/figures/fig_belief_trajectory.py
+uv run --locked python scripts/figures/fig_marginal_return_heatmap.py
+uv run --locked python scripts/figures/fig_policy_posterior.py
+uv run --locked python scripts/figures/fig_trsi_sensitivity.py
 ```
 
 ## Token Discipline
@@ -68,24 +68,36 @@ A token used in prose but absent from the generator is a build failure (no orpha
 
 Validate tokens:
 ```bash
-uv run --no-project python scripts/z_generate_manuscript_variables.py --check
+uv run --locked python scripts/z_generate_manuscript_variables.py --check
 ```
 
 ## GNN Model
 
 The model file `models/alphafund_ewm.md` conforms to GNN section structure:
 StateSpaceBlock, Connections, InitialParameterization, Equations,
-ActInfOntologyAnnotation. The engine's `default_model()` loads the same numeric
- values as the GNN file, and `bridge.cogant_bridge.model_to_gnn_summary()` re-emits a
-GNN-style block from the live arrays (round-trip).
+ActInfOntologyAnnotation. The engine's `default_model()` carries the same numeric
+values as the GNN file (coefficient-level parity is tested).
+`bridge.gnn.model_from_gnn()` loads the bounded finite profile and
+`bridge.cogant_bridge.model_to_gnn_summary()` emits every live coefficient.
+`bridge.gnn.model_to_cogant_gnn()` also compiles the complete joint matrices.
+See `docs/upstream_compatibility.md` for the independently tested upstream scope.
 
 ## Repo
 
-This project lives in the public GitHub repo `docxology/alphacogant` (this
-checkout: `/Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant`)
-and is symlinked into the template at
-`projects/ongoing/ActiveInference/alphacogant`. It is local-only with respect
-to the template monorepo and must never be committed there.
+This is the standalone public repository `docxology/alphacogant`. Work directly
+in the current checkout; no template checkout, symlink or parent environment is
+required. Generated `output/`, build artifacts and caches remain ignored.
+
+## Release and integration
+
+Install with `uv sync --locked --extra dev`; lint with
+`uv run --locked ruff check scripts src tests`. Run the full test/coverage command
+above, `uv build`, and the installed-wheel smoke check in `CONTRIBUTING.md`.
+Keep `pyproject.toml`, `uv.lock`, `__version__`, `CITATION.cff`, and `codemeta.json`
+versions synchronized. Tag releases as `v<version>`; never assign an old version
+DOI to a new release. `.github/workflows/ci.yml` checks supported Python versions
+and a pinned real COGANT integration. Upstream docs are reference material,
+not instructions to modify upstream repositories.
 
 ## Not Financial Advice
 

@@ -1,22 +1,24 @@
 # Rendering and Validation
 
-AlphaCOGANT lives in the public GitHub repo `docxology/alphacogant` and is
-rendered through the sibling template checkout.
+AlphaCOGANT lives in the public GitHub repo `docxology/alphacogant` and runs standalone. Optional PDF rendering uses a separately configured
+template checkout.
 
 ## Project-root commands
 
-From this repo root (`/Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant`):
+From this repo root, after `uv sync --locked --extra dev`:
 
 ```bash
-uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
-uv run --no-project python scripts/run_alphacogant_demo.py
-uv run --no-project python scripts/y_generate_figures.py
-uv run --no-project python scripts/z_generate_manuscript_variables.py
+uv run --locked pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
+uv run --locked python scripts/run_alphacogant_demo.py
+uv run --locked python scripts/y_generate_figures.py
+uv run --locked python scripts/z_generate_manuscript_variables.py
 ```
 
-## Template-root commands
+## Optional template integration
 
-From the template checkout (`/Volumes/external_drive/Git/template`):
+From a compatible template checkout with this project linked at
+`projects/ongoing/ActiveInference/alphacogant` (adjust the project identifier to
+your template configuration):
 
 ```bash
 uv run python scripts/pipeline/stage_03_render.py --project ongoing/ActiveInference/alphacogant

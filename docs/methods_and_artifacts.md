@@ -33,13 +33,14 @@ independent create and decay samples. The statistic complements t-RSI:
 Run from the project root:
 
 ```bash
-uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
-uv run --no-project python scripts/run_alphacogant_demo.py
-uv run --no-project python scripts/y_generate_figures.py
-uv run --no-project python scripts/z_generate_manuscript_variables.py
+uv run --locked pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
+uv run --locked python scripts/run_alphacogant_demo.py
+uv run --locked python scripts/y_generate_figures.py
+uv run --locked python scripts/z_generate_manuscript_variables.py
 ```
 
-Then from the template root:
+For optional PDF rendering, run from a separately configured template root
+with this project linked under the indicated project identifier:
 
 ```bash
 uv run python scripts/pipeline/stage_03_render.py --project ongoing/ActiveInference/alphacogant

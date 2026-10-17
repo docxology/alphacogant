@@ -32,3 +32,5 @@ operational contracts used to regenerate and audit that argument.
 Do not edit `output/` to fix a documentation or manuscript defect. Change the
 source file, regenerate figures and manuscript variables, then render through the
 template pipeline.
+
+- [Upstream compatibility](upstream_compatibility.md) — pinned GNN/COGANT contracts, checks, and limits.

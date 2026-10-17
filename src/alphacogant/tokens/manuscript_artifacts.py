@@ -225,9 +225,8 @@ def run(check: bool = False) -> int:
     """
     manuscript_dir = _PROJECT_ROOT / "docs" / "manuscript"
     output_dir = _PROJECT_ROOT / "output"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     variables = generate_variables()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     used = used_tokens(manuscript_dir)
     missing = sorted(used - set(variables))

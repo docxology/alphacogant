@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from alphacogant.tokens.manuscript_artifacts import artifact_manifest_issues
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +61,7 @@ def test_run_demo_produces_json_and_png() -> None:
     assert png_path.stat().st_size > 100
 
 
+@pytest.mark.figures
 def test_generate_manuscript_variables_check_mode() -> None:
     result = _run("z_generate_manuscript_variables.py")
     # The script writes variables and injected manuscript in default mode.
@@ -167,6 +170,7 @@ def test_artifact_manifest_reports_broken_registered_figures(tmp_path: Path) -> 
     assert any("duplicate registered figure filename: ok.png" in issue for issue in issues)
 
 
+@pytest.mark.figures
 def test_generate_manuscript_variables_no_orphans() -> None:
     """The script's --check mode exits 0 when all prose tokens are generated."""
     env = {

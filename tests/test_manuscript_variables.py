@@ -58,3 +58,20 @@ def test_generate_variables_is_deterministic_and_consistent(model, prior) -> Non
     assert first["FUNDED_CHANNEL"] == CHANNELS[funded_action]
     assert first["FUNDED_PRAGMATIC"] == f"{funded_result.pragmatic:.4f}"
     assert first["FUNDED_EPISTEMIC"] == f"{funded_result.epistemic:.4f}"
+
+
+
+def test_generate_variables_requires_available_manuscript_sources(tmp_path):
+    import pytest
+
+    with pytest.raises(FileNotFoundError, match="Manuscript sources are required"):
+        generate_variables(n=2, manuscript_dir=tmp_path)
+
+
+def test_generate_variables_counts_explicit_source_directory(tmp_path):
+    (tmp_path / "00_example.md").write_text(
+        "**Definition D1** Test.\n![Example](example.png){#fig:example}\n"
+    )
+    result = generate_variables(n=2, manuscript_dir=tmp_path)
+    assert result["NUM_DEFINITIONS"] == "1"
+    assert result["NUM_FIGURES"] == "1"

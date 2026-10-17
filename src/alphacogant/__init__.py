@@ -27,6 +27,8 @@ from alphacogant.bridge import (
     model_to_gnn_summary,
     parse_gnn_summary,
 )
+from alphacogant.bridge.gnn import joint_matrices, model_from_gnn, model_to_cogant_gnn
+from alphacogant.bridge.inference import run_inference, verify_inference
 
 # ── EFE subpackage ───────────────────────────────────────────────────────────
 from alphacogant.efe import (
@@ -96,7 +98,7 @@ from alphacogant.trsi import (
 )
 from alphacogant.viz import plot_style as plot_style
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 __all__ = [
     # model
@@ -136,6 +138,11 @@ __all__ = [
     "decay_rate",
     "t_rsi",
     # bridge
+    "joint_matrices",
+    "model_from_gnn",
+    "model_to_cogant_gnn",
+    "run_inference",
+    "verify_inference",
     "firm_structure_to_channels",
     "model_to_gnn_summary",
     "parse_gnn_summary",

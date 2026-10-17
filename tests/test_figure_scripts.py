@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.figures
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC = PROJECT_ROOT / "src"
 FIGURES_DIR = PROJECT_ROOT / "scripts" / "figures"

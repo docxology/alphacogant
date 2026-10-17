@@ -5,11 +5,12 @@
 
 **Recursive corporate self-improvement as Active Inference, rendered in GNN via COGANT.**
 
-**Status (2026-09-08, verified by the commands shown):** research artifact, phase
-complete per `ISA.md` (17/17). 216 tests, coverage 95.23% (`uv run --no-project
-pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q`, all passing); figure
-scripts regenerate into `output/figures/`. Fast inner loop: `pytest tests/ -m
-"not figures"`. Current backlog: [`TODO.md`](TODO.md).
+**Version 1.1.0 (2026-10-16).** Standalone NumPy research package with lossless
+finite GNN serialization, complete COGANT joint-matrix export, and replayable
+observation-conditioned inference. See [CHANGELOG.md](CHANGELOG.md) and the
+[pinned upstream contract](docs/upstream_compatibility.md). CI runs lint, the full
+test suite with ≥90% coverage, model parity, and installed-wheel checks on
+Python 3.10, 3.12, and 3.14. The research scope is recorded in [`ISA.md`](ISA.md).
 
 The [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) reframes recursive
 self-improvement (RSI) as a portfolio-optimization problem: a corporation recursively
@@ -30,14 +31,16 @@ makes the correspondence executable:
 | Investments / Actuators returns | **pragmatic value** (expected log-equity) |
 | t-RSI certificate | thresholded EFE-improvement gate |
 
-It is built from three pieces of the template monorepo:
+Its design draws on three related projects:
 
 - **`template_code_project`** — the reproducible code-research scaffold (thin
   orchestrator, `{{TOKEN}}` manuscript, ≥90% coverage, no mocks).
 - **GNN** (Generalized Notation Notation) — the text language for Active Inference
   generative models. `models/alphafund_ewm.md` encodes the five-channel EWM.
-- **COGANT** — the codebase-to-GNN translation pattern; `src/alphacogant/bridge/cogant_bridge.py`
-  maps firm structure → generative-model priors and re-emits a GNN summary (round-trip).
+- **[COGANT](https://github.com/ActiveInferenceInstitute/COGANT)** — codebase-to-GNN
+  translation and finite-model execution. AlphaCOGANT uses an authored model,
+  maps firm structure → priors, and exports all coefficients in both factorized
+  and joint form. See [the bridge contract](docs/cogant_bridge.md).
 
 ## Layout
 
@@ -76,14 +79,26 @@ scripts/                      # thin orchestrators (demo, variable generation, f
 ## Quick start
 
 ```bash
-# from this repo root (repo lives at
-# /Volumes/external_drive/Git/projects/ongoing/docxology/alphacogant,
-# symlinked into the template checkout as projects/ongoing/ActiveInference/alphacogant)
-uv run --no-project pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
-uv run --no-project python scripts/run_alphacogant_demo.py
-uv run --no-project python scripts/y_generate_figures.py
-uv run --no-project python scripts/z_generate_manuscript_variables.py
+# From a fresh checkout; Python 3.10+ and uv are required.
+uv sync --locked --extra dev
+uv run --locked pytest tests/ --cov=alphacogant --cov-fail-under=90 -q
+uv run --locked alphacogant validate models/alphafund_ewm.md
+uv run --locked alphacogant export --cogant -o output/model.gnn.md
+uv run --locked alphacogant infer output/model.gnn.md --steps 8 -o output/trace.json
+uv run --locked alphacogant verify-trace output/model.gnn.md output/trace.json
+uv run --locked python scripts/run_alphacogant_demo.py
+uv run --locked python scripts/y_generate_figures.py
+uv run --locked python scripts/z_generate_manuscript_variables.py
 ```
+
+Exports preserve existing files; use `--overwrite` to replace a generated file.
+`infer --observations observations.json` accepts a JSON array of `[reward, loss]`
+integer bucket pairs. Without observations it records a synthetic model rollout.
+The trace binds the exact source bytes, coefficients, filtering, EFE scores, and
+selected actions. The existing `simulate_trajectory` API records open-loop
+predictions; t-RSI is a separately evaluated certificate, not an enforced action
+gate in either simulator. See [CONTRIBUTING.md](CONTRIBUTING.md) for CI parity and
+wheel installation checks.
 
 ## Read the concept
 
