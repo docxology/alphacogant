@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0 — 2026-10-16
+
+- Batch EFE action scoring and masked information gain; remove repeated admission
+  checks from internal bootstrap paths while preserving normalization and RNG order.
+- Compute KL in log space so valid subnormal priors cannot overflow a probability ratio.
+- Defer plotting imports for faster backend and CLI startup.
+- Add a versioned Python client, discoverable parameter schemas, bounded JSONL
+  requests, seeded simulation/bootstrap commands, diagnostics and JSON result/error
+  envelopes. Agent methods operate on content and do not write files or run commands.
+- Add reproducible workload profiling using Python 3.15 `profiling.tracing`,
+  separate wall samples and memory instrumentation, source fingerprints and portable
+  JSON hotspots. Older supported runtimes retain a cProfile fallback.
+- Bound CLI input reads, reject duplicate/nonfinite/deep JSON, and publish complete
+  outputs atomically with exclusive writes and explicit overwrite.
+- Install pinned COGANT from a source-only checkout so upstream evaluation
+  fixture submodules cannot block the bridge integration job.
+- Add Python 3.15 to CI, installed-wheel agent checks, profile artifacts and
+  differential numerical/admission regression coverage.
+
 ## 1.1.1 — 2026-10-16
 
 - Select the modal joint reward/loss observation during synthetic rollouts so

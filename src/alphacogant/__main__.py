@@ -1,4 +1,4 @@
-"""Standalone CLI for finite GNN validation, export, and inference."""
+"""Standalone model, inference, diagnostics and agent CLI."""
 
 from __future__ import annotations
 
@@ -7,22 +7,67 @@ import json
 import sys
 from pathlib import Path
 
-from alphacogant.bridge.gnn import model_from_gnn, model_to_cogant_gnn, model_to_gnn
+from alphacogant import __version__
+from alphacogant.api import API_VERSION, Client, handle_request, json_value
 from alphacogant.bridge.inference import run_inference, verify_inference
-from alphacogant.model.generative_model import default_model
+from alphacogant.io import MAX_JSON_BYTES, parse_json, read_text, write_text
 
 
 def _write(text: str, output: Path | None, overwrite: bool) -> None:
     if output is None:
         print(text, end="" if text.endswith("\n") else "\n")
     else:
-        output.parent.mkdir(parents=True, exist_ok=True)
-        with output.open("w" if overwrite else "x", encoding="utf-8", newline="\n") as handle:
-            handle.write(text if text.endswith("\n") else text + "\n")
+        write_text(text, output, overwrite=overwrite)
 
 
-def main(argv: list[str] | None = None) -> int:
+def _json(data) -> str:
+    return json.dumps(json_value(data), indent=2, allow_nan=False) + "\n"
+
+
+def _stream() -> int:
+    """One JSON request and response per line, with bounded frame and stream lengths."""
+    failed = False
+    for _ in range(1000):
+        raw = sys.stdin.buffer.readline(1_000_001)
+        if not raw:
+            return 2 if failed else 0
+        try:
+            if len(raw) > 1_000_000:
+                raise ValueError("Request exceeds 1000000 bytes; stream closed.")
+            response = handle_request(parse_json(raw.decode("utf-8")))
+        except (ValueError, UnicodeError) as exc:
+            response = {
+                "schema_version": API_VERSION,
+                "id": None,
+                "ok": False,
+                "error": {"code": "invalid_request", "message": str(exc)},
+            }
+        print(json.dumps(response, allow_nan=False), flush=True)
+        failed |= not response["ok"]
+        if len(raw) > 1_000_000:
+            return 2  # never treat a remainder of the same oversized frame as a new request
+    if sys.stdin.buffer.read(1):
+        print(
+            json.dumps(
+                {
+                    "schema_version": API_VERSION,
+                    "id": None,
+                    "ok": False,
+                    "error": {
+                        "code": "limit_exceeded",
+                        "message": "At most 1000 requests per stream.",
+                    },
+                }
+            ),
+            flush=True,
+        )
+        return 2
+    return 2 if failed else 0
+
+
+def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", action="version", version=f"alphacogant {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
     validate = sub.add_parser("validate", help="validate this project's finite GNN profile")
     validate.add_argument("source", type=Path)
@@ -36,45 +81,124 @@ def main(argv: list[str] | None = None) -> int:
     verify = sub.add_parser("verify-trace", help="replay and verify a saved trace")
     verify.add_argument("source", type=Path)
     verify.add_argument("trace", type=Path)
-    for command in (export, infer):
+    simulate = sub.add_parser("simulate", help="record a seeded allocation trajectory")
+    simulate.add_argument("--source", type=Path)
+    simulate.add_argument("--horizon", type=int, default=12)
+    simulate.add_argument(
+        "--policy", choices=["greedy", "hold", "fund_theta", "stochastic"], default="greedy"
+    )
+    simulate.add_argument("--seed", type=int, default=7)
+    bootstrap = sub.add_parser("bootstrap", help="paired create/decay bootstrap statistics")
+    bootstrap.add_argument("--source", type=Path)
+    bootstrap.add_argument("--n", type=int, default=32)
+    bootstrap.add_argument("--horizon", type=int, default=12)
+    bootstrap.add_argument("--seed", type=int, default=7)
+    bootstrap.add_argument("--concentration", type=float, default=12.0)
+    profile = sub.add_parser("profile", help="bounded performance evidence (Python 3.15 tracing)")
+    profile.add_argument(
+        "--workload", choices=["bootstrap", "inference", "efe"], default="bootstrap"
+    )
+    profile.add_argument("--samples", type=int, default=5)
+    profile.add_argument("--n", type=int, default=32)
+    profile.add_argument("--horizon", type=int, default=12)
+    profile.add_argument("--seed", type=int, default=7)
+    profile.add_argument("--no-memory", action="store_true")
+    capabilities = sub.add_parser("capabilities", help="discover methods, schemas and limits")
+    doctor = sub.add_parser("doctor", help="check runtime identity and model round-trip")
+    sub.add_parser("request", help="process bounded JSONL requests from stdin")
+    for command in (
+        validate,
+        export,
+        infer,
+        verify,
+        simulate,
+        bootstrap,
+        profile,
+        capabilities,
+        doctor,
+    ):
+        command.add_argument("--json", action="store_true", help="JSON success/error envelope")
+    for command in (export, infer, simulate, bootstrap, profile, capabilities, doctor):
         command.add_argument("-o", "--output", type=Path)
         command.add_argument("--overwrite", action="store_true")
-    args = parser.parse_args(argv)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
     try:
+        if args.command == "request":
+            return _stream()
+        client = Client()
+        source = read_text(args.source) if getattr(args, "source", None) is not None else None
         if args.command == "validate":
-            model_from_gnn(args.source.read_bytes().decode("utf-8"))
-            print("Valid AlphaCOGANT finite GNN profile.")
+            result = client.call("model.validate", {"source": source})
+            text = "Valid AlphaCOGANT finite GNN profile.\n"
         elif args.command == "export":
-            model = (
-                default_model()
-                if args.source is None
-                else model_from_gnn(args.source.read_bytes().decode("utf-8"))
+            params = {"cogant": args.cogant}
+            if source is not None:
+                params["source"] = source
+            result = client.call("model.export", params)
+            text = result["source"]
+        elif args.command == "verify-trace":
+            trace = parse_json(read_text(args.trace, limit=MAX_JSON_BYTES))
+            verify_inference(source, trace)
+            result = {"verified": True}
+            text = "Inference trace verified by replay.\n"
+        elif args.command == "infer":
+            observations = (
+                None
+                if args.observations is None
+                else parse_json(read_text(args.observations, limit=MAX_JSON_BYTES))
             )
-            render = model_to_cogant_gnn if args.cogant else model_to_gnn
-            _write(render(model), args.output, args.overwrite)
+            steps = (
+                args.steps
+                if args.steps is not None
+                else (8 if observations is None else len(observations))
+            )
+            result = run_inference(source, steps=steps, observations=observations)
+            text = _json(result)
         else:
-            source = args.source.read_bytes().decode("utf-8")
-            if args.command == "verify-trace":
-                trace = json.loads(args.trace.read_text(encoding="utf-8"))
-                verify_inference(source, trace)
-                print("Inference trace verified by replay.")
-            else:
-                observations = (
-                    None
-                    if args.observations is None
-                    else json.loads(args.observations.read_text(encoding="utf-8"))
-                )
-                steps = (
-                    args.steps
-                    if args.steps is not None
-                    else (8 if observations is None else len(observations))
-                )
-                trace = run_inference(source, steps=steps, observations=observations)
-                _write(
-                    json.dumps(trace, indent=2, allow_nan=False) + "\n", args.output, args.overwrite
-                )
-    except (OSError, ValueError, TypeError) as exc:
-        print(f"alphacogant: {exc}", file=sys.stderr)
+            params = {
+                key: value
+                for key, value in vars(args).items()
+                if key not in {"command", "json", "output", "overwrite", "source", "no_memory"}
+            }
+            if source is not None:
+                params["source"] = source
+            if args.command == "profile":
+                params["memory"] = not args.no_memory
+            method = {
+                "simulate": "simulation.run",
+                "bootstrap": "statistics.bootstrap",
+                "profile": "profile.run",
+                "capabilities": "capabilities",
+                "doctor": "diagnostics",
+            }[args.command]
+            result = client.call(method, params)
+            text = _json(result)
+        if args.json:
+            text = _json({"schema_version": API_VERSION, "id": None, "ok": True, "result": result})
+        _write(text, getattr(args, "output", None), getattr(args, "overwrite", False))
+        if args.command == "doctor" and not result["healthy"]:
+            return 2
+    except BrokenPipeError:
+        return 0
+    except (OSError, ValueError, TypeError, LookupError, RecursionError) as exc:
+        if getattr(args, "json", False):
+            print(
+                _json(
+                    {
+                        "schema_version": API_VERSION,
+                        "id": None,
+                        "ok": False,
+                        "error": {"code": "invalid_request", "message": str(exc)},
+                    }
+                ),
+                end="",
+            )
+        else:
+            print(f"alphacogant: {exc}", file=sys.stderr)
         return 2
     return 0
 

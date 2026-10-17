@@ -27,11 +27,16 @@ Run the optional real COGANT parser and inference test with the reviewed revisio
 
 ```bash
 uv sync --locked --extra dev
-uv run --with 'cogant @ git+https://github.com/ActiveInferenceInstitute/COGANT.git@5ea2a440bed9cd447e1dd70faae6ce49f0dfee8b#subdirectory=cogant' \
-  pytest tests/test_cogant_integration.py -q
+# A source checkout is enough; do not initialize upstream evaluation fixtures.
+git clone --no-recurse-submodules https://github.com/ActiveInferenceInstitute/COGANT.git output/upstream/COGANT
+git -C output/upstream/COGANT checkout --detach 5ea2a440bed9cd447e1dd70faae6ce49f0dfee8b
+uv run --with './output/upstream/COGANT/cogant' pytest tests/test_cogant_integration.py -q
 ```
 
-CI runs this check separately on Python 3.12. The base suite explicitly skips it
+CI checks out the pinned source without submodules and runs this check separately
+on Python 3.12. Direct `git+` package installation recursively fetches unrelated
+upstream evaluation fixtures; a source-only checkout avoids that dependency and
+its unrelated transfer/integrity failures. The base suite explicitly skips it
 when COGANT is absent. The test compares every parsed matrix coefficient and
 executes a three-observation trace in COGANT's actual runtime. It does not equate
 COGANT's full-joint filtering or risk-plus-ambiguity objective with AlphaCOGANT's

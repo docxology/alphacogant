@@ -96,9 +96,8 @@ from alphacogant.trsi import (
     decay_rate,
     t_rsi,
 )
-from alphacogant.viz import plot_style as plot_style
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 __all__ = [
     # model
@@ -168,3 +167,18 @@ __all__ = [
     # metadata
     "__version__",
 ]
+
+
+def __getattr__(name: str):
+    """Keep plotting dependencies out of backend and agent startup."""
+    if name == "plot_style":
+        from importlib import import_module
+
+        module = import_module("alphacogant.viz.plot_style")
+        globals()[name] = module
+        return module
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(__all__))

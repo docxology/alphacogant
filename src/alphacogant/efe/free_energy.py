@@ -88,24 +88,35 @@ def _epistemic_value(
     probability, and the KL(posterior || prior), then takes the observation-weighted
     sum. Observations with zero probability contribute nothing (their weight is 0).
     """
-    # joint[r, l, t] = theta_prior[t] * P(reward=r | theta=t) * P(loss=l | theta=t)
+    return float(_epistemic_values(theta_prior, reward_given_theta, loss_given_theta))
+
+
+def _epistemic_values(
+    theta_prior: np.ndarray, reward_given_theta: np.ndarray, loss_given_theta: np.ndarray
+) -> np.ndarray:
+    """Broadcast the same masked KL calculation over optional leading batch axes."""
     joint = (
-        theta_prior[None, None, :] * reward_given_theta[:, None, :] * loss_given_theta[None, :, :]
+        theta_prior[..., None, None, :]
+        * reward_given_theta[..., :, None, :]
+        * loss_given_theta[..., None, :, :]
     )
-    observation_prob = joint.sum(axis=2)  # (R, L)
+    observation_prob = joint.sum(axis=-1)
     valid = observation_prob > 0.0
-    safe_denominator = np.where(valid[..., None], observation_prob[..., None], 1.0)
-    posterior = joint / safe_denominator  # (R, L, T); rows for invalid obs are meaningless
+    posterior = joint / np.where(valid[..., None], observation_prob[..., None], 1.0)
     positive = posterior > 0.0
-    ratio = np.ones_like(posterior)
-    np.divide(posterior, theta_prior[None, None, :], out=ratio, where=positive)
-    kl = np.sum(np.where(positive, posterior * np.log(ratio), 0.0), axis=2)  # (R, L)
+    # log(posterior) - log(prior) remains finite when posterior/prior would
+    # overflow for a valid subnormal prior. Zero posterior terms contribute 0.
+    log_posterior = np.zeros_like(posterior)
+    log_prior = np.zeros_like(theta_prior)
+    np.log(posterior, out=log_posterior, where=positive)
+    np.log(theta_prior, out=log_prior, where=theta_prior > 0.0)
+    kl = np.sum(posterior * (log_posterior - log_prior[..., None, None, :]), axis=-1)
     if np.any(kl < -1e-12):
         raise ValueError(
             "Epistemic value must be non-negative because KL divergence is non-negative."
         )
     contributions = np.where(valid, observation_prob * np.clip(kl, 0.0, None), 0.0)
-    return float(np.clip(contributions.sum(), 0.0, None))
+    return np.clip(contributions.sum(axis=(-2, -1)), 0.0, None)
 
 
 def _efe_from_validated(
@@ -153,6 +164,13 @@ def static_pragmatic_value(
     delta.
     """
     normalized = validate_belief_map(belief, context="belief")
+    return _static_pragmatic_from_normalized(model, normalized)
+
+
+def _static_pragmatic_from_normalized(
+    model: EconomicWorldModel, normalized: Mapping[str, np.ndarray]
+) -> float:
+    """Private evaluator for validated, normalized internal beliefs."""
     reward_distribution = _reward_distribution(model, normalized)
     loss_distribution = _loss_distribution(model, normalized)
     return float(reward_distribution @ model.C_R + loss_distribution @ model.C_L)
@@ -165,7 +183,26 @@ def efe_vector(model: EconomicWorldModel, belief: Mapping[str, np.ndarray]) -> l
     (simulation cycles, policy scoring): one validation, one B-rollout sweep.
     """
     validated = validate_belief_map(belief, context="belief")
-    return [_efe_from_validated(model, validated, action) for action in range(len(ACTIONS))]
+    return _efe_vector_from_normalized(model, validated)
+
+
+def _efe_vector_from_normalized(
+    model: EconomicWorldModel, belief: Mapping[str, np.ndarray]
+) -> list[EFEResult]:
+    """Score all six actions in one batch; callers own belief admission."""
+    predicted = {c: np.einsum("ija,j->ai", model.B[c], belief[c]) for c in CHANNELS}
+    reward = np.einsum(
+        "riut,ai,au,at->ar", model.A_R, predicted["I"], predicted["U"], predicted["Theta"]
+    )
+    loss = np.einsum("lst,as,at->al", model.A_L, predicted["S"], predicted["Theta"])
+    pragmatic = reward @ model.C_R + loss @ model.C_L
+    reward_theta = np.einsum("riut,ai,au->art", model.A_R, predicted["I"], predicted["U"])
+    loss_theta = np.einsum("lst,as->alt", model.A_L, predicted["S"])
+    epistemic = _epistemic_values(predicted["Theta"], reward_theta, loss_theta)
+    return [
+        EFEResult(float(p), float(e), float(-(p + e)))
+        for p, e in zip(pragmatic, epistemic, strict=True)
+    ]
 
 
 def marginal_return_vector(

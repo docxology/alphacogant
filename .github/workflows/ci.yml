@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.10', '3.12', '3.14']
+        python: ['3.10', '3.12', '3.14', '3.15']
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
@@ -26,6 +26,18 @@ jobs:
           MPLBACKEND: Agg
       - run: uv run --locked alphacogant validate models/alphafund_ewm.md
       - run: uv run --locked python scripts/z_generate_manuscript_variables.py --check
+      - run: uv run --locked alphacogant doctor --json
+      - name: Agent JSONL smoke
+        run: echo '{"id":"ci","method":"simulation.run","params":{"horizon":2}}' | uv run --locked alphacogant request
+      - name: Profile a bounded workload on Python 3.15
+        if: matrix.python == '3.15'
+        run: uv run --locked alphacogant profile --samples 3 --n 16 --horizon 8 -o output/profile.json
+      - name: Upload Python 3.15 performance evidence
+        if: matrix.python == '3.15'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: python-3.15-profile
+          path: output/profile.json
       - run: uv build
       - name: Installed wheel smoke check outside checkout
         shell: bash
@@ -38,6 +50,9 @@ jobs:
           from alphacogant.bridge.gnn import model_from_gnn, model_to_gnn
           assert alphacogant.__version__ == version("alphacogant")
           model_from_gnn(model_to_gnn(alphacogant.default_model()))
+          from alphacogant.api import Client
+          assert Client().call("diagnostics")["healthy"]
+          assert Client().call("simulation.run", {"horizon": 2})["summary"]["horizon"] == "2"
           try:
               alphacogant.generate_variables(n=2)
           except FileNotFoundError:
@@ -54,5 +69,19 @@ jobs:
         with:
           python-version: '3.12'
       - run: uv sync --locked --extra dev
+      - name: Checkout pinned COGANT without evaluation fixture submodules
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ActiveInferenceInstitute/COGANT
+          ref: 5ea2a440bed9cd447e1dd70faae6ce49f0dfee8b
+          path: .upstream/COGANT
+          submodules: false
+          persist-credentials: false
       - name: Verify pinned COGANT matrix parsing and real inference
-        run: uv run --with 'cogant @ git+https://github.com/ActiveInferenceInstitute/COGANT.git@5ea2a440bed9cd447e1dd70faae6ce49f0dfee8b#subdirectory=cogant' pytest tests/test_cogant_integration.py -q
+        run: |
+          uv run --with './.upstream/COGANT/cogant' python - <<'PYCODE'
+          import cogant
+          import pytest
+          assert cogant.__version__ == "0.7.0"
+          raise SystemExit(pytest.main(["tests/test_cogant_integration.py", "-q"]))
+          PYCODE

@@ -5,12 +5,12 @@
 
 **Recursive corporate self-improvement as Active Inference, rendered in GNN via COGANT.**
 
-**Version 1.1.1 (2026-10-16).** Standalone NumPy research package with lossless
+**Version 1.2.0 (2026-10-16).** Standalone NumPy research package with lossless
 finite GNN serialization, complete COGANT joint-matrix export, and replayable
-observation-conditioned inference. See [CHANGELOG.md](CHANGELOG.md) and the
+observation-conditioned inference, batched action scoring and a versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
 [pinned upstream contract](docs/upstream_compatibility.md). CI runs lint, the full
 test suite with ≥90% coverage, model parity, and installed-wheel checks on
-Python 3.10, 3.12, and 3.14. The research scope is recorded in [`ISA.md`](ISA.md).
+Python 3.10, 3.12, 3.14, and 3.15. The development interpreter defaults to 3.15. The research scope is recorded in [`ISA.md`](ISA.md).
 
 The [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) reframes recursive
 self-improvement (RSI) as a portfolio-optimization problem: a corporation recursively
@@ -99,6 +99,24 @@ selected actions. The existing `simulate_trajectory` API records open-loop
 predictions; t-RSI is a separately evaluated certificate, not an enforced action
 gate in either simulator. See [CONTRIBUTING.md](CONTRIBUTING.md) for CI parity and
 wheel installation checks.
+
+## Backend and agent workflows
+
+```bash
+uv run --locked alphacogant doctor --json
+uv run --locked alphacogant capabilities
+uv run --locked alphacogant simulate --policy stochastic --seed 7 --horizon 12
+uv run --locked alphacogant bootstrap --seed 7 --n 32 --horizon 12
+uv run --locked alphacogant profile --samples 5 -o output/profile.json
+printf '%s\n' '{"id":"demo","method":"simulation.run","params":{"horizon":3}}' | uv run --locked alphacogant request
+```
+
+The [agent API](docs/agent_api.md) shares method admission between Python and
+JSONL. `--json` gives CLI computations machine-readable result/error envelopes;
+normal argument-usage errors remain on stderr. Outputs publish atomically and
+require `--overwrite` to replace an existing file. See
+[profiling and performance](docs/performance.md) for reproducible Python 3.15
+measurements, profiler limits and numerical compatibility.
 
 ## Read the concept
 

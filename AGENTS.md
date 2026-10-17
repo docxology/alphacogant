@@ -105,3 +105,16 @@ AlphaCOGANT is a modeling and integrity instrument. The GNN model is an
 illustrative reduced encoding; every numeric in the manuscript is a property
 of that model, generated and gated by the engine — not a claim about
 AlphaFund's proprietary books.
+
+## Backend, agents and profiling
+
+The development interpreter is Python 3.15; preserve package compatibility with
+Python 3.10+. New agent methods belong in `alphacogant.api` with strict schemas,
+finite work limits, real computations and no arbitrary shell/file/network actions.
+CLI and JSONL share that registry. Keep stdout machine-readable for agent calls.
+
+Profile with `uv run --locked alphacogant profile`; preserve raw unprofiled samples
+and source/runtime/workload bindings. Use `profiling.tracing` on 3.15 and keep
+sampling permission failures explicit without OS elevation. Verify batched EFE
+against scalar evaluation and preserve RNG draw order and manuscript tokens.
+See `docs/agent_api.md` and `docs/performance.md`.

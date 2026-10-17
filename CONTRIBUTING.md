@@ -28,11 +28,12 @@ undeclared imports, and accidental reliance on the repository layout:
 # Replace /absolute/path/alphacogant with your checkout.
 cd /tmp
 uv run --isolated --no-project \
-  --with /absolute/path/alphacogant/dist/alphacogant-1.1.1-py3-none-any.whl \
+  --with /absolute/path/alphacogant/dist/alphacogant-1.2.0-py3-none-any.whl \
   python -c 'import alphacogant; from importlib.metadata import version; assert alphacogant.__version__ == version("alphacogant"); from alphacogant.bridge.gnn import model_from_gnn, model_to_gnn; model_from_gnn(model_to_gnn(alphacogant.default_model()))'
 ```
 
-CI checks Python 3.10, 3.12, and 3.14. Run the real pinned COGANT integration as
+CI checks Python 3.10, 3.12, 3.14, and 3.15. The development pin is 3.15;
+use `uv sync --python 3.10 --locked --extra dev` to exercise the oldest supported runtime. Run the real pinned COGANT integration as
 shown in [upstream compatibility](docs/upstream_compatibility.md) when changing
 the bridge. It is intentionally separate from ordinary installation.
 
@@ -57,3 +58,12 @@ For a release, update `pyproject.toml`, `uv.lock`, `alphacogant.__version__`,
 DOI; only add a new version DOI once that deposit exists. Complete the checks,
 commit, and create an annotated `v<version>` tag on the released commit. Publish
 with ordinary fast-forward pushes; never force-push a release.
+
+## Agent and performance development
+
+Use `alphacogant capabilities` for the current schema and `alphacogant doctor`
+for installed-runtime validation. Profile with `uv run --locked alphacogant profile`;
+keep timings separate from instrumentation and compare matched runtimes,
+NumPy versions, workloads, seeds and thread settings. Read [the profiling guide](docs/performance.md)
+and [agent API](docs/agent_api.md). Never gate CI on wall-time thresholds from a
+shared runner; numerical parity, output provenance and workload bounds are gates.

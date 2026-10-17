@@ -1,11 +1,20 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Current release: **1.1.1 (2026-10-16)**. Full validation: 294 passed, one optional
-upstream integration skipped in the base environment, 96.46% coverage. The real
-pinned COGANT integration passes separately. All 30 generated manuscript values
-are unchanged from the previous main. See [CHANGELOG.md](CHANGELOG.md) for scope
-and [CONTRIBUTING.md](CONTRIBUTING.md) for repeatable validation commands.
+Current release: **1.2.0 (2026-10-16)**. Python 3.15 full validation: 352 passed,
+one optional upstream integration skipped in the base environment, 94.12% coverage.
+Fast suites pass on Python 3.10 and 3.14 (332 passed each); 77 focused checks
+pass again on each after the final log-space KL change. The real pinned COGANT
+integration passes separately. All 30 generated manuscript values match v1.1.1.
+See [CHANGELOG.md](CHANGELOG.md), [agent API](docs/agent_api.md), and
+[profiling](docs/performance.md) for scope and repeatable commands.
+
+## Completed for 1.2.0
+
+- [x] Batched EFE, bootstrap internal validation reductions and lazy plotting imports (`src/alphacogant/efe/free_energy.py`, `src/alphacogant/trsi/t_rsi.py`, `src/alphacogant/__init__.py`).
+- [x] Versioned client/JSONL methods, capability schemas and runtime diagnostics (`src/alphacogant/api.py`).
+- [x] Seeded CLI simulation/bootstrap, JSON envelopes, bounded inputs and atomic outputs (`src/alphacogant/__main__.py`, `src/alphacogant/io.py`).
+- [x] Python 3.15 tracing and source-bound performance reports (`src/alphacogant/profiling.py`, `.github/workflows/ci.yml`).
 
 ## Completed for 1.1.0
 

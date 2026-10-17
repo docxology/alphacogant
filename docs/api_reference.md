@@ -61,3 +61,9 @@ sources for definition/figure counts. In a source checkout it uses
 Missing manuscript sources raise `FileNotFoundError` before computation or artifact
 writes, rather than producing zero counts. Artifact generation scripts require
 the source checkout.
+
+## Versioned agent and profiling surfaces
+
+`alphacogant.api.Client.call`, `capabilities`, and `handle_request` provide the
+[agent protocol](agent_api.md). `alphacogant.profiling.profile_workload` returns
+[bounded performance evidence](performance.md) with source/runtime provenance.

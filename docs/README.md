@@ -22,6 +22,9 @@ operational contracts used to regenerate and audit that argument.
 | [extending_the_model.md](extending_the_model.md) | Safe extension lanes for continuous state/action and learning dynamics. |
 | [glossary.md](glossary.md) | Short definitions of local terms. |
 
+- [Agent API](agent_api.md) — versioned Python/JSONL requests, schemas, limits and CLI contracts.
+- [Python 3.15 profiling](performance.md) — reproducible measurement and numerical compatibility.
+
 ## Related notes
 
 - [methods_and_artifacts.md](methods_and_artifacts.md) records the source-to-output contract.

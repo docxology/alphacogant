@@ -25,7 +25,11 @@ from collections.abc import Mapping, Sequence
 
 import numpy as np
 
-from alphacogant.efe.free_energy import greedy_action, predicted_belief, static_pragmatic_value
+from alphacogant.efe.free_energy import (
+    _efe_vector_from_normalized,
+    _static_pragmatic_from_normalized,
+    predicted_belief,
+)
 from alphacogant.model.channels import CHANNELS, action_index
 from alphacogant.model.generative_model import EconomicWorldModel, validate_belief_map
 from alphacogant.model.operating_points import BOOTSTRAP_CONCENTRATION
@@ -49,6 +53,11 @@ def _standard_error(samples: np.ndarray) -> float:
     return float(np.std(samples, ddof=1) / np.sqrt(samples.size))
 
 
+def _normalize_internal(belief: Mapping[str, np.ndarray]) -> dict[str, np.ndarray]:
+    """Renormalize admitted internal beliefs in the same order as public validation."""
+    return {channel: belief[channel] / float(belief[channel].sum()) for channel in CHANNELS}
+
+
 def _greedy_trajectory(
     model: EconomicWorldModel,
     belief: Mapping[str, np.ndarray],
@@ -58,7 +67,10 @@ def _greedy_trajectory(
     trajectory: list[dict[str, np.ndarray]] = []
     for _ in range(horizon):
         trajectory.append({channel: current[channel].copy() for channel in CHANNELS})
-        current = predicted_belief(model, current, greedy_action(model, current))
+        normalized = _normalize_internal(current)
+        scores = _efe_vector_from_normalized(model, normalized)
+        action = min(range(len(scores)), key=lambda a: scores[a].total)
+        current = predicted_belief(model, current, action)
     return trajectory
 
 
@@ -71,7 +83,7 @@ def _hold_mean_pragmatic(
     current = {channel: belief[channel].copy() for channel in CHANNELS}
     values: list[float] = []
     for _ in range(horizon):
-        values.append(static_pragmatic_value(model, current))
+        values.append(_static_pragmatic_from_normalized(model, _normalize_internal(current)))
         current = predicted_belief(model, current, hold)
     return float(np.mean(values))
 
@@ -82,7 +94,11 @@ def _create_from_trajectory(
     trajectory: list[dict[str, np.ndarray]],
     horizon: int,
 ) -> float:
-    greedy_mean = float(np.mean([static_pragmatic_value(model, b) for b in trajectory]))
+    greedy_mean = float(
+        np.mean(
+            [_static_pragmatic_from_normalized(model, _normalize_internal(b)) for b in trajectory]
+        )
+    )
     return greedy_mean - _hold_mean_pragmatic(model, normalized, horizon)
 
 
@@ -95,7 +111,11 @@ def _decay_from_trajectory(
     for b in trajectory:
         refreshed = {**b, "Theta": model.B["Theta"][:, :, refresh] @ b["Theta"]}
         erosions.append(
-            max(0.0, static_pragmatic_value(model, refreshed) - static_pragmatic_value(model, b))
+            max(
+                0.0,
+                _static_pragmatic_from_normalized(model, _normalize_internal(refreshed))
+                - _static_pragmatic_from_normalized(model, _normalize_internal(b)),
+            )
         )
     return float(np.mean(erosions))
 
@@ -186,10 +206,10 @@ def paired_bootstrap_samples(
     normalized_belief = validate_belief_map(belief, context="belief")
     create_samples = np.empty(n, dtype=float)
     decay_samples = np.empty(n, dtype=float)
+    alphas = {c: np.clip(v, 1e-9, None) * concentration + 1.0 for c, v in normalized_belief.items()}
     for index in range(n):
         perturbed: dict[str, np.ndarray] = {}
-        for channel, vector in normalized_belief.items():
-            alpha = np.clip(vector, 1e-9, None) * concentration + 1.0
+        for channel, alpha in alphas.items():
             perturbed[channel] = rng.dirichlet(alpha)
         normalized = validate_belief_map(perturbed, context="belief")
         trajectory = _greedy_trajectory(model, normalized, horizon)
