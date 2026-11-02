@@ -1,6 +1,6 @@
 # Contributing
 
-AlphaCOGANT is a standalone Python package. Use a fresh checkout, Python 3.10+
+AlphaCOGANT is a standalone Python package. Use a fresh checkout, Python (the bound in `pyproject.toml`) or newer
 and [uv](https://docs.astral.sh/uv/). No template workspace is required.
 
 ```bash
