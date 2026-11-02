@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
         with:
-          python-version: '3.12'
+          python-version-file: ".python-version"
       - run: uv sync --locked --extra dev --no-build-package numpy --no-build-package matplotlib --no-build-package pillow --no-build-package contourpy --no-build-package kiwisolver
       - name: Checkout pinned COGANT without evaluation fixture submodules
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
