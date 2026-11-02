@@ -79,7 +79,7 @@ scripts/                      # thin orchestrators (demo, variable generation, f
 ## Quick start
 
 ```bash
-# From a fresh checkout; Python 3.10+ and uv are required.
+# From a fresh checkout; Python (the bound in `pyproject.toml`) or newer and uv are required.
 uv sync --locked --extra dev
 uv run --locked pytest tests/ --cov=alphacogant --cov-fail-under=90 -q
 uv run --locked alphacogant validate models/alphafund_ewm.md

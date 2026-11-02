@@ -109,7 +109,7 @@ AlphaFund's proprietary books.
 ## Backend, agents and profiling
 
 The development interpreter is Python 3.15; preserve package compatibility with
-Python 3.10+. New agent methods belong in `alphacogant.api` with strict schemas,
+Python (the bound in `pyproject.toml`) or newer. New agent methods belong in `alphacogant.api` with strict schemas,
 finite work limits, real computations and no arbitrary shell/file/network actions.
 CLI and JSONL share that registry. Keep stdout machine-readable for agent calls.
 
