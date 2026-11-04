@@ -1,8 +1,8 @@
 # Python 3.15 profiling and performance
 
 The development interpreter is the one `.python-version` pins. The package still
-supports Python 3.10+; CI exercises 3.10, 3.12, 3.14 and 3.15. Select an alternate
-interpreter with `uv sync --python 3.10 --locked --extra dev`.
+supports Python 3.11+; CI exercises 3.12, 3.14 and 3.15. Select an alternate
+interpreter with `uv sync --python 3.11 --locked --extra dev`.
 
 ## Reproduce a profile
 

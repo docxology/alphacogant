@@ -32,8 +32,8 @@ uv run --isolated --no-project \
   python -c 'import alphacogant; from importlib.metadata import version; assert alphacogant.__version__ == version("alphacogant"); from alphacogant.bridge.gnn import model_from_gnn, model_to_gnn; model_from_gnn(model_to_gnn(alphacogant.default_model()))'
 ```
 
-CI checks Python 3.10, 3.12, 3.14, and 3.15. The development pin is 3.15;
-use `uv sync --python 3.10 --locked --extra dev` to exercise the oldest supported runtime. Run the real pinned COGANT integration as
+CI checks Python 3.12, 3.14, and 3.15. The development pin lives in `.python-version`;
+use `uv sync --python 3.11 --locked --extra dev` to exercise the oldest supported runtime. Run the real pinned COGANT integration as
 shown in [upstream compatibility](docs/upstream_compatibility.md) when changing
 the bridge. It is intentionally separate from ordinary installation.
 
