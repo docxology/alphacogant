@@ -8,7 +8,7 @@
   "license": "https://spdx.org/licenses/MIT",
   "codeRepository": "https://github.com/docxology/alphacogant",
   "programmingLanguage": "Python",
-  "runtimePlatform": "Python 3.10+",
+  "runtimePlatform": "Python 3.11+",
   "keywords": [
     "active inference",
     "expected free energy",

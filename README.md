@@ -10,7 +10,7 @@ finite GNN serialization, complete COGANT joint-matrix export, and replayable
 observation-conditioned inference, batched action scoring and a versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
 [pinned upstream contract](docs/upstream_compatibility.md). CI runs lint, the full
 test suite with ≥90% coverage, model parity, and installed-wheel checks on
-Python 3.10, 3.12, 3.14, and 3.15. The development interpreter defaults to 3.15. The research scope is recorded in [`ISA.md`](ISA.md).
+Python 3.12, 3.14, and 3.15. The development interpreter is the one `.python-version` pins. The research scope is recorded in [`ISA.md`](ISA.md).
 
 The [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) reframes recursive
 self-improvement (RSI) as a portfolio-optimization problem: a corporation recursively
