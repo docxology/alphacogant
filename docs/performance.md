@@ -4,7 +4,7 @@ The development interpreter is the one `.python-version` pins. The package still
 supports Python 3.11+; CI exercises 3.11, 3.12, 3.14 and 3.15. Select an alternate
 interpreter with `uv sync --python 3.11 --locked --extra dev`.
 
-## Reproduce a profile
+## Collect matched workload timings with source and runtime provenance
 
 ```bash
 uv sync --locked --extra dev
@@ -36,7 +36,7 @@ absolute time thresholds as CI gates. Compare matched environments and workloads
 and retain the raw samples. CI publishes a Python 3.15 profile artifact on every
 run.
 
-## Optimizations and numerical guarantees
+## Preserve model semantics while permitting floating-point roundoff
 
 `efe_vector` validates a public belief once, predicts all six actions in a batch,
 and broadcasts masked KL across the action axis. KL uses log probabilities to
@@ -57,7 +57,7 @@ regenerate rather than require equality with the old, truncated-horizon rates.
 Batched contractions can change the final bits of floating-point values; exact
 trace replay requires a matching engine/numerical environment.
 
-## Sampling availability
+## Treat external sampling availability separately from measured cost
 
 Python 3.15 also provides
 [`profiling.sampling`](https://docs.python.org/3.15/library/profiling.sampling.html).

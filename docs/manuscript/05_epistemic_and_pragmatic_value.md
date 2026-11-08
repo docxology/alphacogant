@@ -1,6 +1,6 @@
-# Epistemic and pragmatic value, and the separate t-RSI diagnostic {#sec:value}
+# One-step Theta-information EFE and separate paired synthetic diagnostics {#sec:value}
 
-## The implemented one-step objective
+## Minimize G using expected preference and Theta-information gain
 
 Active Inference motivates a preference/information decomposition
 [@friston2015epistemic; @friston2017process]. In this reduced engine, an action
@@ -80,8 +80,10 @@ same ordering.
 
 ![Synthetic Dirichlet-perturbation create and residual-decay densities at IMPROVING, using {{BOOTSTRAP_N}} draws. Means {{CREATE_RATE_MEAN}} and {{DECAY_RATE_MEAN}}, paired-margin SE {{PAIRED_MARGIN_SE}}, and t-RSI {{HEADLINE_T_RSI}} all use the same paired samples. Computed by `paired_bootstrap_samples` and `t_rsi`.](../output/figures/trsi_densities.png){#fig:trsi}
 
-The perturbation law is $\mathrm{Dirichlet}(\alpha b_k+1)$ per binary channel.
-Its mean is $(\alpha b_k+1)/(\alpha+2)$, not $b_k$: concentration changes
+At the interior operating beliefs, the perturbation law is
+$\mathrm{Dirichlet}(\alpha b_k+1)$ per binary channel. The implementation floors
+belief entries at $10^{-9}$ before constructing these parameters. Away from that
+floor, the mean is $(\alpha b_k+1)/(\alpha+2)$, not $b_k$: concentration changes
 shrinkage toward the uniform belief as well as dispersion. The sample count
 controls Monte Carlo precision, not the amount of observed corporate data.
 Repeating draws can change the standardized magnitude without new evidence.

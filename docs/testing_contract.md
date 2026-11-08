@@ -1,13 +1,13 @@
-# Testing Contract
+# Exercise real computations and manuscript source contracts
 
 AlphaCOGANT uses no-mock tests. Tests run real engine computations, scripts, and
 figure generators with deterministic seeds.
 
-## Core suite
+## Run the real-engine suite
 
-```bash
-uv run --locked pytest tests/ --cov=src/alphacogant --cov-fail-under=90 -q
-```
+The ordered test/generation recipe is maintained in
+[rendering and validation](rendering_and_validation.md); this page owns the
+coverage expectations and scope of the checks.
 
 The suite covers:
 
@@ -23,7 +23,7 @@ The suite covers:
 - claim-boundary wording
 - docs hub structure
 
-## Contract tests
+## Protect render-facing syntax and artifact contracts
 
 `tests/test_manuscript_contract.py` protects render-facing syntax and claim
 boundaries. It rejects unlabeled display equations, raw LaTeX equation blocks,
@@ -35,6 +35,9 @@ contracts.
 
 `tests/test_docs_contract.py` protects the modular docs hub.
 
-## Coverage
+## Interpret coverage as software evidence only
 
 The project target is at least 90 percent coverage over `src/alphacogant`.
+Coverage does not establish correct observation chronology, financial calibration,
+current figure generation or publication readiness. See the
+[claim boundaries](claim_boundaries.md) and [artifact provenance limits](figures_and_artifacts.md).

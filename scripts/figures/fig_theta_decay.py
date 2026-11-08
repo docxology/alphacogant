@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
-"""Thin orchestrator: alpha-decay vs refresh of the EWM-parameter belief Theta.
+"""Predict Theta capability under hold versus repeated fund_Theta.
 
-Illustrates the whitepaper's *alpha-decay* term — the residual freshness gap that
-the t-RSI certificate charges when the firm neglects its model parameters Theta.
-Starting from a fresh parameter belief ``Theta = (0.1, 0.9)`` (P(fresh) = 0.9), the
-belief is rolled forward ``HORIZON`` cycles under two stationary policies, both read
-directly off ``model.B["Theta"]``:
+Starting from ``Theta = (0.1, 0.9)``, both stationary policies propagate
+factor beliefs through the fixed ``model.B["Theta"]`` matrices. The hold
+trajectory approaches its authored fixed point; funding approaches a different
+fixed point, not perfect freshness. Neither trajectory learns coefficients,
+prices a financial cost or applies a t-RSI admission gate.
 
-  * **hold** — never re-fund Theta; the hold transition column drives P(fresh) down
-    toward its stale fixed point (the alpha-decay the certificate prices).
-  * **fund_Theta** — refresh Theta every cycle; the fund transition column keeps the
-    belief fresh (it returns toward / holds near P(fresh) = 1).
-
-All transition math comes from ``src/alphacogant`` (the engine's ``model.B`` and the
-``channel_index`` helper); this script only orchestrates the deterministic forward
-roll and renders the two trajectories. No mocks; no global RNG seeding.
+This script owns the deterministic forward roll and visualization; transition
+coefficients and action indices come from the engine. No RNG is needed.
 """
 
 from __future__ import annotations
@@ -92,7 +86,7 @@ def main() -> int:
         p_fresh_fund,
         alpha=0.12,
         color="#7c3aed",
-        label="freshness gap (alpha-decay cost)",
+        label="difference in predicted freshness",
     )
 
     ax.plot(
@@ -150,11 +144,11 @@ def main() -> int:
 
     ax.set_xlabel("Cycle")
     ax.set_ylabel(r"$P(\Theta = \mathrm{fresh})$")
-    ax.set_title(r"Alpha-decay vs refresh of the EWM-parameter belief $\Theta$")
+    ax.set_title(r"Fixed-model $\Theta$ capability: hold versus repeated funding")
     ax.set_xlim(0, HORIZON)
     ax.set_ylim(0.0, 1.05)
     ax.set_xticks(cycles)
-    ax.legend(loc="center right", framealpha=0.95, fontsize=8)
+    ax.legend(loc="upper right", bbox_to_anchor=(1, 0.84), framealpha=0.95, fontsize=8)
     fig.tight_layout()
     add_provenance_footer(fig, ANALYTIC_FOOTER)  # deterministic forward roll of model.B
 

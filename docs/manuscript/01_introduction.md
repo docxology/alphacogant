@@ -1,6 +1,6 @@
-# Introduction {#sec:introduction}
+# Corporate RSI motivates a reduced Active Inference analogy {#sec:introduction}
 
-## Recursive self-improvement is an economic control problem
+## Economic survival constrains the historical RSI argument
 
 The literature on recursive self-improvement (RSI) — from Yudkowsky's seed AI [@yudkowsky2008],
 through Schmidhuber's Gödel Machines [@schmidhuber2007godel], to intelligence-explosion dynamics and
@@ -10,8 +10,9 @@ assumption by placing survival and capital constraints into the optimization
 problem [@westenhaver2026rsi; @kaelbling1998pomdp; @friston2017process]. Every FLOP and every bit of data costs money; a system that
 spends more on self-improvement than it earns from the resulting improvement runs
 out of resources and dies. AlphaFund therefore recasts RSI as constrained control
-survival test and an auditable certificate [@westenhaver2026rsi; @dacosta2020synthesis]. RSI is therefore a
-**stochastic control problem under a survival constraint** [@westenhaver2026rsi; @kaelbling1998pomdp; @friston2017process], and a corporation is
+with a survival test and an auditable certificate [@westenhaver2026rsi; @dacosta2020synthesis].
+In that account, RSI is a **stochastic control problem under a survival constraint**
+[@westenhaver2026rsi; @kaelbling1998pomdp; @friston2017process], and a corporation is
 its cleanest instance: a legal object with perpetual succession that turns capital into
 improved capability and improved capability back into capital [@coase1937].
 
@@ -29,7 +30,7 @@ filtration-respecting approximation to the true corporate transition law [@weste
 firm's standing is summarized by **t-RSI**, the standardized distance between its
 alpha-creation and alpha-decay rates.
 
-## The thesis of this paper
+## The executable thesis is a bounded analogy, not objective equivalence
 
 Read the previous paragraph again with one substitution. A system that maintains a
 **generative model** of a partially-observed world, infers hidden state from a
@@ -69,7 +70,7 @@ things:
    [@friston2015epistemic; @dacosta2020synthesis]. No model-update acceptance
    mechanism is implemented.
 
-## Why route AlphaFund through Active Inference and GNN
+## Inspectable inference and a legible objective motivate the translation
 
 AlphaFund already has a controller; what does the Active Inference framing add?
 Two things the whitepaper itself asks for and Active Inference makes explicit in

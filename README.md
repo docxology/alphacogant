@@ -3,20 +3,20 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20976824.svg)](https://doi.org/10.5281/zenodo.20976824)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Recursive corporate self-improvement as Active Inference, rendered in GNN via COGANT.**
+**An authored reduced Active Inference analogy for corporate self-improvement.**
 
-**Version 1.2.2 (2026-11-07).** Standalone NumPy research package with lossless
+**Version 1.2.2 (2026-11-08).** Standalone NumPy research package with lossless
 finite GNN serialization, complete COGANT joint-matrix export, and replayable
 observation-conditioned inference, batched action scoring and a versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
 [pinned upstream contract](docs/upstream_compatibility.md). CI runs lint, the full
 test suite with ≥90% coverage, model parity, and installed-wheel checks on
 Python 3.11, 3.12, 3.14, and 3.15. The development interpreter is the one `.python-version` pins. The research scope is recorded in [`ISA.md`](ISA.md).
 
-The [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) reframes recursive
-self-improvement (RSI) as a portfolio-optimization problem: a corporation recursively
-improves when realized economic gains finance the next cycle of better prediction and
-deployment, and the firm's standing is summarized by **t-RSI**, the standardized gap
-between alpha-creation and alpha-decay rates.
+The historical [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) frames
+recursive self-improvement (RSI) as a portfolio-optimization problem: realized
+economic gains finance better prediction and deployment. Its corporate assertions
+are attributed, not independently reproduced financial evidence; see the
+[historical concept inventory](docs/whitepaper_concepts.md).
 
 AlphaCOGANT implements an illustrative, reduced Active Inference analogy —
 not an equivalence proof of the firm's economic objective:
@@ -29,12 +29,12 @@ not an equivalence proof of the firm's economic objective:
 | Marginal-return analogy | discrete negative-EFE action scores |
 | Sensors / R&D roles | conceptual epistemic roles; implemented information gain targets Theta |
 | Investments / Actuators roles | expected reward/loss preference contributions |
-| t-RSI diagnostic | separately evaluated paired create-minus-decay threshold |
+| t-RSI diagnostic | separately evaluated paired synthetic mean margin divided by its SE |
 
 Its design draws on three related projects:
 
-- **`template_code_project`** — the reproducible code-research scaffold (thin
-  orchestrator, `{{TOKEN}}` manuscript, ≥90% coverage, no mocks).
+- **`template_code_project`** — historical inspiration for source-owned research
+  artifacts and thin orchestration, not a runtime or rendering dependency.
 - **GNN** (Generalized Notation Notation) — the text language for Active Inference
   generative models. `models/alphafund_ewm.md` encodes the five-channel EWM.
 - **[COGANT](https://github.com/ActiveInferenceInstitute/COGANT)** — codebase-to-GNN
@@ -42,14 +42,14 @@ Its design draws on three related projects:
   maps firm structure → priors, and exports all coefficients in both factorized
   and joint form. See [the bridge contract](docs/cogant_bridge.md).
 
-## Layout
+## Find engine, manuscript and figure sources
 
 ```
 models/alphafund_ewm.md       # AlphaFund EWM as a GNN Active Inference model
 src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   model/                      # channels, A/B/C/D matrices, operating points
-  efe/                        # EFE = epistemic + pragmatic; marginal-return vector
-  trsi/                       # create/decay rates, t-RSI, certificate
+  efe/                        # minimizes G = -(pragmatic + epistemic); value = -G
+  trsi/                       # paired synthetic rates, mean/SE, scalar predicate
   bridge/                     # firm structure -> priors -> GNN summary (round-trip)
   stats/                      # trajectories, sensitivity, paired bootstrap profiles
   tokens/                     # every prose {{TOKEN}} is generated here
@@ -57,26 +57,26 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
 docs/manuscript/                   # the concept, fully written out (00–09 + refs)
 scripts/                      # thin orchestrators (demo, variable generation, figures)
   y_generate_figures.py       # runs every manuscript figure script
-  figures/                    # 15 manuscript figures + cover art
+  figures/                    # registered manuscript figures, including graphical abstract
     fig_aif_dictionary.py     # AlphaFund ↔ Active Inference dictionary
     fig_certificate_sign_flip.py  # not-green-by-construction comparator
     fig_gnn_factor_graph.py    # EWM-as-GNN factor graph
-    fig_self_forecasting_loop.py  # whitepaper Figure 1 schematic
+    fig_self_forecasting_loop.py  # conceptual corporate loop; external handoffs explicit
     fig_theta_decay.py         # alpha-decay vs refresh of Theta
-    fig_trsi_densities.py      # bootstrap posteriors of create/decay rates
-    fig_value_by_regime.py     # EFE decomposition per channel × regime
-    fig_belief_trajectory.py   # multi-cycle belief trajectory
+    fig_trsi_densities.py      # paired synthetic rate densities
+    fig_value_by_regime.py     # one-step pragmatic and Theta-information scores
+    fig_belief_trajectory.py   # prediction-only multi-cycle belief trajectory
     fig_marginal_return_heatmap.py  # value landscape over actions × cycles
-    fig_policy_posterior.py    # explore→exploit transition
-    fig_trsi_sensitivity.py    # t-RSI vs belief precision and Theta freshness
+    fig_policy_posterior.py    # softmax evaluated along a greedy trajectory, not a switch
+    fig_trsi_sensitivity.py    # t-RSI vs Dirichlet concentration and Theta freshness
     fig_regime_comparison.py   # bootstrap CIs + EFE decomposition per regime
     fig_efe_waterfall.py       # EFE decomposition waterfall per action
     fig_create_vs_decay_scatter.py  # bootstrap scatter with break-even line
     fig_break_even_probability.py  # paired break-even probability over Theta freshness
-    fig_cover_art.py          # PDF title-page cover art
+    fig_cover_art.py          # registered landscape graphical abstract: cover_art.png
 ```
 
-## Quick start
+## Install and exercise the standalone engine
 
 ```bash
 # From a fresh checkout; Python (the bound in `pyproject.toml`) or newer and uv are required.
@@ -96,8 +96,9 @@ Exports preserve existing files; use `--overwrite` to replace a generated file.
 integer bucket pairs. Without observations it records a synthetic model rollout.
 The trace binds the exact source bytes, coefficients, filtering, EFE scores, and
 selected actions. The existing `simulate_trajectory` API records open-loop
-predictions; t-RSI is a separately evaluated certificate, not an enforced action
-gate in either simulator. See [CONTRIBUTING.md](CONTRIBUTING.md) for CI parity and
+predictions; t-RSI is a separate paired synthetic diagnostic whose scalar threshold
+does not gate actions or updates. Chronological input integrity remains caller-owned.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for CI parity and
 wheel installation checks.
 
 ## Backend and agent workflows
@@ -118,16 +119,20 @@ require `--overwrite` to replace an existing file. See
 [profiling and performance](docs/performance.md) for reproducible Python 3.15
 measurements, profiler limits and numerical compatibility.
 
-## Read the concept
+## Choose a reading or regeneration route
 
-The manuscript writes the idea out in full: the AlphaFund↔Active Inference dictionary
-(§2), the GNN-via-COGANT realization (§3), ordered approximate inference (§4), the
-epistemic/pragmatic split and separate synthetic t-RSI diagnostic (§5), and the
-functionality + integrity case (§6), numbered formalisms (§8), limitations and
-sensitivity analysis (§9).
+- [Manuscript reading order](docs/manuscript/README.md): the conceptual argument,
+  authored GNN, factorized filtering, one-step EFE and separate diagnostics.
+- [Documentation task hub](docs/README.md): one detailed owner per technical contract.
+- [Source-to-output map](docs/methods_and_artifacts.md): trace claims and figures to code.
+- [Regeneration and manuscript-release rendering](docs/rendering_and_validation.md):
+  serialized generation, consistency checks and actual page/figure inspection.
 
-Implementation and artifact regeneration details live in
-[`docs/methods_and_artifacts.md`](docs/methods_and_artifacts.md).
+The abstract ends with a registered landscape graphical abstract, generated as
+`cover_art.png` by `fig_cover_art.py`. It distinguishes the observation-conditioned
+controller from the prediction-only greedy/hold diagnostic and carries provenance;
+it is not decorative title-page art or an extra chapter. The dictionary,
+self-forecasting loop and GNN factor graph remain separate explanatory figures.
 
 > **Not financial advice.** AlphaCOGANT is a modeling and integrity instrument. The
 > GNN model is illustrative; generated numerics describe that model, not

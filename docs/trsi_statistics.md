@@ -1,9 +1,11 @@
-# t-RSI and statistics
+# Interpret paired synthetic create-minus-decay diagnostics
 
-The implementation spans `trsi/t_rsi.py` and `stats/statistics.py`. It is a
-synthetic reduced-model diagnostic, not an empirical financial certificate.
+The implementation spans `alphacogant.trsi.t_rsi` and
+`alphacogant.stats.statistics`. This page owns the rates, sampling and reporting
+contract, separate from [EFE action selection](efe_and_policy.md). These are
+synthetic reduced-model diagnostics, not empirical financial certificates.
 
-## Rates and timeline
+## Average rates over post-action beliefs, not the initial state
 
 `create_rate` averages greedy pragmatic value minus passive-hold pragmatic value
 over H post-transition beliefs b1…bH. The final action contributes; H=1 includes
@@ -11,7 +13,7 @@ the first funded and hold outcomes. `decay_rate` averages the nonnegative
 Theta-refresh opportunity gap on those same greedy states. The two quantities
 are not algebraically ordered, and neither is epistemic information gain.
 
-## Paired standardization
+## Standardize the paired margin, retaining covariance
 
 ```text
 t_rsi = mean(create - decay) / (std(create - decay, ddof=1) / sqrt(n))
@@ -23,17 +25,22 @@ the implemented formula. Scaling prevents intermediate underflow/overflow from
 manufacturing a constant margin. A truly constant nonzero margin yields signed
 infinity; zero margin or fewer than two paired samples returns zero.
 
+## Treat the threshold as a scalar predicate, not an admission mechanism
+
 `certificate(value, delta)` compares scalars only. It is not enforced by the
 simulators, compares no candidate/incumbent, and supplies no held-out/readiness
 or monotonic-EFE guarantee.
 
-## Synthetic uncertainty
+## Interpret Dirichlet perturbations as synthetic sensitivity
 
-The law is `Dirichlet(concentration * belief + 1)` per channel, with explicit
-NumPy generators. For a binary factor its mean is `(concentration*p+1)/(concentration+2)`:
-concentration changes the center as well as dispersion. Canonical manuscript
-settings live in `model/operating_points.py`; the Python generator uses n=2560,
+The implementation draws `Dirichlet(concentration * maximum(belief, 1e-9) + 1)`
+per channel, with explicit NumPy generators. At the interior operating beliefs,
+the binary-factor mean is `(concentration*p+1)/(concentration+2)`:
+concentration changes the center as well as dispersion and is not policy precision.
+Canonical manuscript settings live in `model/operating_points.py`; the Python generator uses n=2560,
 intentionally beyond the bounded agent API's n≤2048 interface.
+Draw count and horizon must be positive integers; concentration must be positive
+and finite. Reusing a seed makes a specified recipe reproducible, not empirical.
 
 Percentile intervals summarize the perturbation cloud, not calibrated corporate
 confidence or uncertainty of t-RSI itself. The t statistic's magnitude depends on
@@ -41,7 +48,7 @@ the generated sample count. `break_even_profile` separately reports positive-mar
 event mass and paired margin percentiles; a majority-positive cloud can have a
 negative mean if its negative tail is larger.
 
-## Effect sizes and reporting
+## Report effect sizes with actual confidence levels and sample counts
 
 Cohen's d uses `(n_a-1)`/`(n_b-1)` weighted pooled sample variance. Groups must be
 finite vectors with at least two entries. Identical constants yield zero;

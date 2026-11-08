@@ -1,4 +1,4 @@
-# Active Inference Dictionary
+# Map corporate concepts to reduced Active Inference objects
 
 The manuscript's central move is a structural mapping from AlphaFund's
 recursive-corporate-self-improvement language to Active Inference. This file is
@@ -13,23 +13,24 @@ are identified in the [manuscript bibliography](manuscript/references.bib).
 | Five capital channels | Hidden-state factors | `model/channels.py` |
 | Channel capability | Two-level latent state per factor | `default_model()` |
 | Capital allocation | Discrete funding action | `ACTIONS` |
-| Portfolio optimizer objective | Negative Expected Free Energy action value | `efe/marginal_return_vector()` |
+| Portfolio optimizer objective | Negative Expected Free Energy action value | `alphacogant.efe.free_energy.marginal_return_vector` |
 | Broker-ledger reward | Reward observation likelihood | `A_R` |
 | Forecast loss | Loss observation likelihood | `A_L` |
-| Alpha creation | Greedy policy value over passive holding | `trsi/create_rate()` |
-| Alpha decay | Residual Theta staleness erosion | `trsi/decay_rate()` |
-| t-RSI | Standardized create-minus-decay separation | `trsi/t_rsi()` |
-| Certificate | Threshold predicate over t-RSI | `trsi/certificate()` |
+| Alpha creation | Mean greedy pragmatic value over passive hold | `alphacogant.trsi.t_rsi.create_rate` |
+| Alpha decay | Residual Theta-refresh opportunity | `alphacogant.trsi.t_rsi.decay_rate` |
+| t-RSI | Paired synthetic mean margin divided by its SE | `alphacogant.trsi.t_rsi.t_rsi` |
+| Certificate | Scalar threshold predicate; no enforced gate | `alphacogant.trsi.t_rsi.certificate` |
 
-## Important distinction
+## Discrete action values are not continuous dollar derivatives
 
 AlphaFund's whitepaper uses a continuous dollar-vector and a marginal-return
 gradient. AlphaCOGANT uses a reduced discrete action space. The engine therefore
 computes a negative-EFE value for each admissible funding move, not a continuous
 portfolio derivative.
 
-## Where this appears in the manuscript
+## Read the argument or follow an implementation contract
 
-- `docs/manuscript/02_active_inference_mapping.md`
-- `docs/manuscript/05_epistemic_and_pragmatic_value.md`
-- `docs/manuscript/08_formalisms.md`
+- [Manuscript dictionary](manuscript/02_active_inference_mapping.md) develops the analogy.
+- [EFE and policy](efe_and_policy.md) owns action scoring and Theta-information semantics.
+- [Paired diagnostics](trsi_statistics.md) owns rates and the non-enforced predicate.
+- [Numbered formalisms](manuscript/08_formalisms.md) distinguishes implemented objects from conceptual definitions.

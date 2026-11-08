@@ -1,4 +1,4 @@
-# COGANT Bridge
+# Author priors, interchange finite GNN and replay inference
 
 AlphaCOGANT is an authored reduced economic model. Its bridge adapts COGANT's
 codebase-to-GNN design locally; it does not run repository extraction or infer
@@ -18,7 +18,7 @@ them through a logistic-scaled `log1p` map:
 | `Theta` | `models`, `ewm_models` |
 | `Z` | `researchers`, `research_staff` |
 
-## Numeric round trip
+## Preserve authored coefficients through a bounded numeric round trip
 
 `model_to_gnn_summary()` emits every A/B/C/D coefficient with round-trip float
 precision, declarations, connections, ontology annotations, and the standard
@@ -36,9 +36,8 @@ or silently renormalizes an imported model.
 `parse_gnn_summary()` remains a lightweight structural inspector for callers
 that only need factors, connections and ontology. It does not validate a model.
 The authored file is `models/alphafund_ewm.md`; coefficient-level tests bind it
-to `default_model()`. All B tensors use `[next, current, action]` axes. Older
-source text displayed action-major B rows despite declaring action-last axes;
-version 1.1.0 corrects that layout without changing engine coefficients.
+to `default_model()`. All B tensors use `[next, current, action]` axes; emitted
+and authored coefficients follow that action-last convention.
 
 ### Fixed-profile validation limits
 
@@ -62,7 +61,7 @@ itself is checked against that implementation. Validation does not establish
 no-peeking, timestamps, corpus cutoffs or the timeliness of observations:
 callers must supply correctly timed data.
 
-## Complete joint export
+## Export complete joint matrices without claiming policy equivalence
 
 `joint_matrices()` enumerates the 32 complete states `(I,S,U,Theta,Z)` and nine
 joint observations `(reward,loss)`, in lexicographic order with the last index
@@ -106,3 +105,8 @@ budget; source remains limited to 1,000,000 bytes. The JSONL budget accommodates
 full source-plus-trace replay at the API's maximum 1000 steps, not every research
 trace. File outputs are exclusive unless `--overwrite` is specified. These are
 model computations, not market observations or a proof of economic adequacy.
+
+Transport schemas, JSONL errors and machine-facing CLI envelopes are owned by
+the [agent protocol](agent_api.md), not by GNN interchange. Pinned upstream
+checks and unsupported upstream capabilities are recorded in
+[upstream compatibility](upstream_compatibility.md).

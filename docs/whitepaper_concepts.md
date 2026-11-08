@@ -8,7 +8,7 @@ freshly corroborated. This inventory preserves attribution, not independent evid
 The current manuscript explicitly distinguishes implemented objects from analogies
 and unimplemented concepts; no requirement forces every historical claim into code.
 
-## Sections & core claims
+## Attributed historical sections and corporate claims
 
 1. **Introduction** — RSI is an economic problem under a survival constraint; every
    FLOP/bit costs money; intelligence = capacity to acquire, preserve, compound command
@@ -66,11 +66,14 @@ and unimplemented concepts; no requirement forces every historical claim into co
 16. **Conclusion** — differentiable corporation as a measurement architecture for
     compounding economic intelligence.
 
-## Certificate of monotone improvement
-Admit a candidate update iff held-out t-RSI clears Sharpe-margin δ and a Fisher-information
-readiness floor ε_c on every active channel.
+## Historical admission proposal, not a local enforced certificate
 
-## The 23 numbered Definitions → AlphaCOGANT formalism targets
+The attributed proposal admits a candidate only if held-out t-RSI clears a
+Sharpe-margin δ and a Fisher-information readiness floor ε_c on every active
+channel. AlphaCOGANT implements none of that admission mechanism; its scalar
+predicate is documented in the [paired diagnostic contract](trsi_statistics.md).
+
+## Historical definitions motivate mappings, not objective identities
 D1 equity↔preference target; D2 reward↔log-evidence; D3 J_t↔−E[EFE pragmatic]; D4 Ξ_t↔hidden
 state; D5 a_t↔control; D6 W↔generative process; D7 Ŵ_t↔generative model; D8 H_t↔observation
 sequence; D9 H_t^k↔per-factor evidence; D10 F_t↔measurability/no-peeking; D11 Ŵ_t^k↔factorized
@@ -79,8 +82,10 @@ rows↔A/B sensitivities; D20 continual learning↔prequential refit; D21 superm
 coupling; D22 continuation bound↔posterior-over-trajectory; D23 deployable capital↔external
 evidence amplification.
 
-## Numbers that MUST become auto-injected tokens (AlphaCOGANT model values, not AlphaFund's)
-channel count, action count, levels/factor, planning horizon, B_Θ decay-leak probability,
-prior/posterior beliefs, EFE pragmatic/epistemic per channel and per regime, marginal-return
-argmax, t-RSI at prior/improving/coasting, create/decay means+SEs, certificate δ and verdicts,
-number of definitions, number of figures, KL-nonnegativity check, determinism check.
+## Generate local model quantities without importing historical numerics
+
+Local numerical reporting is owned by `alphacogant.tokens.manuscript_variables`,
+not by the historical values above. See the [source-to-output map](methods_and_artifacts.md)
+and [manuscript formalisms](manuscript/08_formalisms.md) for the implemented subset.
+Conceptual targets in this inventory do not require unsupported quantities,
+readiness checks or certificate verdicts to be fabricated as tokens.

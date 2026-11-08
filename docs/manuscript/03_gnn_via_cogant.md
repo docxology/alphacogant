@@ -1,6 +1,6 @@
-# Technical and computational realization: GNN via COGANT {#sec:gnn}
+# Authored GNN and bounded COGANT matrix interoperability {#sec:gnn}
 
-## What GNN is, and why it fits
+## GNN declares model structure; the local parser enforces a finite profile
 
 Generalized Notation Notation (GNN) is a text-based specification language for
 Active Inference generative models, with a processing pipeline that transforms a
@@ -22,7 +22,7 @@ temporal type system or proof of filtration integrity. Reviewers can inspect
 the state factors, likelihoods, transitions and action edges without mistaking
 that inspectability for a verified financial controller.
 
-## What COGANT is, and the translation step
+## COGANT inspires a structure-to-prior mapping, not corporate extraction
 
 COGANT is a **codebase-to-GNN translator** [@friedman2026cogant]: it scans a system's structure
 (program graph, modules, call edges), builds a state-space factor graph, and
@@ -32,17 +32,17 @@ the differentiable corporation is a *natural* COGANT input, because AlphaFund's
 **third structural fact** is that the firm is "API-complete": data ingestion,
 model training, capital allocation, trade execution, and asset acquisition are all
 function calls, each producing a structured record that "doubles as the causal
-record needed for a derivative against it." A system whose operational degrees of
-freedom are all API calls with causal records is a system whose structure COGANT
-can scan and whose dynamics COGANT can express as $B_k$ transitions.
+record needed for a derivative against it." Such API structure motivates a
+COGANT-style representation; scanability alone cannot identify economic
+transition coefficients or causal effects.
 
-The translation has three stages, mirrored by the engine in `src/alphacogant/`:
+The local authored translation has three stages:
 
 1. **Structure → channels.** A firm description — counts of data feeds, execution
    venues, deployed models, researchers, and book size — maps onto the five
-   channel factors and their prior beliefs $D_k$. More feeds strengthen the
-   Sensors prior; a larger validated book strengthens Investments; a fresher
-   model strengthens Parameters. This is `cogant_bridge.firm_structure_to_channels`.
+   channel factors and their prior beliefs $D_k$. Counts are transformed by a
+   logistic-scaled `log1p` map, not interpreted as validated capability measurements.
+   This is `alphacogant.bridge.cogant_bridge.firm_structure_to_channels`.
    This is a hand-authored illustrative mapping inspired by COGANT
    [@friedman2026cogant], not inferred financial dynamics.
 
@@ -60,30 +60,30 @@ The translation has three stages, mirrored by the engine in `src/alphacogant/`:
    COGANT. That runtime's joint filtering and risk-plus-ambiguity objective are
    not policy-equivalent to the local engine.
 
-## The model file
+## The authored file fixes factors, observation likelihoods and action axes
 
 `models/alphafund_ewm.md` encodes the five whitepaper channels as hidden-state
 factors `sI, sS, sU, sTheta, sZ`, each with two capability levels
 $\{\text{weak}, \text{strong}\}$. The control vector has six actions —
 `fund_I, fund_S, fund_U, fund_Theta, fund_Z, hold` — so a cycle's decision is
-"which channel receives the marginal dollar." Two observations are modeled: the
-realized log-equity reward `o_R` (the only channel read directly off the broker
-ledger, per AlphaFund's Investments row) and the EWM predictive loss `o_L` (the
-forecast-evaluation panel). The likelihood $A_R$ makes high reward probable only
+"which channel receives a discrete funding move." Two bucketed observations are
+modeled: reward `o_R` and predictive loss `o_L`, inspired by the historical
+broker-ledger and forecast-evaluation roles. Neither is calibrated to a measured
+log-equity series. The likelihood $A_R$ makes high reward probable only
 when the production channels $I, U$ are strong **and** the parameters $\Theta$ are
 fresh; $A_L$ makes low predictive loss probable only when Sensors are rich **and**
 $\Theta$ is fresh. The transition $B_\Theta$ illustrates parameter-capability
 decay toward stale under non-refit actions and refresh when Theta is funded.
 These coefficients are illustrative, not independently measured corporate rates.
 
-[@fig:factorgraph] draws the GNN factor graph this file declares: the
-{{NUM_CHANNELS}} hidden-state factors `sI, sS, sU, sTheta, sZ`, the two likelihood
-matrices $A_R, A_L$ wiring factors to the reward and loss observations, the
-per-factor transitions $B_k$ under the {{NUM_ACTIONS}} actions, and the
-Expected-Free-Energy block — the `Connections` block made visible, so a future
-observation conditioning a past belief is an edge one can see is absent.
+[@fig:factorgraph] draws the reduced model's computational dependencies:
+the {{NUM_CHANNELS}} hidden-state factors `sI, sS, sU, sTheta, sZ`, the likelihoods
+$A_R, A_L$, and per-factor transitions $B_k$ under {{NUM_ACTIONS}} actions.
+The EFE annotations distinguish expected preference from Theta-information gain.
+Z has no likelihood or value edge. The visible dependency structure does not
+authenticate when caller-supplied observations became available.
 
-![GNN factor graph of the five-channel firm: {{NUM_CHANNELS}} hidden-state factors, likelihoods $A_R$ (coupling $I, U, \Theta$ to reward $o_R$) and $A_L$ (coupling $S, \Theta$ to loss $o_L$), per-factor transitions $B_k$ over {{NUM_ACTIONS}} actions, and the EFE objective block, with factor structure read from `generative_model.default_model`.](../output/figures/gnn_factor_graph.png){#fig:factorgraph}
+![Computational factor graph of the authored reduced model: {{NUM_CHANNELS}} hidden-state factors, reward likelihood $A_R$ coupling $I,U,\Theta$, loss likelihood $A_L$ coupling $S,\Theta$, and per-factor transitions $B_k$ under {{NUM_ACTIONS}} actions. EFE minimizes G = -(pragmatic + Theta-information gain). Z has no likelihood/value edge; conceptual R&D roles are not computational dependencies. Structure and coefficients come from `generative_model.default_model`.](../output/figures/gnn_factor_graph.png){#fig:factorgraph}
 
 The reduced encoding is legible and numerically validated. Neither this engine
 nor its interchange tests implement a continuous production portfolio controller

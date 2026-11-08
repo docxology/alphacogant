@@ -4,11 +4,9 @@
 
 paper:
   title: "AlphaCOGANT: Recursive Corporate Self-Improvement as Active Inference"
-  subtitle: "Rendering the AlphaFund Economic World Model as a GNN generative model via COGANT"
+  subtitle: "A fixed GNN–NumPy model of inference, action value and paired synthetic diagnostics"
   version: "1.2.2"
-  date: "2026-11-07"
-  cover:
-    image: "figures/cover_art.png"
+  date: "2026-11-08"
 
 authors:
   - name: "Daniel Ari Friedman"

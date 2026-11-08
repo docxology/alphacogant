@@ -1,4 +1,4 @@
-# Functionality and integrity boundaries {#sec:integrity}
+# Replay and artifact checks establish consistency, not financial validity {#sec:integrity}
 
 The executable contribution is a reviewable reduced model, not a financial
 controller or proof that recursive self-improvement must occur. The relevant
@@ -15,7 +15,7 @@ authenticate when observations became available, inspect a training corpus, or
 reject future-derived values supplied as current observations. GNN graph syntax
 is not a temporal type system [@friedman2026gnn].
 
-## One legible, limited objective
+## Explicit preference/information scores do not establish dollar calibration
 
 Each action has explicit pragmatic, Theta-information, and total-EFE scores
 [@friston2015epistemic; @friston2017process]. The scorer minimizes their stated
@@ -24,7 +24,7 @@ calibration, solvency, continuous optimality, or the economic equimarginal ident
 [@milgrom1990; @coase1937]. A policy's numerical score is not evidence of realized
 financial gain.
 
-## Numeric substitution and artifact inventory
+## Token substitution and file inventories do not attest semantic freshness
 
 `manuscript_variables.generate_variables` computes model-result tokens.
 `z_generate_manuscript_variables.py` rejects referenced tokens missing from that
@@ -50,7 +50,7 @@ or monotonic-EFE guarantee. Neither simulation nor inference is gated by this
 predicate. The motivating corporate certificate [@westenhaver2026rsi] is a
 conceptual reference, not an implemented operational assurance primitive.
 
-## What the evidence can support
+## Software evidence supports only the stated reduced-model behavior
 
 The engine provides bounded finite GNN interchange, deterministic computations,
 real-array tests, and reproducible synthetic diagnostics. It does not reproduce

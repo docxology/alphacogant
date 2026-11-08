@@ -106,11 +106,9 @@ def artifact_manifest_issues(
     seen_labels: set[str] = set()
     seen_filenames: set[str] = set()
     figures_dir = output_dir / "figures"
-    # PNGs consumed outside the manuscript registry: cover_art via the
-    # docs/manuscript/config.yaml ``cover.image`` key, value_decomposition as the
-    # run_alphacogant_demo.py output. Everything else in output/figures/ must be
-    # embedded in the manuscript prose.
-    NON_REGISTRY_FIGURES = frozenset({"cover_art.png", "value_decomposition.png"})
+    # The demo comparison is not a manuscript figure. Every other PNG,
+    # including the registered graphical abstract, must be embedded in prose.
+    NON_REGISTRY_FIGURES = frozenset({"value_decomposition.png"})
 
     for entry in figure_entries:
         label = entry["label"]

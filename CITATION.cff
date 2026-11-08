@@ -23,7 +23,7 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.20976824
     description: Concept DOI (cites all versions)
-date-released: "2026-11-07"
+date-released: "2026-11-08"
 license: MIT
 repository-code: "https://github.com/docxology/alphacogant"
 keywords:

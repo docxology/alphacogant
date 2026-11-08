@@ -6,11 +6,15 @@
 Margins + base font size are set in config.yaml (metadata.geometry / fontsize /
 documentclass), NOT here, so geometry is loaded exactly once by pandoc. -->
 
-# LaTeX Preamble
+# Optional template LaTeX preamble; not the contained renderer
 
-LaTeX packages injected before `\begin{document}` for the combined PDF. Geometry and
-base font size live in `config.yaml` (`metadata.geometry`, `metadata.fontsize`,
-`metadata.documentclass: extarticle`).
+This preamble is an optional external-template input, not a manuscript chapter or
+a dependency of the contained Pandoc recipe. That recipe supplies its own font and
+layout options; see [rendering and validation](../rendering_and_validation.md).
+When a template consumes this file, geometry and base font size belong in
+`config.yaml` (`metadata.geometry`, `metadata.fontsize`, `metadata.documentclass`),
+not duplicate package loads here. The template must supply its chosen citation
+and Unicode-math packages for the settings below.
 
 ```latex
 % Core mathematics
@@ -39,10 +43,8 @@ base font size live in `config.yaml` (`metadata.geometry`, `metadata.fontsize`,
 }
 \usepackage[capitalise,noabbrev]{cleveref}
 
-% Auto-numbered, hyperlinked citations from references.bib. The natbib package
-% options (numbers, square, sort&compress) and biblio-style (unsrtnat, number by
-% citation order) are set via pandoc metadata in 00_abstract.md; this fallback
-% guarantees numeric square-bracket citations even if that metadata is dropped.
+% Optional natbib fallback for a template that explicitly loads natbib.
+% The contained citeproc renderer does not consume this preamble.
 \setcitestyle{numbers,square,comma}
 % The manuscript already provides the "References" heading (99_references.md);
 % suppress natbib's own duplicate section header so there is exactly one.
@@ -50,8 +52,8 @@ base font size live in `config.yaml` (`metadata.geometry`, `metadata.fontsize`,
 
 % Unicode-capable fonts (xelatex)
 % The manuscript uses Greek/math unicode in prose and math.
-% latinmodern-math gives broad math coverage; JuliaMono covers code glyphs.
-% If JuliaMono is absent, the guard leaves xelatex on its default mono font.
+% latinmodern-math supplies math glyphs; JuliaMono is an optional local code font.
+% If JuliaMono is absent, the guard keeps the default monospace font.
 \usepackage{fontspec}
 \IfFontExistsTF{JuliaMono-Regular}{%
   \setmonofont{JuliaMono-Regular}[

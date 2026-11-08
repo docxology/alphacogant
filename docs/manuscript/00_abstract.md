@@ -1,4 +1,4 @@
-# Abstract {#sec:abstract .unnumbered}
+# Abstract: an executable corporate analogy, not financial evidence {#sec:abstract .unnumbered}
 
 The historical AlphaFund account frames recursive self-improvement (RSI) as a
 portfolio optimization problem [@westenhaver2026rsi]. Its full primary text was
@@ -14,8 +14,8 @@ Notation Notation (GNN)** using a **COGANT-inspired** structure-to-prior mapping
 and independently checked matrix interchange [@friedman2026gnn; @friedman2026cogant].
 The five named capital channels —
 Investments, Sensors, Actuators, Parameters, and R&D — become the hidden-state
-factors of a partially-observed model; capital allocation becomes the control
-vector; and the portfolio optimizer's marginal-return objective becomes
+factors of a partially-observed model; capital allocation becomes a discrete
+control action; and the portfolio optimizer's marginal-return objective motivates
 **Expected Free Energy (EFE)** minimization in the reduced controller. Its
 pragmatic term is expected reward/loss preference, not measured equity growth;
 its epistemic term is information gain about the hidden Theta capability.
@@ -35,3 +35,13 @@ not exact joint inference. Chronological input integrity remains the caller's
 responsibility; GNN structure alone cannot authenticate observation availability.
 This synthetic modeling demonstration is not financial advice or evidence about
 AlphaFund's proprietary books.
+
+```{=latex}
+\clearpage
+```
+
+![Graphical abstract of the reduced model: caller-supplied reward/loss observations pass through one factorized filtering sweep, one-step EFE scoring/selection and state prediction. Value = -G = pragmatic preference + Theta-information gain. A separate prediction-only greedy/hold diagnostic uses {{BOOTSTRAP_N}} paired synthetic draws, concentration {{BOOTSTRAP_CONCENTRATION}} and horizon {{PLANNING_HORIZON}}: mean margin {{BREAK_EVEN_MARGIN_MEAN}}, paired SE {{PAIRED_MARGIN_SE}}, t-RSI {{HEADLINE_T_RSI}} and positive-margin fraction {{BREAK_EVEN_PROB}} at IMPROVING. The scalar threshold does not gate allocation; A/B/C/D stay fixed, chronology is caller-owned, and no financial calibration or coefficient learning is implied.](../output/figures/cover_art.png){#fig:graphicalabstract}
+
+```{=latex}
+\clearpage
+```

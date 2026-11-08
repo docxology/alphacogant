@@ -1,69 +1,35 @@
-# API Reference
+# Python entry points and contract owners
 
-This is a compact map of stable engine functions used by scripts, tests, and the
-manuscript.
+This is an import map, not a second protocol specification. The engine functions
+listed below are also exported from `alphacogant`, except
+`paired_bootstrap_samples`, which is imported from its defining module.
 
-## Model
+| Defining module | Entry points | Detailed semantics |
+| --- | --- | --- |
+| `alphacogant.model.generative_model` | `EconomicWorldModel`, `default_model`, `belief_prior`, `infer_states`, `validate_belief_map` | [A/B/C/D and single-sweep factorized filtering](generative_model_contract.md) |
+| `alphacogant.model.channels` | `CHANNELS`, `ACTIONS`, `action_index`, `channel_index` | [Model axes and channels](generative_model_contract.md) |
+| `alphacogant.efe.free_energy` | `expected_free_energy`, `efe_vector`, `marginal_return_vector`, `greedy_action`, `policy_posterior`, `predicted_belief`, `static_pragmatic_value` | [One-step EFE signs and policy precision](efe_and_policy.md) |
+| `alphacogant.trsi.t_rsi` | `create_rate`, `decay_rate`, `paired_bootstrap_samples`, `t_rsi`, `bootstrap_t_rsi`, `certificate` | [Paired diagnostic, not an enforced gate](trsi_statistics.md) |
+| `alphacogant.stats.statistics` | `bootstrap_ci`, `compute_regime_statistics`, `compare_regimes`, `break_even_profile` | [Synthetic intervals and event mass](trsi_statistics.md) |
+| `alphacogant.stats.simulation` | `simulate_trajectory`, `summarize_trajectory` | [Prediction-only trajectory scope](efe_and_policy.md) |
+| `alphacogant.bridge.cogant_bridge` | `firm_structure_to_channels`, `model_to_gnn_summary`, `parse_gnn_summary` | [Authored priors and numeric serialization](cogant_bridge.md) |
+| `alphacogant.bridge.gnn` | `model_from_gnn`, `model_to_cogant_gnn`, `joint_matrices` | [Finite-profile import and joint export](cogant_bridge.md) |
+| `alphacogant.bridge.inference` | `run_inference`, `verify_inference` | [Source-bound filter/score/predict traces](cogant_bridge.md) |
+| `alphacogant.tokens.manuscript_variables` | `generate_variables` | [Source-to-output ownership](methods_and_artifacts.md) |
 
-- `default_model()` builds the reduced Economic World Model.
-- `belief_prior(model)` returns the prior belief map.
-- `infer_states(model, obs_R, obs_L, prior)` performs one filtering update.
-- `validate_belief_map(belief, context=...)` normalizes and validates beliefs.
-
-## EFE
-
-- `expected_free_energy(model, belief, action)` returns pragmatic, epistemic,
-  and total EFE.
-- `marginal_return_vector(model, belief)` returns negative-EFE values for all
-  actions.
-- `policy_posterior(model, belief, gamma=1.0)` returns a softmax posterior over
-  actions.
-
-## t-RSI
-
-- `create_rate(model, belief, horizon=DEFAULT_HORIZON)` computes greedy value
-  over passive holding.
-- `decay_rate(model, belief, horizon=DEFAULT_HORIZON)` computes residual Theta
-  erosion.
-- `bootstrap_t_rsi(model, belief, rng, ...)` returns deterministic bootstrap
-  summary values.
-- `certificate(t_rsi_value, delta)` applies the threshold gate.
-
-## Statistics
-
-- `bootstrap_ci(samples, confidence=0.95)` returns a percentile interval.
-- `compute_regime_statistics(...)` returns a complete regime profile.
-- `compare_regimes(...)` compares improving and coasting regimes.
-- `break_even_profile(...)` estimates paired `create > decay` event mass.
-
-## Bridge
-
-- `firm_structure_to_channels(spec)` maps firm counts to priors.
-- `model_to_gnn_summary(model)` emits a GNN-style summary.
-- `parse_gnn_summary(text)` extracts sections, factors, connections, and ontology.
-
-## Tokens
-
-- `generate_variables()` returns the full manuscript token dictionary.
-
-## Finite GNN and replayable inference (1.1.0)
-
-Public imports from `alphacogant` now include `model_from_gnn`,
-`model_to_cogant_gnn`, `joint_matrices`, `run_inference` and `verify_inference`.
-`model_to_gnn_summary` now preserves every numeric coefficient; the lightweight
-`parse_gnn_summary` structural return type is unchanged. Read the
-[bridge contract](cogant_bridge.md) for axes, budgets, observation modes and
-policy differences from COGANT. CLI: `uv run --locked alphacogant --help`.
+## Generate evidence tokens from manuscript sources
 
 `generate_variables(n=None, *, manuscript_dir=None)` requires actual manuscript
-sources for definition/figure counts. In a source checkout it uses
+sources for definition/figure counts. A source checkout defaults to
 `docs/manuscript/`; installed-wheel callers must supply that directory explicitly.
-Missing manuscript sources raise `FileNotFoundError` before computation or artifact
-writes, rather than producing zero counts. Artifact generation scripts require
-the source checkout.
+Missing sources raise `FileNotFoundError` before computation or artifact writes.
+Artifact-generation scripts require the source checkout. An explicit `n` changes
+the synthetic sample recipe and its reported results, not the empirical data volume.
 
-## Versioned agent and profiling surfaces
+## Integrate bounded requests or collect performance evidence
 
-`alphacogant.api.Client.call`, `capabilities`, and `handle_request` provide the
-[agent protocol](agent_api.md). `alphacogant.profiling.profile_workload` returns
-[bounded performance evidence](performance.md) with source/runtime provenance.
+Use `from alphacogant.api import Client, capabilities, handle_request` for the
+[versioned agent protocol](agent_api.md), which owns schemas, errors, budgets and
+CLI behavior. `alphacogant.profiling.profile_workload` produces
+[bounded performance evidence](performance.md). Neither surface is an external
+execution service or a financial controller.

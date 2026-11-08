@@ -1,284 +1,124 @@
 #!/usr/bin/env python3
-"""Render the EWM-as-GNN factor graph for the AlphaCOGANT manuscript.
+"""Untangled fixed-model dependency graph in Generative-Notation style.
 
-This is a deterministic thin-orchestrator figure script. All Active Inference
-math (model matrices, marginal-return vector, expected free energy, policy
-posterior) lives in ``src/alphacogant``; this script only *orchestrates* an
-engine query at two manuscript operating points and *draws* the resulting
-factor graph. No business logic is implemented here.
-
-The figure depicts the Economic World Model (EWM) as a Generative-Notation /
-factor graph:
-
-* Five hidden-state factor nodes — ``sI, sS, sU, sTheta, sZ`` — labelled from
-  :data:`alphacogant.channels.CHANNELS`.
-* Two likelihoods, ``A_R`` (wired from ``sI, sU, sTheta``) and ``A_L`` (wired
-  from ``sS, sTheta``), feeding observation nodes ``o_R`` and ``o_L``.
-* A control node ``u`` with ``B_k`` transition edges into each factor; the edge
-  labels are read from :data:`alphacogant.channels.ACTIONS`.
-* Expected Free Energy ``G`` uses both predictive likelihoods for pragmatic
-  preference and information gain about Theta. Z has a transition but no
-  likelihood/value dependency in this fixed model.
-
-Geometry is a manual deterministic schematic, not parser-generated topology.
-Two live one-step action-score decompositions annotate the diagram.
-
-Run (from the repository root):
-    PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_gnn_factor_graph.py
+Dashed transition arrows, solid likelihood arrows and dotted score readouts
+encode distinct relationships. Geometry is schematic, not inferred topology or
+neural message passing. No scientific computation is duplicated in this script.
 """
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
 import matplotlib
 
-matplotlib.use("Agg")  # headless, deterministic raster backend
-os.environ.setdefault("MPLBACKEND", "Agg")
-
-import matplotlib.patches as mpatches  # noqa: E402
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
+from matplotlib.patches import FancyBboxPatch  # noqa: E402
 
-# --- Engine import (thin orchestrator: math comes only from src/alphacogant) ---
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_SRC = _PROJECT_ROOT / "src"
-if str(_SRC) not in sys.path:
-    sys.path.insert(0, str(_SRC))
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from alphacogant.efe.free_energy import (  # noqa: E402
-    expected_free_energy,
-    marginal_return_vector,
-)
-from alphacogant.model.channels import ACTIONS, CHANNELS, action_index, channel_index  # noqa: E402
-from alphacogant.model.generative_model import default_model, validate_belief_map  # noqa: E402
-from alphacogant.model.operating_points import COASTING_RAW, IMPROVING_RAW  # noqa: E402
+from alphacogant.model.channels import ACTIONS, CHANNELS  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
-    ANALYTIC_FOOTER,
+    CHANNEL_COLORS,
     DPI,
-    add_provenance_footer,
+    EPISTEMIC_COLOR,
+    NEUTRAL_COLOR,
     apply_style,
 )
 
-OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "gnn_factor_graph.png"
+OUTPUT_PATH = PROJECT_ROOT / "output" / "figures" / "gnn_factor_graph.png"
+INK = "#172033"
 
-# Likelihood wiring (which factors parameterize each likelihood column tensor).
-A_R_PARENTS = ("I", "U", "Theta")
-A_L_PARENTS = ("S", "Theta")
-# Both likelihoods feed expected preference and Theta-only information gain.
-VALUE_LIKELIHOODS = ("A_R", "A_L")
-
-# Deterministic node coordinates (x, y) — fixed, no layout RNG.
-POSITIONS: dict[str, tuple[float, float]] = {
-    "u": (0.0, 2.5),
-    "sI": (3.0, 4.5),
-    "sS": (3.0, 3.25),
-    "sU": (3.0, 2.0),
-    "sTheta": (3.0, 0.75),
-    "sZ": (3.0, -0.5),
-    "A_R": (6.0, 3.0),
-    "A_L": (6.0, 1.0),
-    "o_R": (8.5, 3.0),
-    "o_L": (8.5, 1.0),
-    "G": (4.6, -1.3),
+# Display order makes each likelihood's parents contiguous; canonical engine
+# ordering is unchanged. Theta is shared; Z deliberately has no outgoing edge.
+FACTOR_X = {"I": 0.09, "U": 0.26, "Theta": 0.46, "S": 0.68, "Z": 0.90}
+LIKELIHOODS = {
+    "A_R": (0.22, ("I", "U", "Theta"), "reward o_R"),
+    "A_L": (0.65, ("S", "Theta"), "loss o_L"),
 }
 
-# Palette.
-C_FACTOR = "#1e3a8a"
-C_LIKELIHOOD = "#0f766e"
-C_OBS = "#7c2d12"
-C_CONTROL = "#6d28d9"
-C_EFE = "#b91c1c"
-C_EDGE = "#475569"
-C_EPI = "#0e7490"
+
+def _node(ax, x, y, w, h, label, color, *, dashed=False):
+    ax.add_patch(FancyBboxPatch(
+        (x - w / 2, y - h / 2), w, h,
+        boxstyle="round,pad=0.008,rounding_size=0.014",
+        facecolor="white", edgecolor=color, linewidth=2,
+        linestyle="--" if dashed else "-", zorder=3,
+    ))
+    ax.text(x, y, label, ha="center", va="center", fontsize=14,
+            fontweight="bold", color=INK, zorder=4, linespacing=1.3)
 
 
-def _build_belief(raw: dict[str, tuple[float, float]]) -> dict[str, np.ndarray]:
-    """Turn a (weak, strong) spec into a validated, normalized belief map."""
-    belief = {ch: np.array(raw[ch], dtype=float) for ch in CHANNELS}
-    return validate_belief_map(belief, context="operating_point")
+def _edge(ax, start, end, *, style="-", color=INK):
+    ax.annotate("", xy=end, xytext=start,
+                arrowprops={"arrowstyle": "-|>", "lw": 1.8,
+                            "linestyle": style, "color": color}, zorder=1)
 
 
-def _funded_split(model, belief: dict[str, np.ndarray]) -> tuple[str, float, float]:
-    """Return (funded_channel_or_action, pragmatic, epistemic) from the engine.
-
-    Uses the engine's own marginal-return vector to pick the funded action, then
-    the engine's expected-free-energy decomposition to read the pragmatic and
-    epistemic *values* (value = -G; both higher-is-better) for that action.
-    """
-    g_t = marginal_return_vector(model, belief)
-    funded_action = max(g_t, key=lambda a: g_t[a])
-    efe = expected_free_energy(model, belief, funded_action)
-    return ACTIONS[funded_action], float(efe.pragmatic), float(efe.epistemic)
-
-
-def _draw_node(ax, name: str, label: str, color: str, *, shape: str = "circle") -> None:
-    x, y = POSITIONS[name]
-    if shape == "square":
-        patch = mpatches.FancyBboxPatch(
-            (x - 0.55, y - 0.32),
-            1.1,
-            0.64,
-            boxstyle="round,pad=0.02,rounding_size=0.08",
-            linewidth=1.6,
-            edgecolor="black",
-            facecolor=color,
-            zorder=3,
-        )
-    else:
-        patch = mpatches.Circle(
-            (x, y), 0.45, linewidth=1.6, edgecolor="black", facecolor=color, zorder=3
-        )
-    ax.add_patch(patch)
-    ax.text(
-        x,
-        y,
-        label,
-        ha="center",
-        va="center",
-        color="white",
-        fontsize=10,
-        fontweight="bold",
-        zorder=4,
-    )
-
-
-def _draw_edge(ax, src: str, dst: str, color: str, *, label: str = "", style: str = "-") -> None:
-    x0, y0 = POSITIONS[src]
-    x1, y1 = POSITIONS[dst]
-    ax.annotate(
-        "",
-        xy=(x1, y1),
-        xytext=(x0, y0),
-        arrowprops={
-            "arrowstyle": "-|>",
-            "color": color,
-            "linewidth": 1.3,
-            "linestyle": style,
-            "shrinkA": 18,
-            "shrinkB": 18,
-            "alpha": 0.85,
-        },
-        zorder=1,
-    )
-    if label:
-        mx, my = (x0 + x1) / 2.0, (y0 + y1) / 2.0
-        ax.text(
-            mx, my, label, ha="center", va="center", fontsize=6.5, color=color,
-            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.9}, zorder=5,
-        )
-
-
-def build_figure(model, improving: dict[str, np.ndarray], coasting: dict[str, np.ndarray]):
-    """Assemble the matplotlib figure from deterministic geometry + engine annotations."""
-    imp_action, imp_prag, imp_epi = _funded_split(model, improving)
-    coa_action, coa_prag, coa_epi = _funded_split(model, coasting)
-
-    fig, ax = plt.subplots(figsize=(13.0, 9.0))
-    ax.set_xlim(-1.6, 10.2)
-    ax.set_ylim(-4.7, 5.6)
-    ax.set_aspect("equal")
+def build_figure() -> plt.Figure:
+    fig, ax = plt.subplots(figsize=(9.0, 7.0))
+    fig.subplots_adjust(left=0.02, right=0.98, bottom=0.01, top=0.99)
+    ax.set(xlim=(0, 1), ylim=(0, 1))
     ax.axis("off")
-    ax.set_title(
-        "The Economic World Model as a GNN factor graph",
-        fontsize=15,
-        fontweight="bold",
-        pad=14,
-    )
+    ax.text(0.02, 0.967, "Economic World Model: exact dependency wiring", fontsize=20,
+            fontweight="bold", color=INK, va="top")
+    ax.text(0.02, 0.912,
+            "Dashed: $B_k$ transitions    Solid: likelihoods    Dotted: score readouts",
+            fontsize=13, color=INK, va="top")
 
-    factor_labels = {f"s{ch}": f"s{ch}" for ch in CHANNELS}
+    _node(ax, 0.46, 0.841, 0.35, 0.067,
+          f"control u • {len(ACTIONS)} actions", EPISTEMIC_COLOR, dashed=True)
+    ax.plot([min(FACTOR_X.values()), max(FACTOR_X.values())], [0.774, 0.774],
+            color=EPISTEMIC_COLOR, linestyle="--", lw=1.8)
+    ax.plot([0.46, 0.46], [0.80, 0.774], color=EPISTEMIC_COLOR, linestyle="--", lw=1.8)
+    ax.text(0.04, 0.834, "$B_k$ controls\nevery factor", fontsize=13,
+            va="center", color=INK, linespacing=1.3)
 
-    # Keep transition labels short; put the action set in its own clear band.
-    for ch in CHANNELS:
-        _draw_edge(ax, "u", f"s{ch}", C_CONTROL, label=f"B_{ch}", style="--")
-    ax.text(
-        4.3, 5.15, "B_k actions: " + ", ".join(ACTIONS),
-        ha="center", va="center", fontsize=8, color=C_CONTROL,
-    )
+    for channel in CHANNELS:
+        x = FACTOR_X[channel]
+        _edge(ax, (x, 0.774), (x, 0.707), style="--", color=EPISTEMIC_COLOR)
+        _node(ax, x, 0.662, 0.11, 0.072,
+              "Θ" if channel == "Theta" else channel, CHANNEL_COLORS[channel])
+    ax.text(0.90, 0.568, "Z has no\nlikelihood\nor value edge", ha="center",
+            va="center", fontsize=13, color=INK, linespacing=1.35)
 
-    # --- Factor -> likelihood edges ---
-    for ch in A_R_PARENTS:
-        _draw_edge(ax, f"s{ch}", "A_R", C_LIKELIHOOD)
-    for ch in A_L_PARENTS:
-        _draw_edge(ax, f"s{ch}", "A_L", C_LIKELIHOOD)
+    for name, (x, parents, observation) in LIKELIHOODS.items():
+        for parent in parents:
+            _edge(ax, (FACTOR_X[parent], 0.618), (x, 0.536))
+        parent_label = ",".join("Θ" if p == "Theta" else p for p in parents)
+        _node(ax, x, 0.482, 0.26, 0.10, f"{name}\nP(o | {parent_label})", CHANNEL_COLORS["S"])
+        _edge(ax, (x, 0.424), (x, 0.347))
+        _node(ax, x, 0.305, 0.23, 0.067, observation, NEUTRAL_COLOR)
 
-    # --- Likelihood -> observation edges ---
-    _draw_edge(ax, "A_R", "o_R", C_OBS)
-    _draw_edge(ax, "A_L", "o_L", C_OBS)
-
-    # Predictive observation distributions supply both value components.
-    for likelihood in VALUE_LIKELIHOODS:
-        _draw_edge(ax, likelihood, "G", C_EPI, style=":")
-
-    # --- Nodes (drawn after edges so they sit on top) ---
-    _draw_node(ax, "u", "u", C_CONTROL, shape="circle")
-    for ch in CHANNELS:
-        _draw_node(ax, f"s{ch}", factor_labels[f"s{ch}"], C_FACTOR, shape="circle")
-    _draw_node(ax, "A_R", "A_R", C_LIKELIHOOD, shape="square")
-    _draw_node(ax, "A_L", "A_L", C_LIKELIHOOD, shape="square")
-    _draw_node(ax, "o_R", "o_R", C_OBS, shape="circle")
-    _draw_node(ax, "o_L", "o_L", C_OBS, shape="circle")
-    _draw_node(ax, "G", "G", C_EFE, shape="square")
-
-    # --- Engine-derived annotation block at the two operating points ---
-    annotation = (
-        "Expected Free Energy G  (minimized; value = -G)\n"
-        "  epistemic: information gain about Theta (KL >= 0)\n"
-        "  pragmatic: expected reward/loss log preference\n"
-        "  both use A_R and A_L; Z is inert to value\n"
-        "\n"
-        "Selected action (one-step marginal-return argmax):\n"
-        f"  IMPROVING: {imp_action}  |  pragmatic {imp_prag:+.3f}  epistemic {imp_epi:+.3f}\n"
-        f"  COASTING:  {coa_action}  |  pragmatic {coa_prag:+.3f}  epistemic {coa_epi:+.3f}"
-    )
-    ax.text(
-        0.0,
-        -2.5,
-        annotation,
-        ha="left",
-        va="top",
-        fontsize=8.0,
-        family="monospace",
-        bbox={"boxstyle": "round,pad=0.4", "facecolor": "#f8fafc", "edgecolor": C_EDGE},
-        zorder=5,
-    )
-
-    # --- Legend ---
-    legend_handles = [
-        mpatches.Patch(color=C_FACTOR, label="hidden-state factor s_k"),
-        mpatches.Patch(color=C_LIKELIHOOD, label="likelihood (A_R, A_L)"),
-        mpatches.Patch(color=C_OBS, label="observation (o_R, o_L)"),
-        mpatches.Patch(color=C_CONTROL, label="control u (B_k transitions)"),
-        mpatches.Patch(color=C_EFE, label="Expected Free Energy G"),
-        mpatches.Patch(color=C_EPI, label="predictive likelihoods -> G"),
-    ]
-    ax.legend(handles=legend_handles, loc="upper left", fontsize=8, framealpha=0.95)
-
-    # Sanity assertions tying labels to the engine's canonical ordering.
-    assert tuple("s" + c for c in CHANNELS) == ("sI", "sS", "sU", "sTheta", "sZ")
-    assert channel_index("Theta") == 3
-    assert action_index("hold") == len(ACTIONS) - 1
-
-    fig.tight_layout()
+    # These are score dependencies, not observation-to-action feedback arrows.
+    # Readouts occupy the central corridor, away from the observation edges.
+    _edge(ax, (0.358, 0.47), (0.405, 0.211), style=":", color=EPISTEMIC_COLOR)
+    _edge(ax, (0.512, 0.47), (0.495, 0.211), style=":", color=EPISTEMIC_COLOR)
+    ax.add_patch(FancyBboxPatch(
+        (0.18, 0.075), 0.61, 0.128,
+        boxstyle="round,pad=0.008,rounding_size=0.012",
+        facecolor="#f5f3ff", edgecolor=EPISTEMIC_COLOR, linewidth=1.6, zorder=3,
+    ))
+    ax.text(0.485, 0.139,
+            "Minimize G; value = −G\n"
+            "Pragmatic: expected reward/loss log preference\n"
+            "Epistemic: information about Θ via A_R + A_L",
+            ha="center", va="center", fontsize=13, color=INK, linespacing=1.4, zorder=4)
+    ax.text(0.5, 0.028,
+            "Fixed NumPy model topology; no learned neural network or coefficient learning.",
+            ha="center", va="center", fontsize=13, color=INK)
     return fig
 
 
 def main() -> Path:
-    """Render the GNN factor-graph figure and return its absolute path."""
     apply_style()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-    model = default_model()
-    improving = _build_belief(IMPROVING_RAW)
-    coasting = _build_belief(COASTING_RAW)
-
-    fig = build_figure(model, improving, coasting)
-    add_provenance_footer(fig, ANALYTIC_FOOTER)  # deterministic schematic, not data
-    fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight")
+    fig = build_figure()
+    fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight", facecolor="white", pad_inches=0.08)
     plt.close(fig)
-
     print(str(OUTPUT_PATH.resolve()))
     return OUTPUT_PATH
 

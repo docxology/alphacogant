@@ -1,12 +1,15 @@
-# Rendering and validation
+# Regenerate artifacts and render inspected manuscript releases
 
 AlphaCOGANT is standalone. Never run another repository's template stages as a
-local gate. The contained recipe below needs Pandoc, pandoc-crossref and XeLaTeX.
-It uses Matplotlib's bundled fonts without installing host tools or fonts.
-The PDF/HTML contain the numbered body chapters and references. Cover artwork
-is generated and inspected separately, not represented as an extra body figure.
+local gate. Engine-only installation and use need no document toolchain.
+Manuscript/visual releases require the contained PDF/HTML rendering below and
+actual page/figure inspection. Rendering needs Pandoc, pandoc-crossref and
+XeLaTeX; it uses Matplotlib's bundled fonts without installing host tools or fonts. The numbered body chapters include the registered graphical
+abstract at the end of `00_abstract.md`, before the introduction. No extra cover
+chapter is needed. Raw LaTeX clear-page blocks isolate it in PDF and are ignored
+in HTML.
 
-## Regenerate and check
+## Regenerate source-owned artifacts and check saved consistency
 
 From the repository root:
 
@@ -26,7 +29,7 @@ undecodable registered PNGs or stale injected prose fail. This is structural
 consistency, not proof of producer execution, empirical calibration or the
 correctness of arbitrary literal prose.
 
-## Contained PDF and HTML
+## Required contained PDF and HTML rendering for manuscript releases
 
 Write render metadata from the current manuscript configuration:
 
@@ -69,12 +72,13 @@ checkout. Keep temporary/cache directories repository-local when running under
 an inherited execution governor. For reproducibility, set `SOURCE_DATE_EPOCH`
 to a recorded source timestamp and retain tool/runtime versions and raw logs.
 
-## Required inspection
+## Inspect semantic content and actual rendered pages before publication
 
 - Inspect renderer diagnostics for undefined citations/references, missing glyphs
   and layout overflow; compilation alone is not acceptance.
 - Decode every figure and inspect axes, event-region signs, annotations and
-  n/seed/concentration/horizon recipes. Inspect cover and demo artwork separately.
+  n/seed/concentration/horizon recipes. Inspect the registered graphical abstract
+  and its provenance as well as the separate demo figure.
 - Inspect actual PDF pages and HTML, including tables, equations, captions and
   the rendered bibliography. Check PDF structure with an available tool such as
   `qpdf --check output/manuscript/alphacogant.pdf`.

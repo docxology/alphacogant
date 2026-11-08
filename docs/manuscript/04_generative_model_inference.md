@@ -1,6 +1,6 @@
-# Generative-model inference under the firm filtration {#sec:inference}
+# Factorized observation filtering with caller-owned chronology {#sec:inference}
 
-## The generative model
+## Fixed likelihoods and transitions define the reduced generative law
 
 The AlphaCOGANT generative model factorizes the next cycle as
 
@@ -11,17 +11,16 @@ P(o_{R,t}, o_{L,t}, s_{t+1} \mid s_t, a_t)
     \prod_{k \in \{I,S,U,\Theta,Z\}} B_k\!\left(s^k_{t+1} \mid s^k_t, a_t\right).
 $$ {#eq:generative-factorization}
 
-This is AlphaFund's "true corporate transition" $W$ — a property of the world the
-firm cannot access — approximated by the firm's learned $\widehat{W}_t$, the EWM.
-In this form it is a finite-state, controlled, partially-observed model in the
-same sense as active-inference POMDPs [@friston2010freeenergy; @friston2015epistemic; @kaelbling1998pomdp; @friston2017process].
-The likelihoods $A_R, A_L$ are how the latent corporate state generates the
-observable broker ledger and forecast-evaluation panel; the transitions $B_k$ are
-how a capital-allocation action moves each channel. Inference is the inverse
+The historical account distinguishes a true corporate transition $W$ from its
+learned approximation $\widehat{W}_t$. Here the analogous law is authored and
+fixed: a finite-state, controlled, partially-observed model
+[@friston2010freeenergy; @friston2015epistemic; @kaelbling1998pomdp; @friston2017process].
+The likelihoods map latent capability to bucketed reward/loss; the transitions
+map a funding action to the next capability distribution. Inference is the inverse
 problem: recover a posterior $q(s_t)$ over the five channels from the observed
 reward/loss history.
 
-## Inference is the firm reading its own state
+## One factorized sweep estimates capability, not exact joint state
 
 Because the firm "sees the world only through its sensors," it never observes
 $\Xi_t$ directly; it observes $o_R, o_L$ and infers the channel capabilities that
@@ -33,13 +32,11 @@ retained product is an approximation, not exact joint filtering. Independent
 joint enumeration in the numerical tests exposes this distinction
 [@vandemeent2021ppl; @kaelbling1998pomdp; @friston2017process].
 
-A worked reading: a high-reward, low-loss observation is most probable when the
-production channels and the EWM are strong and fresh, so the posterior shifts mass
-toward `strong` on $I, U, \Theta$ and toward `rich` on $S$. The firm has *inferred*
-that it is in a compounding regime — not because it was told, but because the
-ledger and the panel are jointly improbable under any weaker state. This is the
-self-forecasting loop's "predict" step: query the world model for the current
-state and its forward law before choosing an allocation.
+A worked reading: a high-reward, low-loss observation favors stronger production
+channels and fresher Theta, with the loss likelihood also informing Sensors.
+The posterior shift is an inference under the authored likelihood, not an
+observation that a real firm is compounding. This is the self-forecasting analogy's
+state-estimation step before scoring an allocation.
 
 The transition $B_\Theta$ illustrates the hypothesis that deployed parameters
 decay toward stale unless refreshed; it is not an empirical estimate obtained by
@@ -84,9 +81,8 @@ likelihood one might use in a time-ordered EWM [@westenhaver2026rsi; @friston201
 The local engine does not fit either loss. Its finite GNN reader validates model
 arrays, not chronological data availability or the absence of training leakage.
 
-A note AlphaFund itself makes survives the translation: a general LLM *wrapped* in
-a strict post-cutoff evaluation harness can still serve as a component of the
-generative model (e.g. a likelihood or proposal). The categorical claim is about
-the bare model used as the primary EWM, not about a properly-filtered subroutine —
-and in GNN such a subroutine is just another typed block whose connections are
-checked.
+A note in the historical account survives the translation: a general LLM wrapped
+in a strict post-cutoff evaluation harness could serve as a component of a
+generative model, rather than as an unaudited primary EWM. That remains a
+conceptual extension, not a callable block or chronology check implemented by
+this finite-profile reader [@westenhaver2026rsi; @friedman2026gnn].

@@ -1,24 +1,9 @@
 #!/usr/bin/env python3
-"""Two-column visual dictionary: AlphaFund constructs -> Active-Inference objects.
+"""Print-scale dictionary separating corporate names from finite-model objects.
 
-Thin-orchestrator figure script. All economic / Active-Inference math is owned by
-``src/alphacogant``; this script only queries the engine for a few live operating-
-point numbers (used in the provenance footer) and draws the schematic. The figure
-itself is a static, deterministic dictionary mapping: each left-hand AlphaFund
-construct is connected by a line to its right-hand Active-Inference counterpart,
-following the coverage rubric in ``docs/whitepaper_concepts.md`` and the sign /
-value conventions in ``docs/manuscript/05_epistemic_and_pragmatic_value.md``.
-
-Links distinguish the implemented finite model from corporate analogies:
-action values are discrete -G(a), not allocation derivatives; information
-gain targets Theta via A_R/A_L, not Z; pragmatic value is authored reward/loss
-log preference. The scalar t-RSI threshold is not a deployment gate.
-Temporal/no-peeking enforcement is conceptual and is not implemented here.
-
-Run (from the repository root):
-    PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_aif_dictionary.py
-
-Prints the absolute PNG path on success.
+The channel table describes implemented likelihood dependencies, not the broader
+conceptual role tags. Model coefficients and scientific computations are not
+reimplemented here; live structural counts come from canonical channel metadata.
 """
 
 from __future__ import annotations
@@ -28,252 +13,99 @@ from pathlib import Path
 
 import matplotlib
 
-matplotlib.use("Agg")  # headless, deterministic raster backend
-
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.lines import Line2D  # noqa: E402
-from matplotlib.patches import FancyBboxPatch  # noqa: E402
+from matplotlib.patches import Rectangle  # noqa: E402
 
-# --- engine import (business logic lives only in src/alphacogant) -------------
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SRC_DIR = PROJECT_ROOT / "src"
-sys.path.insert(0, str(SRC_DIR))
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-import numpy as np  # noqa: E402
-
-from alphacogant.efe.free_energy import (  # noqa: E402
-    expected_free_energy,
-    marginal_return_vector,
-)
 from alphacogant.model.channels import ACTIONS, CHANNELS  # noqa: E402
-from alphacogant.model.generative_model import default_model  # noqa: E402
-from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
-    ANALYTIC_FOOTER,
+    CHANNEL_COLORS,
+    CHANNEL_LABELS,
     DPI,
-    NEGATIVE_COLOR,
-    POSITIVE_COLOR,
-    add_provenance_footer,
+    EPISTEMIC_COLOR,
+    NEUTRAL_COLOR,
     apply_style,
 )
 
 OUTPUT_PNG = PROJECT_ROOT / "output" / "figures" / "aif_dictionary.png"
+INK = "#172033"
 
-# Dictionary rows: (AlphaFund construct, Active-Inference object, semantic tag).
-ROWS: tuple[tuple[str, str, str], ...] = (
-    ("EWM  $\\hat W_t$", "generative model  $\\hat W_t$", "model"),
-    ("channels  $\\Xi_t \\to (I,S,U,\\Theta,Z)$", "hidden state  $s$", "state"),
-    ("allocation  $a_t$ (analogy)", "six discrete control actions", "control"),
-    ("objective  $J_t$ (analogy)", "authored reward/loss log preference", "pragmatic"),
-    ("marginal return  $g_t$", "discrete action values  $-G(a)$", "marginal"),
-    (
-        "Sensors / R&D (analogy)",
-        "Theta information via A_R/A_L;\nZ inert to likelihood and value",
-        "epistemic",
-    ),
-    ("Investments / Actuators (analogy)", "predictive preference contribution", "pragmatic"),
-    ("t-RSI", "paired-margin scalar threshold;\nnot a deployment gate", "certificate"),
-    ("filtration  $F_t$ (concept)", "no temporal enforcement implemented", "measure"),
-)
-
-# Color per semantic tag (deterministic palette with Okabe-Ito accents for the
-# green/red pragmatic/certificate pair, so it stays colourblind-safe).
-TAG_COLORS: dict[str, str] = {
-    "model": "#3B5BA5",
-    "state": "#4C8C99",
-    "control": "#7A5BA5",
-    "pragmatic": POSITIVE_COLOR,
-    "marginal": "#B07A2E",
-    "epistemic": "#A53B6B",
-    "certificate": NEGATIVE_COLOR,
-    "measure": "#566573",
+# A display dictionary of the fixed likelihood topology, not a role taxonomy.
+DEPENDENCIES = {
+    "I": "Reward likelihood A_R",
+    "S": "Loss likelihood A_L",
+    "U": "Reward likelihood A_R",
+    "Theta": "A_R + A_L; information-gain target",
+    "Z": "Transition only; no likelihood / value edge",
 }
 
 
-def _operating_point_facts() -> dict[str, float]:
-    """Pull a few live engine numbers for the provenance footer (no plotting math).
-
-    Returns the marginal-return argmax action and the funded channel's EFE
-    pragmatic / epistemic split at the IMPROVING operating point, plus a
-    KL-nonnegativity confirmation across all actions/regimes.
-    """
-    model = default_model()
-
-    g = marginal_return_vector(model, IMPROVING)
-    funded_action = max(g, key=lambda a: g[a])
-
-    funded_efe = expected_free_energy(model, IMPROVING, funded_action)
-
-    # epistemic value is a KL -> always >= 0 (assert the sign convention holds).
-    min_epistemic = min(
-        expected_free_energy(model, belief, action).epistemic
-        for belief in (IMPROVING, COASTING)
-        for action in range(len(ACTIONS))
-    )
-
-    return {
-        "funded_action_idx": float(funded_action),
-        "funded_pragmatic": funded_efe.pragmatic,
-        "funded_epistemic": funded_efe.epistemic,
-        "min_epistemic": min_epistemic,
-    }
-
-
-def _draw_box(ax, x: float, y: float, w: float, h: float, text: str, color: str) -> None:
-    box = FancyBboxPatch(
-        (x, y),
-        w,
-        h,
-        boxstyle="round,pad=0.012,rounding_size=0.02",
-        linewidth=1.4,
-        edgecolor=color,
-        facecolor=color,
-        alpha=0.12,
-        mutation_aspect=1.0,
-    )
-    ax.add_patch(box)
-    ax.text(
-        x + w / 2.0,
-        y + h / 2.0,
-        text,
-        ha="center",
-        va="center",
-        fontsize=9.5,
-        color="#1A1A1A",
-    )
-
-
-def build_figure(facts: dict[str, float]) -> plt.Figure:
-    """Draw the two-column dictionary schematic. Pure layout; no business logic."""
-    fig, ax = plt.subplots(figsize=(11.0, 8.5), dpi=150)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+def build_figure() -> plt.Figure:
+    fig, ax = plt.subplots(figsize=(9.0, 7.2))
+    fig.subplots_adjust(left=0.02, right=0.98, bottom=0.01, top=0.99)
+    ax.set(xlim=(0, 1), ylim=(0, 1))
     ax.axis("off")
+    ax.text(0.02, 0.965, "Corporate vocabulary → finite-model meaning", fontsize=20,
+            fontweight="bold", color=INK, va="top")
+    ax.text(0.02, 0.907,
+            "Names are analogies; the dependency column describes what the engine uses.",
+            fontsize=13, color=INK, va="top")
 
-    # Column geometry.
-    n = len(ROWS)
-    box_w = 0.34
-    box_h = 0.050
-    left_x = 0.04
-    right_x = 0.62
-    top = 0.86
-    bottom = 0.25
-    ys = np.linspace(top, bottom, n)
+    ax.add_patch(Rectangle((0.02, 0.802), 0.96, 0.065, facecolor="#172033", edgecolor="none"))
+    for x, label in (
+        (0.045, "Factor"), (0.185, "Corporate analogy"), (0.46, "Implemented dependency"),
+    ):
+        ax.text(x, 0.834, label, fontsize=13, fontweight="bold", color="white", va="center")
+    for index, channel in enumerate(CHANNELS):
+        y = 0.802 - (index + 1) * 0.065
+        ax.add_patch(Rectangle((0.02, y), 0.96, 0.065,
+                               facecolor="#f1f5f9" if index % 2 == 0 else "white",
+                               edgecolor="none"))
+        ax.add_patch(Rectangle((0.02, y), 0.008, 0.065,
+                               facecolor=CHANNEL_COLORS[channel], edgecolor="none"))
+        ax.text(0.045, y + 0.0325, "Θ" if channel == "Theta" else channel,
+                fontsize=15, fontweight="bold", color=INK, va="center")
+        analogy = "Parameters" if channel == "Theta" else CHANNEL_LABELS[channel]
+        ax.text(0.185, y + 0.0325, analogy, fontsize=13, color=INK, va="center")
+        ax.text(0.46, y + 0.0325, DEPENDENCIES[channel], fontsize=13, color=INK, va="center")
+    ax.plot([0.02, 0.98], [0.477, 0.477], color=NEUTRAL_COLOR, lw=1)
 
-    # Headers.
-    ax.text(
-        0.5,
-        0.955,
-        "AlphaFund / Active Inference: implementation and analogy",
-        ha="center",
-        va="center",
-        fontsize=15.5,
-        fontweight="bold",
-        color="#1A1A1A",
-    )
-    ax.text(
-        left_x + box_w / 2.0,
-        0.915,
-        "AlphaFund construct",
-        ha="center",
-        va="center",
-        fontsize=12,
-        fontweight="bold",
-        color="#333333",
-    )
-    ax.text(
-        right_x + box_w / 2.0,
-        0.915,
-        "Finite-model counterpart / boundary",
-        ha="center",
-        va="center",
-        fontsize=12,
-        fontweight="bold",
-        color="#333333",
-    )
+    ax.text(0.02, 0.444, "EWM → FIXED A/B/C/D", fontsize=14, fontweight="bold",
+            color=EPISTEMIC_COLOR, va="top")
+    ax.text(0.02, 0.401,
+            "A: observation likelihoods     B: action-conditioned state transitions\n"
+            "C: reward/loss log preferences     D: initial factor beliefs",
+            fontsize=13, color=INK, va="top", linespacing=1.5)
 
-    # Rows: boxes + connecting line.
-    for (lhs, rhs, tag), y in zip(ROWS, ys, strict=True):
-        color = TAG_COLORS[tag]
-        cy = y - box_h / 2.0
-        _draw_box(ax, left_x, y - box_h, box_w, box_h, lhs, color)
-        _draw_box(ax, right_x, y - box_h, box_w, box_h, rhs, color)
-        ax.add_line(
-            Line2D(
-                [left_x + box_w, right_x],
-                [cy, cy],
-                color=color,
-                linewidth=1.6,
-                alpha=0.7,
-                solid_capstyle="round",
-            )
-        )
-        # small arrow head toward the AIF object
-        ax.annotate(
-            "",
-            xy=(right_x, cy),
-            xytext=(right_x - 0.03, cy),
-            arrowprops=dict(arrowstyle="-|>", color=color, lw=1.6, alpha=0.85),
-        )
-
-    # Sign-convention legend.
-    ax.text(
-        0.5,
-        0.135,
-        "Sign convention: EFE $G$ is minimized; value $= -G$.\n"
-        "Pragmatic and epistemic values are higher-is-better; "
-        "Theta information gain is nonnegative.",
-        ha="center",
-        va="center",
-        fontsize=9.5,
-        style="italic",
-        color="#444444",
+    ax.text(0.02, 0.303, "DECISION TERMS → COMPUTATION AND BOUNDARY", fontsize=14,
+            fontweight="bold", color=EPISTEMIC_COLOR, va="top")
+    terms = (
+        ("Allocation", f"{len(ACTIONS)} discrete actions; not continuous capital weights"),
+        ("Marginal return", "Value −G(a); not an allocation derivative"),
+        ("Value", "Expected log preference + information about Θ"),
+        ("t-RSI", "Paired synthetic mean / SE; not a deployment gate"),
+        ("Temporal filtration", "Conceptual no-peeking rule; not enforced here"),
     )
-
-    # Live point-belief annotation, separate from the shared provenance footer.
-    funded_idx = int(facts["funded_action_idx"])
-    funded_name = ACTIONS[funded_idx]
-    footer = (
-        f"Live engine (IMPROVING operating point): "
-        f"marginal-return argmax = {funded_name}\n"
-        f"pragmatic = {facts['funded_pragmatic']:.4f}  |  "
-        f"epistemic = {facts['funded_epistemic']:.4f}  |  "
-        f"min epistemic over actions/regimes = {facts['min_epistemic']:.4f}"
-    )
-    ax.text(
-        0.5,
-        0.068,
-        footer,
-        ha="center",
-        va="center",
-        fontsize=8.0,
-        color="#666666",
-    )
-    ax.text(
-        0.5,
-        0.018,
-        f"channels = {', '.join(CHANNELS)}   |   actions = {len(ACTIONS)}",
-        ha="center",
-        va="center",
-        fontsize=8.0,
-        color="#888888",
-    )
-
-    fig.tight_layout()
+    for index, (term, meaning) in enumerate(terms):
+        y = 0.255 - index * 0.041
+        ax.text(0.02, y, term, fontsize=13, fontweight="bold", color=INK, va="center")
+        ax.text(0.30, y, meaning, fontsize=13, color=INK, va="center")
+    ax.text(0.5, 0.032,
+            f"Fixed NumPy source • {len(CHANNELS)} factors • "
+            "no coefficient learning or financial calibration.",
+            ha="center", va="center", fontsize=13, color=INK)
     return fig
 
 
 def main() -> int:
-    """Generate the AIF construct-dictionary figure deterministically."""
     apply_style()
     OUTPUT_PNG.parent.mkdir(parents=True, exist_ok=True)
-
-    facts = _operating_point_facts()
-    fig = build_figure(facts)
-    add_provenance_footer(fig, ANALYTIC_FOOTER)  # schematic dictionary, not data
-    fig.savefig(OUTPUT_PNG, dpi=DPI, bbox_inches="tight", facecolor="white")
+    fig = build_figure()
+    fig.savefig(OUTPUT_PNG, dpi=DPI, bbox_inches="tight", facecolor="white", pad_inches=0.08)
     plt.close(fig)
-
     print(str(OUTPUT_PNG.resolve()))
     return 0
 

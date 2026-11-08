@@ -1,6 +1,6 @@
-# Limitations and future work {#sec:limitations}
+# Synthetic evidence limits and prerequisites for empirical extensions {#sec:limitations}
 
-## Deliberate model reduction
+## Finite actions and product filtering omit corporate structure
 
 Each of the {{NUM_CHANNELS}} channels has two capability levels, and the
 controller chooses one of {{NUM_ACTIONS}} discrete actions. This is an
@@ -35,8 +35,9 @@ constitute multi-step optimal planning or a learned closed loop.
 ## Synthetic perturbations, not empirical confidence
 
 The canonical diagnostic uses {{BOOTSTRAP_N}} seeded draws with concentration
-{{BOOTSTRAP_CONCENTRATION}}. The law $\mathrm{Dirichlet}(\alpha b_k+1)$ both
-smooths the center toward a uniform belief and controls dispersion. Its
+{{BOOTSTRAP_CONCENTRATION}}. At the interior operating beliefs, the law
+$\mathrm{Dirichlet}(\alpha b_k+1)$ smooths the center toward uniform and controls
+dispersion; boundary entries are floored as described in [@sec:value]. Its
 percentile intervals describe the synthetic draw cloud. They are not calibrated
 confidence intervals for a real firm's returns. The t-RSI denominator is the
 Monte Carlo SE of the paired margin, so its magnitude depends on draw count.
@@ -76,7 +77,7 @@ margin percentiles are separate diagnostics from a standardized mean.
 
 ![Synthetic positive-margin fraction and paired-margin central percentile interval across Theta freshness. The per-grid sample count, seed policy, concentration and horizon are printed on the figure. Computed by `statistics.break_even_profile`.](../output/figures/break_even_probability.png){#fig:breakeven}
 
-## Trajectories are predictions, not observed learning
+## Prediction-only trajectories do not demonstrate observed learning
 
 The IMPROVING greedy trajectory's first action is {{TRAJ_FIRST_FUNDED}}, last
 {{TRAJ_LAST_FUNDED}}, and dominant action {{TRAJ_DOMINANT_ACTION}}. Its recorded

@@ -3,10 +3,10 @@
 The {{NUM_DEFINITIONS}} numbered definitions distinguish executable reduced-model
 objects from the historical AlphaFund concepts that motivate them
 [@westenhaver2026rsi]. They are not a proof that every corporate definition has an
-implemented numerical counterpart. The {{NUM_FIGURES}} body figures are either
-model computations or explicitly labeled conceptual diagrams.
+implemented numerical counterpart. The {{NUM_FIGURES}} registered manuscript figures,
+including the graphical abstract, combine model computations and labeled conceptual diagrams.
 
-## Equity, reward and objective
+## Equity and cumulative return motivate, but do not calibrate, preference
 
 **Definition D1 (Equity and preference).** Equity and solvency are external
 corporate concepts. The engine has no assets/liabilities state or survival
@@ -32,7 +32,7 @@ greedy and hold trajectories over {{PLANNING_HORIZON}} actions. These are
 separate operations, not an equality between economic $J_t$ and EFE
 [@friston2010freeenergy; @dacosta2020synthesis].
 
-## State, control and transition
+## Product beliefs and discrete actions use authored factorized transitions
 
 **Definition D4 (Product belief).** The engine retains channel beliefs in fixed
 order `I,S,U,Theta,Z`:
@@ -61,7 +61,7 @@ law, not an identified true corporate transition [@kaelbling1998pomdp].
 transitions, preferences and priors. Theta is a hidden capability label, not
 these numerical coefficients. No within-run coefficient learning is performed.
 
-## Observations, inference and chronology
+## Ordered observations do not authenticate external chronology
 
 **Definition D8 (Observation history).** `run_inference` consumes supplied
 reward/loss pairs in order, or explicitly labeled modal model observations.
@@ -93,7 +93,7 @@ likelihoods are distinct assumptions. The complete joint export preserves both;
 the local filter additionally approximates its retained belief. Upstream joint
 filtering need not agree with that approximation [@friedman2026gnn; @friedman2026cogant].
 
-## Action scores and trajectory diagnostics
+## One-step action scores and paired horizon rates answer different questions
 
 **Definition D12 (Softmax policy).** `policy_posterior` computes
 
@@ -164,7 +164,7 @@ incumbent, verify held-out evidence or per-channel readiness, or gate either
 simulator. The historical corporate admission concept is not implemented as a
 deployment mechanism.
 
-## Concepts outside the implemented model
+## Supermodularity, continuation and capital amplification remain conceptual
 
 **Definition D18 (Supermodularity and continuation).** Economic cross-partials and
 certified continuation bounds motivate possible extensions [@milgrom1990]. The

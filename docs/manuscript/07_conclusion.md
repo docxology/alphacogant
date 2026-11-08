@@ -1,4 +1,4 @@
-# Conclusion {#sec:conclusion}
+# An inspectable reduced analogy, not a deployed self-improving firm {#sec:conclusion}
 
 AlphaFund's historical whitepaper motivates a corporate recursive-self-improvement
 analogy [@westenhaver2026rsi]. AlphaCOGANT makes a bounded part of that analogy
@@ -20,7 +20,7 @@ artifacts. Chronological data provenance, scientific interpretation, and freshne
 of published bytes still require independent checks. Token coverage and current
 file hashes cannot make arbitrary prose true.
 
-## Discussion
+## Research progress requires new behavioral and empirical evidence
 
 A sustainability-constrained learning firm remains a substantive research question
 [@coase1937; @milgrom1990]. The present model supplies a reproducible experimental

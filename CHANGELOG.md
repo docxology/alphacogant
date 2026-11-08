@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.2 — 2026-11-07
+## 1.2.2 — 2026-11-08
 
 - Correct create/hold/residual-decay horizons to include all H post-action
   outcomes, including the first action at H=1. Regenerate affected diagnostics.
@@ -32,6 +32,14 @@
   flush pending figures before the bibliography, and reconcile schematic captions.
 - Synchronize archival/manuscript/package versions, remove the stale version DOI,
   include archival metadata in source distributions, and cover Python 3.11 in CI.
+- Register a computation-backed graphical abstract within the manuscript; replace
+  decorative art and dense diagrams with printable workflow, channel/dependency
+  and fixed-model schematics carrying their own evidence boundaries.
+- Align dictionary captions and accessibility text with the actual structural
+  figure; distinguish fixed-belief comparisons from coefficient learning.
+- Reorganize documentation around task-specific contract owners and informative
+  section titles. Require contained PDF/HTML rendering and actual inspection for
+  manuscript/visual releases, without adding document tools to engine-only use.
 
 ## 1.2.1 — 2026-10-16
 
