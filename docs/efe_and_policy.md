@@ -4,10 +4,11 @@
 
 ## Sign convention
 
-Active Inference minimizes Expected Free Energy `G` [2, 3]. AlphaCOGANT reports:
+Active Inference motivates minimizing Expected Free Energy `G`
+([epistemic-value paper](https://doi.org/10.1080/17588928.2015.1020053)). AlphaCOGANT reports:
 
 - `pragmatic`: expected log-preference value
-- `epistemic`: expected information gain [3, 4]
+- `epistemic`: expected information gain about the hidden Theta capability only
 - `total`: the minimized quantity, `-(pragmatic + epistemic)`
 
 The action value used for ranking is therefore `-total`.
@@ -16,7 +17,7 @@ The action value used for ranking is therefore `-total`.
 
 For each action:
 
-1. `_predict_belief()` advances the current belief through the action-specific
+1. `predicted_belief()` advances the current belief through the action-specific
    transition tensor.
 2. Reward and loss distributions are computed under the predicted belief.
 3. Pragmatic value is computed from preferences `C_R` and `C_L`.
@@ -27,8 +28,8 @@ For each action:
 ## Policy posterior
 
 `policy_posterior()` applies a precision-weighted softmax to the action values.
-`gamma` must be positive and finite. The posterior is used in figures to show
-how mass shifts from exploration to exploitation as beliefs change.
+`gamma` must be positive and finite. Figure probabilities are evaluated along a
+greedy prediction-only rollout; they do not establish an explore/exploit switch.
 
 ## Claim boundary
 

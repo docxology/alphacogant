@@ -3,8 +3,8 @@
 `src/alphacogant/model/generative_model.py` owns the reduced Economic World
 Model. The model is deliberately small: five factors, two levels per factor, six
 actions, and two observation channels.
-This contract is the source-owned executable form of the model in the whitepaper's
-filtered generative framing [1, 2, 3, 4].
+The matrices are illustrative authored parameters, not fitted corporate data.
+See the [manuscript references](manuscript/references.bib) for methodological context.
 
 ## Tensors
 
@@ -26,14 +26,16 @@ filtered generative framing [1, 2, 3, 4].
 
 ## Inference contract
 
-`infer_states()` performs a one-step Bayesian filtering update from reward and
-loss observations to posterior channel beliefs. For the current factor graph, the
-mean-field update is exact per factor given the other factors. If future work adds
-coupled transitions or higher-cardinality state, this exactness claim must be
-revised [2, 4].
+`infer_states()` performs one factorized filtering sweep. Each likelihood message
+is averaged over the other prior factors; the resulting product discards
+posterior dependence. Coupled likelihoods can change exact individual marginals,
+even with independent transitions. Log-domain normalization supports rare
+positive evidence; truly zero-support observations raise `ValueError`.
 
 ## What the model is not
 
 The model is not a calibrated copy of AlphaFund proprietary surfaces. It is an
 illustrative reduced Active Inference encoding used to test the correspondence,
 the sign-discriminating certificate, and the source-owned manuscript pipeline.
+Z has no likelihood or cross-transition effect and cannot affect EFE in this
+encoding. Theta is a capability state, not learned matrix coefficients.

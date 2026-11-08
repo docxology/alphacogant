@@ -145,16 +145,16 @@ def main() -> Path:
     )
     fig.text(
         0.5,
-        -0.02,
-        "Pragmatic value rises (less negative) as the firm strengthens and the EWM "
-        "freshens (improving → coasting); epistemic value (info gain about Θ) "
-        "shifts locus, peaking at Θ when the EWM is stale and at Sensors when it is "
-        f"fresh. Actions evaluated: {', '.join(a for a in ACTIONS if a != 'hold')}.",
+        -0.06,
+        "Two authored point beliefs, not a learning trajectory; epistemic value is "
+        "information gain about Theta.\n"
+        "Its funding-action peak is at Theta for IMPROVING and Sensors for COASTING; "
+        f"actions: {', '.join(a for a in ACTIONS if a != 'hold')}.",
         ha="center",
         fontsize=9,
         color="#333333",
     )
-    add_provenance_footer(fig, ANALYTIC_FOOTER, y=-0.05)  # below the explanatory caption
+    add_provenance_footer(fig, ANALYTIC_FOOTER, y=-0.12)  # below the explanatory caption
 
     fig.tight_layout()
     fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight")

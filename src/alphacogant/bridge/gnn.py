@@ -24,6 +24,45 @@ PARAMETER_SHAPES = {
     "C_L": (3,),
     **{f"D_{c}": (2,) for c in CHANNELS},
 }
+DECLARATION_SHAPES = {
+    **{f"s{c}": (2, 1) for c in CHANNELS},
+    **PARAMETER_SHAPES,
+    "o_R": (3, 1),
+    "o_L": (3, 1),
+    "pi": (6,),
+    "u": (1,),
+    "G": (6,),
+    "g_epistemic": (6,),
+    "g_pragmatic": (6,),
+    "tRSI": (1,),
+}
+FIXED_CONNECTIONS = (
+    *(f"D_{c}>s{c}" for c in CHANNELS),
+    "sI-A_R",
+    "sU-A_R",
+    "sTheta-A_R",
+    "sS-A_L",
+    "sTheta-A_L",
+    "A_R-o_R",
+    "A_L-o_L",
+    "C_R>G",
+    "C_L>G",
+    "G>pi",
+    "pi>u",
+    "g_epistemic>G",
+    "g_pragmatic>G",
+    "g_pragmatic>tRSI",
+    "sTheta>tRSI",
+    *(edge for c in CHANNELS for edge in (f"B_{c}>u", f"u>s{c}")),
+)
+MODEL_COUNTS = {
+    "num_channel_factors": 5,
+    "num_levels_per_factor": 2,
+    "num_reward_levels": 3,
+    "num_loss_levels": 3,
+    "num_actions": 6,
+    "policy_horizon": 1,
+}
 REQUIRED_SECTIONS = (
     "GNNSection",
     "GNNVersionAndFlags",
@@ -71,7 +110,7 @@ def model_to_gnn(model: EconomicWorldModel) -> str:
             "B axes: next state, current state, action. C contains log preferences.",
         ],
         "StateSpaceBlock": [f"s{c}[2,1,type=float]" for c in CHANNELS],
-        "Connections": [f"D_{c}>s{c}" for c in CHANNELS],
+        "Connections": list(FIXED_CONNECTIONS),
         "InitialParameterization": [],
         "Equations": ["G = -g_pragmatic - g_epistemic"],
         "Time": ["Dynamic", "Discrete", "ModelTimeHorizon=1"],
@@ -107,26 +146,14 @@ def model_to_gnn(model: EconomicWorldModel) -> str:
     for name, (dims, concept) in extras.items():
         sections["StateSpaceBlock"].append(f"{name}[{dims},type=float]")
         sections["ActInfOntologyAnnotation"].append(f"{name}={concept}")
-    sections["Connections"] += [
-        "sI-A_R",
-        "sU-A_R",
-        "sTheta-A_R",
-        "sS-A_L",
-        "sTheta-A_L",
-        "A_R-o_R",
-        "A_L-o_L",
-        "C_R>G",
-        "C_L>G",
-        "G>pi",
-        "pi>u",
-        "g_epistemic>G",
-        "g_pragmatic>G",
-        "g_pragmatic>tRSI",
-        "sTheta>tRSI",
-    ]
-    for c in CHANNELS:
-        sections["Connections"] += [f"B_{c}>u", f"u>s{c}"]
     return "\n\n".join(f"## {name}\n" + "\n".join(lines) for name, lines in sections.items()) + "\n"
+
+
+def _content_lines(block: str):
+    for raw_line in block.splitlines():
+        line = raw_line.split("#", 1)[0].strip()
+        if line:
+            yield line
 
 
 def model_from_gnn(text: str) -> EconomicWorldModel:
@@ -151,14 +178,22 @@ def model_from_gnn(text: str) -> EconomicWorldModel:
     if not re.fullmatch(r"GNN v1(?:\.[01])?", sections["GNNVersionAndFlags"].strip()):
         raise ValueError("Unsupported GNNVersionAndFlags; expected GNN v1, v1.0 or v1.1.")
     block = re.sub(r"#[^\n]*", "", sections["InitialParameterization"])
-    pattern = re.compile(r"([A-Za-z_]\w*)\s*=\s*\{([^{}]*)\}", re.DOTALL)
+    assignment = re.compile(r"\s*([A-Za-z_]\w*)\s*=\s*\{")
     arrays: dict[str, np.ndarray] = {}
-    for match in pattern.finditer(block):
+    position = 0
+    block = block.strip()
+    while position < len(block):
+        match = assignment.match(block, position)
+        if match is None:
+            raise ValueError("Unsupported InitialParameterization content.")
         name = match[1]
         if name not in PARAMETER_SHAPES or name in arrays:
             raise ValueError(f"Unexpected or duplicate parameter {name}.")
+        end = block.find("}", match.end())
+        if end == -1 or "{" in block[match.end() : end]:
+            raise ValueError(f"Invalid numeric literal for {name}.")
         try:
-            tree = ast.parse("(" + match[2].strip() + ")", mode="eval")
+            tree = ast.parse("(" + block[match.end() : end].strip() + ")", mode="eval")
             if any(
                 isinstance(node, ast.Constant)
                 and (isinstance(node.value, bool) or not isinstance(node.value, (int, float)))
@@ -166,38 +201,49 @@ def model_from_gnn(text: str) -> EconomicWorldModel:
             ):
                 raise ValueError("only real numeric literals are allowed")
             array = np.asarray(ast.literal_eval(tree), dtype=float)
-        except (SyntaxError, TypeError, ValueError, RecursionError) as exc:
+        except (SyntaxError, TypeError, ValueError, OverflowError, RecursionError) as exc:
             raise ValueError(f"Invalid numeric literal for {name}.") from exc
         if array.shape != PARAMETER_SHAPES[name]:
             raise ValueError(f"{name} must have shape {PARAMETER_SHAPES[name]}, got {array.shape}.")
         arrays[name] = array
-    if pattern.sub("", block).strip():
-        raise ValueError("Unsupported InitialParameterization content.")
+        position = end + 1
     if arrays.keys() != PARAMETER_SHAPES.keys():
         raise ValueError(f"Missing parameters: {sorted(PARAMETER_SHAPES.keys() - arrays.keys())}.")
     declarations = {}
-    for name, dimensions in re.findall(
-        r"^\s*(\w+)\[([\d,]+),type=float\]", sections["StateSpaceBlock"], re.MULTILINE
-    ):
-        if name in declarations:
-            raise ValueError(f"Duplicate declaration {name}.")
-        declarations[name] = tuple(map(int, dimensions.split(",")))
-    # The numerical engine implements the fixed EWM factor dependencies. Reject
-    # references the declared graph cannot resolve rather than guessing endpoints.
-    names = set(re.findall(r"^\s*(\w+)\[", sections["StateSpaceBlock"], re.MULTILINE))
-    for raw_line in sections["Connections"].splitlines():
-        line = raw_line.split("#", 1)[0].strip()
-        if not line:
-            continue
-        match = re.fullmatch(r"(\w+)[>-](\w+)", line)
-        if match is None or not {match[1], match[2]}.issubset(names):
-            raise ValueError(f"Invalid or undeclared connection: {line}.")
-    for name, shape in PARAMETER_SHAPES.items():
-        if declarations.get(name) != shape:
-            raise ValueError(f"StateSpaceBlock shape for {name} must be {shape}.")
-    for c in CHANNELS:
-        if declarations.get(f"s{c}") != (2, 1):
-            raise ValueError(f"StateSpaceBlock must declare s{c}[2,1,type=float].")
+    for line in _content_lines(sections["StateSpaceBlock"]):
+        match = re.fullmatch(r"([A-Za-z_]\w*)\[([\d,]+),type=(float|int)\]", line)
+        if match is None:
+            raise ValueError(f"Unsupported StateSpaceBlock declaration: {line}.")
+        name, dimensions, dtype = match.groups()
+        if name not in DECLARATION_SHAPES or name in declarations:
+            raise ValueError(f"Unexpected or duplicate declaration {name}.")
+        shape = tuple(map(int, dimensions.split(",")))
+        if shape != DECLARATION_SHAPES[name]:
+            raise ValueError(
+                f"StateSpaceBlock shape for {name} must be {DECLARATION_SHAPES[name]}."
+            )
+        if dtype != "float" and name not in {"o_R", "o_L", "u"}:
+            raise ValueError(f"StateSpaceBlock type for {name} must be float.")
+        declarations[name] = shape
+    if declarations.keys() != DECLARATION_SHAPES.keys():
+        raise ValueError("StateSpaceBlock must declare every fixed finite-profile variable.")
+    connections = set()
+    for line in _content_lines(sections["Connections"]):
+        if line not in FIXED_CONNECTIONS or line in connections:
+            raise ValueError(f"Unsupported or duplicate connection: {line}.")
+        connections.add(line)
+    if connections != set(FIXED_CONNECTIONS):
+        raise ValueError("Connections must contain every fixed finite-profile edge.")
+    counts = set()
+    for line in _content_lines(sections["ModelParameters"]):
+        name, separator, value = line.partition(":")
+        name = name.strip()
+        if separator and name in MODEL_COUNTS:
+            if name in counts or value.strip() != str(MODEL_COUNTS[name]):
+                raise ValueError(f"ModelParameters {name} must be {MODEL_COUNTS[name]}.")
+            counts.add(name)
+    if not {"num_channel_factors", "num_actions", "policy_horizon"}.issubset(counts):
+        raise ValueError("ModelParameters must declare factor/action counts and policy_horizon.")
     model = EconomicWorldModel(
         A_R=arrays["A_R"],
         A_L=arrays["A_L"],
@@ -222,6 +268,11 @@ def joint_matrices(model: EconomicWorldModel) -> dict[str, np.ndarray]:
     _validate_model(model)
     states = list(product(range(2), repeat=len(CHANNELS)))
     observations = list(product(range(3), repeat=2))
+    try:
+        with np.errstate(over="raise", invalid="raise"):
+            C = np.array([model.C_R[r] + model.C_L[loss] for r, loss in observations])
+    except FloatingPointError as exc:
+        raise ValueError("Joint preference scores must be finite.") from exc
     A = np.empty((9, 32))
     B = np.empty((32, 32, len(ACTIONS)))
     D = np.empty(32)
@@ -237,7 +288,6 @@ def joint_matrices(model: EconomicWorldModel) -> dict[str, np.ndarray]:
                 ],
                 axis=0,
             )
-    C = np.array([model.C_R[r] + model.C_L[loss] for r, loss in observations])
     return {"A": A, "B": B, "C": C, "D": D}
 
 

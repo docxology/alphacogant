@@ -1,8 +1,7 @@
-"""Tests for t-RSI, bootstrap determinism, and the certificate gate.
+"""Paired t-RSI, deterministic bootstrap and scalar threshold behavior.
 
-The central property under test is that the create/decay comparator is NOT
-green-by-construction: t-RSI must be able to change sign across operating points,
-so the certificate of monotone improvement can honestly fire AND fail.
+The comparator can change sign; the predicate does not enforce action,
+model-update or deployment admission.
 """
 
 from __future__ import annotations
@@ -10,8 +9,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from alphacogant.model.channels import CHANNELS
+from alphacogant.model.generative_model import default_model
 from alphacogant.model.operating_points import COASTING as _COASTING
 from alphacogant.model.operating_points import IMPROVING as _IMPROVING
+from alphacogant.stats.simulation import simulate_trajectory
 from alphacogant.trsi.t_rsi import (
     bootstrap_t_rsi,
     certificate,
@@ -132,3 +134,82 @@ def test_paired_bootstrap_samples_are_byte_identical_and_aligned(model, prior) -
     assert first_create.shape == first_decay.shape == (24,)
     # Decay samples are residual erosions: never negative.
     assert np.all(first_decay >= 0.0)
+
+
+@pytest.mark.parametrize("scale", [1e-200, 1.0, 1e200])
+def test_standardization_is_scale_invariant_without_false_certificate(scale):
+    statistic = t_rsi([scale, 2 * scale], [0.0, 0.0])
+    assert statistic == pytest.approx(3.0)
+    assert certificate(statistic, 4.0) is False
+
+
+def test_standardization_handles_overflowing_unscaled_margins():
+    assert t_rsi([1e308, 0.0], [-1e308, 0.0]) == pytest.approx(1.0)
+    # Large equal pairs must not erase the nonzero tiny paired margins.
+    assert t_rsi([1e308, 1e-200, 2e-200], [1e308, 0.0, 0.0]) == pytest.approx(
+        np.sqrt(3.0)
+    )
+
+
+@pytest.mark.parametrize("offset", [float(3 * 2**52), -float(3 * 2**52)])
+def test_standardization_preserves_close_large_offset_samples(offset):
+    statistic = t_rsi([offset, offset + 4], [0.0, 0.0])
+    assert statistic == pytest.approx((offset + 2) / 2, rel=1e-15)
+    assert certificate(statistic, 6e15) is (offset > 0)
+
+
+@pytest.mark.parametrize("horizon", [1, 2, 4])
+def test_create_rate_includes_every_action_outcome(horizon):
+    reward = np.zeros((3, 2, 2, 2))
+    reward[0, 0, :, :] = 1.0
+    reward[2, 1, :, :] = 1.0
+    loss = np.zeros((3, 2, 2))
+    loss[1] = 1.0
+    transitions = {
+        channel: np.repeat(np.eye(2)[:, :, None], 6, axis=2) for channel in CHANNELS
+    }
+    transitions["I"][:, :, 0] = [[0.0, 0.0], [1.0, 1.0]]
+    model = default_model(
+        A_R=reward, A_L=loss, B=transitions, C_R=[0, 0, 1], C_L=[0, 0, 0]
+    )
+    belief = {channel: np.array([0.5, 0.5]) for channel in CHANNELS}
+    belief["I"] = np.array([1.0, 0.0])
+    active = simulate_trajectory(model, belief, horizon, policy="greedy")
+    passive = simulate_trajectory(model, belief, horizon, policy="hold")
+    advantage = (active.cumulative_pragmatic[-1] - passive.cumulative_pragmatic[-1]) / horizon
+    assert advantage == pytest.approx(1.0)
+    assert create_rate(model, belief, horizon) == pytest.approx(advantage)
+
+
+def test_subnormal_samples_are_standardized_before_rescaling():
+    smallest = np.nextafter(0.0, 1.0)
+    assert t_rsi([0.0, smallest], [0.0, 0.0]) == pytest.approx(1.0)
+    assert certificate(t_rsi([0.0, smallest], [0.0, 0.0]), 0.5)
+
+
+def test_single_draw_bootstrap_preserves_zero_statistic_convention(model, prior):
+    result = bootstrap_t_rsi(model, prior, np.random.default_rng(7), n=1, horizon=2)
+    assert result["t_rsi"] == 0.0
+    assert result["create_se"] == result["decay_se"] == 0.0
+
+
+def test_cancellation_residual_cannot_become_a_passing_zero():
+    magnitude = float(2**54)
+    statistic = t_rsi([magnitude, -magnitude, -1.0], [0.0, 0.0, 0.0])
+    assert statistic == pytest.approx(-1 / (magnitude * np.sqrt(3)), rel=1e-15, abs=0)
+    assert not certificate(statistic, 0.0)
+
+
+def test_identical_policies_have_zero_create_rate_at_large_finite_preferences():
+    model = default_model()
+    model.C_R[:] = 1e308
+    model.C_L[:] = 0.0
+    for likelihood in (model.A_R, model.A_L):
+        likelihood.fill(0.0)
+        likelihood[0, ...] = 1.0
+    for transition in model.B.values():
+        transition[:] = np.eye(2)[:, :, None]
+    belief = {channel: np.array([1.0, 0.0]) for channel in CHANNELS}
+    with np.errstate(over="raise", invalid="raise"):
+        assert create_rate(model, belief, horizon=4) == 0.0
+        assert decay_rate(model, belief, horizon=4) == 0.0

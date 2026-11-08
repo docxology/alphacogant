@@ -15,7 +15,7 @@ operational contracts used to regenerate and audit that argument.
 | [efe_and_policy.md](efe_and_policy.md) | Expected Free Energy, policy posterior, and discrete action values. |
 | [trsi_statistics.md](trsi_statistics.md) | Create/decay rates, t-RSI, confidence intervals, and break-even profiles. |
 | [figures_and_artifacts.md](figures_and_artifacts.md) | Figure scripts, registry, manifest, and provenance checks. |
-| [rendering_and_validation.md](rendering_and_validation.md) | Project and template commands for regenerated PDFs. |
+| [rendering_and_validation.md](rendering_and_validation.md) | Contained standalone render, visual checks and optional template integration. |
 | [testing_contract.md](testing_contract.md) | No-mock tests, coverage expectations, and contract tests. |
 | [claim_boundaries.md](claim_boundaries.md) | What the manuscript claims, and what it deliberately does not claim. |
 | [api_reference.md](api_reference.md) | Stable public functions and which surface owns them. |
@@ -32,8 +32,8 @@ operational contracts used to regenerate and audit that argument.
 
 ## Ground rules
 
-Do not edit `output/` to fix a documentation or manuscript defect. Change the
-source file, regenerate figures and manuscript variables, then render through the
-template pipeline.
+Do not edit generated output to fix a source defect. Regenerate figures and
+manuscript variables, use the contained render recipe, then inspect actual output.
+Structural checks and hashes do not prove empirical validity or semantic freshness.
 
 - [Upstream compatibility](upstream_compatibility.md) — pinned GNN/COGANT contracts, checks, and limits.

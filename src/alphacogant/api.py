@@ -22,12 +22,14 @@ from alphacogant.bridge.gnn import (
     model_to_gnn,
 )
 from alphacogant.bridge.inference import run_inference, verify_inference
+from alphacogant.io import MAX_JSON_BYTES
 from alphacogant.model.generative_model import belief_prior, default_model
 from alphacogant.profiling import profile_workload, source_fingerprint
 from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
 from alphacogant.trsi.t_rsi import bootstrap_t_rsi
 
 API_VERSION = "1.0"
+MAX_REQUEST_BYTES = MAX_JSON_BYTES
 
 
 def _integer(default: int, maximum: int, minimum: int = 1):
@@ -138,8 +140,9 @@ def capabilities() -> dict[str, object]:
         },
         "limits": {
             "source_bytes": 1_000_000,
-            "request_bytes": 1_000_000,
+            "request_bytes": MAX_REQUEST_BYTES,
             "requests_per_stream": 1000,
+            "inference_steps": 1000,
             "bootstrap_n_times_horizon": 65_536,
         },
         "nonfinite_result_encoding": "Infinity, -Infinity and NaN are JSON strings",
@@ -290,6 +293,8 @@ def handle_request(request: object) -> dict[str, object]:
         method = request.get("method")
         if not isinstance(method, str):
             raise ValueError("method must be a string.")
+        if "params" in request and not isinstance(request["params"], dict):
+            raise ValueError("params must be an object.")
         result = Client().call(method, request.get("params", {}))
         return {
             "schema_version": API_VERSION,

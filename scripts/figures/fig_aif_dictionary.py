@@ -9,16 +9,11 @@ construct is connected by a line to its right-hand Active-Inference counterpart,
 following the coverage rubric in ``docs/whitepaper_concepts.md`` and the sign /
 value conventions in ``docs/manuscript/05_epistemic_and_pragmatic_value.md``.
 
-Mapping (left -> right):
-    EWM                          -> generative model  Ŵ_t
-    channels Ξ_t                 -> hidden state  s
-    a_t                          -> control / policy  π
-    J_t                          -> negative EFE pragmatic  (−E[EFE pragmatic])
-    marginal-return g_t          -> −∂G/∂a  (the negative-EFE-per-action vector)
-    Sensors / R&D                -> epistemic value  (KL information gain ≥ 0)
-    Investments / Actuators      -> pragmatic value  (expected log-equity)
-    t-RSI                        -> EFE-improvement certificate
-    filtration F_t               -> measurability / no-peeking
+Links distinguish the implemented finite model from corporate analogies:
+action values are discrete -G(a), not allocation derivatives; information
+gain targets Theta via A_R/A_L, not Z; pragmatic value is authored reward/loss
+log preference. The scalar t-RSI threshold is not a deployment gate.
+Temporal/no-peeking enforcement is conceptual and is not implemented here.
 
 Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_aif_dictionary.py
@@ -68,13 +63,17 @@ OUTPUT_PNG = PROJECT_ROOT / "output" / "figures" / "aif_dictionary.png"
 ROWS: tuple[tuple[str, str, str], ...] = (
     ("EWM  $\\hat W_t$", "generative model  $\\hat W_t$", "model"),
     ("channels  $\\Xi_t \\to (I,S,U,\\Theta,Z)$", "hidden state  $s$", "state"),
-    ("action vector  $a_t$", "control / policy  $\\pi$", "control"),
-    ("objective  $J_t$", "$-\\mathbb{E}[$EFE pragmatic$]$", "pragmatic"),
-    ("marginal return  $g_t$", "$-\\partial G/\\partial a$", "marginal"),
-    ("Sensors / R&D", "epistemic value  ($D_{KL}\\!\\geq 0$)", "epistemic"),
-    ("Investments / Actuators", "pragmatic value (log-equity)", "pragmatic"),
-    ("t-RSI", "EFE-improvement certificate", "certificate"),
-    ("filtration  $F_t$", "measurability / no-peeking", "measure"),
+    ("allocation  $a_t$ (analogy)", "six discrete control actions", "control"),
+    ("objective  $J_t$ (analogy)", "authored reward/loss log preference", "pragmatic"),
+    ("marginal return  $g_t$", "discrete action values  $-G(a)$", "marginal"),
+    (
+        "Sensors / R&D (analogy)",
+        "Theta information via A_R/A_L;\nZ inert to likelihood and value",
+        "epistemic",
+    ),
+    ("Investments / Actuators (analogy)", "predictive preference contribution", "pragmatic"),
+    ("t-RSI", "paired-margin scalar threshold;\nnot a deployment gate", "certificate"),
+    ("filtration  $F_t$ (concept)", "no temporal enforcement implemented", "measure"),
 )
 
 # Color per semantic tag (deterministic palette with Okabe-Ito accents for the
@@ -139,7 +138,7 @@ def _draw_box(ax, x: float, y: float, w: float, h: float, text: str, color: str)
         text,
         ha="center",
         va="center",
-        fontsize=10.5,
+        fontsize=9.5,
         color="#1A1A1A",
     )
 
@@ -154,18 +153,18 @@ def build_figure(facts: dict[str, float]) -> plt.Figure:
     # Column geometry.
     n = len(ROWS)
     box_w = 0.34
-    box_h = 0.072
+    box_h = 0.050
     left_x = 0.04
     right_x = 0.62
     top = 0.86
-    bottom = 0.16
+    bottom = 0.25
     ys = np.linspace(top, bottom, n)
 
     # Headers.
     ax.text(
         0.5,
         0.955,
-        "AlphaFund $\\leftrightarrow$ Active Inference: a construct dictionary",
+        "AlphaFund / Active Inference: implementation and analogy",
         ha="center",
         va="center",
         fontsize=15.5,
@@ -185,7 +184,7 @@ def build_figure(facts: dict[str, float]) -> plt.Figure:
     ax.text(
         right_x + box_w / 2.0,
         0.915,
-        "Active-Inference object",
+        "Finite-model counterpart / boundary",
         ha="center",
         va="center",
         fontsize=12,
@@ -220,10 +219,10 @@ def build_figure(facts: dict[str, float]) -> plt.Figure:
     # Sign-convention legend.
     ax.text(
         0.5,
-        0.11,
-        "Sign convention: EFE $G$ is minimized; value $= -G$. "
-        "Pragmatic and epistemic are values (higher = better); "
-        "epistemic (a KL) is $\\geq 0$.",
+        0.135,
+        "Sign convention: EFE $G$ is minimized; value $= -G$.\n"
+        "Pragmatic and epistemic values are higher-is-better; "
+        "Theta information gain is nonnegative.",
         ha="center",
         va="center",
         fontsize=9.5,
@@ -231,19 +230,19 @@ def build_figure(facts: dict[str, float]) -> plt.Figure:
         color="#444444",
     )
 
-    # Provenance footer with live engine values (proves engine is the data source).
+    # Live point-belief annotation, separate from the shared provenance footer.
     funded_idx = int(facts["funded_action_idx"])
     funded_name = ACTIONS[funded_idx]
     footer = (
         f"Live engine (IMPROVING operating point): "
-        f"marginal-return argmax = {funded_name}  |  "
-        f"funded pragmatic value = {facts['funded_pragmatic']:.4f}  |  "
-        f"funded epistemic value = {facts['funded_epistemic']:.4f}  |  "
-        f"min epistemic over all actions/regimes = {facts['min_epistemic']:.4f} ($\\geq 0$)"
+        f"marginal-return argmax = {funded_name}\n"
+        f"pragmatic = {facts['funded_pragmatic']:.4f}  |  "
+        f"epistemic = {facts['funded_epistemic']:.4f}  |  "
+        f"min epistemic over actions/regimes = {facts['min_epistemic']:.4f}"
     )
     ax.text(
         0.5,
-        0.045,
+        0.068,
         footer,
         ha="center",
         va="center",

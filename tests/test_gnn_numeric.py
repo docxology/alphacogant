@@ -56,9 +56,32 @@ def test_numeric_round_trip_preserves_custom_coefficients_and_behavior(model, pr
         lambda s: s.replace("GNN v1", "GNN v999"),
         lambda s: s.replace("G>pi", "missing>pi"),
         lambda s: s.replace("G>pi", "G>>pi"),
+        lambda s: s.replace("G>pi\n", ""),
+        lambda s: s.replace("G>pi", "pi>G"),
+        lambda s: s.replace("G>pi", "G>pi\nG>pi"),
+        lambda s: s.replace("G>pi", "G>pi\no_R>sI"),
+        lambda s: s.replace("G>pi", "G>pi\nsZ>g_epistemic"),
         lambda s: s + "\n## Time\nDynamic\n",
         lambda s: s.replace("A_R[3,2,2,2", "A_R[3,2,2,3"),
         lambda s: s.replace("sI[2,1", "sI[3,1"),
+        lambda s: s.replace("o_R[3,1", "o_R[2,1"),
+        lambda s: s.replace("o_L[3,1", "o_L[3,2"),
+        lambda s: s.replace("u[1,type=float]", "u[6,type=float]"),
+        lambda s: s.replace("pi[6", "pi[5"),
+        lambda s: s.replace("G[6", "G[1"),
+        lambda s: s.replace("g_epistemic[6", "g_epistemic[1"),
+        lambda s: s.replace("g_pragmatic[6", "g_pragmatic[1"),
+        lambda s: s.replace("tRSI[1", "tRSI[6"),
+        lambda s: s.replace("D_I[2,type=float]", "D_I[2,type=int]"),
+        lambda s: s.replace("u[1,type=float]", "u[1,type=bool]"),
+        lambda s: s.replace("u[1,type=float]", "u[1,type=float] trailing"),
+        lambda s: s.replace("u[1,type=float]", ""),
+        lambda s: s.replace("u[1,type=float]", "u[1,type=float]\nextra[1,type=float]"),
+        lambda s: s.replace("num_actions: 6", "num_actions: 7"),
+        lambda s: s.replace("num_channel_factors: 5", "num_channel_factors: 4"),
+        lambda s: s.replace("policy_horizon: 1", "policy_horizon: 2"),
+        lambda s: s.replace("policy_horizon: 1", ""),
+        lambda s: s.replace("policy_horizon: 1", "policy_horizon: 1\npolicy_horizon: 1"),
         lambda s: s.replace("D_I={(0.6, 0.4)}", "D_I={(0.2, 0.2)}"),
         lambda s: s.replace("D_I={(0.6, 0.4)}", "D_I={(True, False)}"),
         lambda s: s.replace("D_I={(0.6, 0.4)}", "D_I={__import__('os').getcwd()}"),
@@ -155,3 +178,43 @@ def test_joint_fence_agrees_with_factor_model(model):
     restored = model_from_gnn(model_to_cogant_gnn(model))
     for name, expected in model_parameters(model).items():
         np.testing.assert_array_equal(model_parameters(restored)[name], expected)
+
+
+@pytest.mark.parametrize("content", ["X" * 100_000, "D_I={(" + "9" * 401 + ", 0)}"])
+def test_malformed_assignment_and_huge_integer_are_value_errors(model, content):
+    source = model_to_gnn_summary(model)
+    source = source.replace(
+        "## InitialParameterization\n", "## InitialParameterization\n" + content + "\n"
+    )
+    with pytest.raises(ValueError):
+        model_from_gnn(source)
+
+
+def test_assignment_scanner_preserves_multiline_literals_and_rejects_leftovers(model):
+    source = model_to_gnn_summary(model).replace(
+        "D_I={(0.6, 0.4)}", "D_I={\n(0.6, # weak\n0.4)\n}"
+    )
+    restored = model_from_gnn(source)
+    for name, expected in model_parameters(model).items():
+        np.testing.assert_array_equal(model_parameters(restored)[name], expected)
+    for content in ("trailing", "D_I={", "D_I={{0.6, 0.4}}"):
+        with pytest.raises(ValueError):
+            model_from_gnn(source.replace("\n## Equations", "\n" + content + "\n## Equations"))
+
+
+def test_discrete_declaration_notation_and_descriptive_sections_preserve_coefficients(model):
+    source = model_to_gnn_summary(model)
+    for name, dims in (("o_R", "3,1"), ("o_L", "3,1"), ("u", "1")):
+        source = source.replace(f"{name}[{dims},type=float]", f"{name}[{dims},type=int]")
+    source = source.replace("G = -g_pragmatic - g_epistemic", "Descriptive equation, not executed")
+    source = source.replace("ModelTimeHorizon=1", "ModelTimeHorizon=Finite")
+    source = source.replace("sI=HiddenStateFactor", "sI=DescriptiveConcept")
+    restored = model_from_gnn(source)
+    for name, expected in model_parameters(model).items():
+        np.testing.assert_array_equal(model_parameters(restored)[name], expected)
+
+
+def test_joint_export_rejects_unrepresentable_combined_preferences():
+    model = default_model(C_R=[1e308] * 3, C_L=[1e308] * 3)
+    with np.errstate(over="raise", invalid="raise"), pytest.raises(ValueError):
+        model_to_cogant_gnn(model)

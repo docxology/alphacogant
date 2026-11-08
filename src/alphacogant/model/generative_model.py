@@ -324,6 +324,38 @@ def belief_prior(model: EconomicWorldModel | None = None) -> dict[str, np.ndarra
     return {channel: active_model.D[channel].copy() for channel in CHANNELS}
 
 
+def _log_probabilities(values: np.ndarray) -> np.ndarray:
+    result = np.full_like(values, -np.inf)
+    np.log(values, out=result, where=values > 0.0)
+    return result
+
+
+def _log_marginal(terms: np.ndarray, axes: tuple[int, ...]) -> np.ndarray:
+    """Sum nonnegative factors without losing rare positive contractions."""
+    maximum = np.max(terms, axis=axes, keepdims=True)
+    shifted = np.full_like(terms, -np.inf)
+    np.subtract(terms, maximum, out=shifted, where=np.isfinite(maximum))
+    with np.errstate(under="ignore"):
+        mass = np.sum(np.exp(shifted), axis=axes)
+    return _log_probabilities(mass) + np.squeeze(maximum, axis=axes)
+
+
+def _posterior_from_log_likelihoods(
+    name: str, log_prior: np.ndarray, *log_likelihoods: np.ndarray
+) -> np.ndarray:
+    """Normalize rare evidence; retain exact zeros as impossible support."""
+    log_weight = log_prior.copy()
+    for likelihood in log_likelihoods:
+        log_weight += likelihood
+    maximum = float(np.max(log_weight))
+    if not np.isfinite(maximum):
+        raise ValueError(f"{name} must have positive total probability mass.")
+    # Posterior mass below representable precision legitimately rounds to zero.
+    with np.errstate(under="ignore"):
+        weights = np.exp(log_weight - maximum)
+    return weights / weights.sum()
+
+
 def infer_states(
     model: EconomicWorldModel,
     obs_R: int,
@@ -346,20 +378,37 @@ def infer_states(
     beliefs = _validate_belief_map(prior, context="prior")
     posterior: dict[str, np.ndarray] = {}
 
-    reward_tensor = model.A_R[obs_R]
-    loss_tensor = model.A_L[obs_L]
-    reward_given_I = np.einsum("iut,u,t->i", reward_tensor, beliefs["U"], beliefs["Theta"])
-    reward_given_U = np.einsum("iut,i,t->u", reward_tensor, beliefs["I"], beliefs["Theta"])
-    reward_given_Theta = np.einsum("iut,i,u->t", reward_tensor, beliefs["I"], beliefs["U"])
-    loss_given_S = np.einsum("st,t->s", loss_tensor, beliefs["Theta"])
-    loss_given_Theta = np.einsum("st,s->t", loss_tensor, beliefs["S"])
+    reward = _log_probabilities(model.A_R[obs_R])
+    loss = _log_probabilities(model.A_L[obs_L])
+    log_beliefs = {
+        channel: _log_probabilities(beliefs[channel]) for channel in ("I", "S", "U", "Theta")
+    }
+    reward_given_I = _log_marginal(
+        reward + log_beliefs["U"][None, :, None] + log_beliefs["Theta"][None, None, :],
+        (1, 2),
+    )
+    reward_given_U = _log_marginal(
+        reward + log_beliefs["I"][:, None, None] + log_beliefs["Theta"][None, None, :],
+        (0, 2),
+    )
+    reward_given_Theta = _log_marginal(
+        reward + log_beliefs["I"][:, None, None] + log_beliefs["U"][None, :, None],
+        (0, 1),
+    )
+    loss_given_S = _log_marginal(loss + log_beliefs["Theta"][None, :], (1,))
+    loss_given_Theta = _log_marginal(loss + log_beliefs["S"][:, None], (0,))
 
-    posterior["I"] = _normalize_probability_vector("posterior[I]", beliefs["I"] * reward_given_I)
-    posterior["S"] = _normalize_probability_vector("posterior[S]", beliefs["S"] * loss_given_S)
-    posterior["U"] = _normalize_probability_vector("posterior[U]", beliefs["U"] * reward_given_U)
-    posterior["Theta"] = _normalize_probability_vector(
-        "posterior[Theta]",
-        beliefs["Theta"] * reward_given_Theta * loss_given_Theta,
+    posterior["I"] = _posterior_from_log_likelihoods(
+        "posterior[I]", log_beliefs["I"], reward_given_I
+    )
+    posterior["S"] = _posterior_from_log_likelihoods(
+        "posterior[S]", log_beliefs["S"], loss_given_S
+    )
+    posterior["U"] = _posterior_from_log_likelihoods(
+        "posterior[U]", log_beliefs["U"], reward_given_U
+    )
+    posterior["Theta"] = _posterior_from_log_likelihoods(
+        "posterior[Theta]", log_beliefs["Theta"], reward_given_Theta, loss_given_Theta
     )
     posterior["Z"] = beliefs["Z"].copy()
     return posterior

@@ -1,27 +1,11 @@
 #!/usr/bin/env python3
 """Schematic of the Self-Forecasting Loop (whitepaper Figure 1).
 
-Thin-orchestrator figure script. All engine math is sourced from
-``src/alphacogant``; this script only orchestrates the engine query and draws a
-pure-matplotlib schematic of the four-node cycle that defines the
-self-forecasting loop in the AlphaFund whitepaper, mapped onto the
-Active-Inference / AlphaCOGANT formalism:
-
-    PREDICT  → query the Economic World Model (EWM) for the marginal-return
-               vector g_t (= -EFE.total per action). Active-Inference
-               counterpart: expected free energy evaluation under the
-               generative model.
-    OPTIMIZE → convex inner program over the Expected Free Energy. AIF
-               counterpart: precision-weighted policy posterior G* = softmax(g_t).
-    EXECUTE  → commit the argmax allocation a*_t. AIF counterpart: action
-               selection / control.
-    LEARN    → the realized row (Xi_{t+1}, E_{t+1}, R_t) tightens the next
-               forecast. AIF counterpart: belief update / evidence accrual
-               that widens the filtration F_t.
-
-The schematic is fully deterministic (no RNG draws affect geometry; the engine
-is queried only to label the PREDICT node with the real funded channel /
-action from a fixed operating-point belief). No engine data file is required.
+Conceptual corporate perception/action cycle, not an executed learning loop.
+The fixed engine scores six discrete actions; it runs no convex allocation
+solver and does not fit A/B matrices. Only two point-belief argmax labels
+below are live engine outputs. Observation-driven model learning and
+deployment commitment are conceptual stages, not computations here.
 
 Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_self_forecasting_loop.py
@@ -138,7 +122,7 @@ def _draw_arrow(ax, start, end, label, color, rad):
     # nudge label outward along the curve normal
     nx, ny = -(end[1] - start[1]), (end[0] - start[0])
     norm = np.hypot(nx, ny) or 1.0
-    off = 0.62 * np.sign(rad if rad != 0 else 1.0)
+    off = -0.62 * np.sign(rad if rad != 0 else 1.0)
     lx, ly = mx + off * nx / norm, my + off * ny / norm
     ax.text(
         lx,
@@ -194,22 +178,22 @@ def main() -> int:
     _draw_node(
         ax,
         P_OPTIMIZE,
-        "OPTIMIZE",
-        "convex inner program\nover EFE  (G* = softmax g_t)",
+        "SCORE / SELECT",
+        "six discrete EFE scores\nargmax value = -G",
         colors["optimize"],
     )
     _draw_node(
         ax,
         P_EXECUTE,
         "EXECUTE",
-        f"commit a*_t\n({imp_action})",
+        f"conceptual external action\n(example: {imp_action})",
         colors["execute"],
     )
     _draw_node(
         ax,
         P_LEARN,
-        "LEARN",
-        "realized row tightens\nthe next forecast",
+        "UPDATE (CONCEPT)",
+        "observations / model learning\nnot run by this simulator",
         colors["learn"],
     )
 
@@ -219,7 +203,7 @@ def main() -> int:
         ax,
         (P_PREDICT[0] + 1.35, P_PREDICT[1]),
         (P_OPTIMIZE[0] - 1.35, P_OPTIMIZE[1]),
-        "AIF: expected free energy\nevaluation, value = -G",
+        "computed: expected free energy\nvalue = -G",
         colors["predict"],
         rad=-0.18,
     )
@@ -227,7 +211,7 @@ def main() -> int:
         ax,
         (P_OPTIMIZE[0], P_OPTIMIZE[1] - 0.78),
         (P_EXECUTE[0], P_EXECUTE[1] + 0.78),
-        "AIF: precision-weighted\npolicy posterior",
+        "conceptual handoff\nselected action",
         colors["optimize"],
         rad=-0.18,
     )
@@ -235,7 +219,7 @@ def main() -> int:
         ax,
         (P_EXECUTE[0] - 1.35, P_EXECUTE[1]),
         (P_LEARN[0] + 1.35, P_LEARN[1]),
-        "AIF: action selection\n(control a*_t)",
+        "conceptual evidence\nfrom external execution",
         colors["execute"],
         rad=-0.18,
     )
@@ -243,7 +227,7 @@ def main() -> int:
         ax,
         (P_LEARN[0], P_LEARN[1] + 0.78),
         (P_PREDICT[0], P_PREDICT[1] - 0.78),
-        "AIF: belief update,\nfiltration F_t widens",
+        "conceptual feedback\nnot model fitting here",
         colors["learn"],
         rad=-0.18,
     )
@@ -251,7 +235,7 @@ def main() -> int:
     ax.text(
         6.0,
         10.4,
-        "The Self-Forecasting Loop",
+        "The Self-Forecasting Loop (conceptual)",
         ha="center",
         va="center",
         fontsize=17,
@@ -261,7 +245,7 @@ def main() -> int:
     ax.text(
         6.0,
         9.75,
-        "Whitepaper Figure 1 — the corporate loop as Active-Inference perception-action",
+        "Corporate analogy; no convex solver, observation loop, or model learning is executed",
         ha="center",
         va="center",
         fontsize=9.5,
@@ -272,9 +256,10 @@ def main() -> int:
     ax.text(
         6.0,
         5.5,
-        f"engine: {len(CHANNELS)} channels {CHANNELS}\n"
-        f"{len(ACTIONS)} actions  •  improving regime funds {imp_channel}\n"
-        f"coasting regime selects {coast_action}",
+        f"Fixed engine: {len(CHANNELS)} factors, {len(ACTIONS)} actions\n"
+        f"Point-belief argmax labels only:\n"
+        f"Improving: {imp_action}\n"
+        f"Coasting: {coast_action}",
         ha="center",
         va="center",
         fontsize=8.2,

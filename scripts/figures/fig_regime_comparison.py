@@ -4,15 +4,10 @@
 Thin-orchestrator figure script. All statistical computation comes from
 ``src/alphacogant.statistics`` (which wraps the engine's t-RSI bootstrap).
 
-Two-panel figure:
-  (a) Create-rate vs decay-rate for IMPROVING and COASTING, with 95% bootstrap
-      CIs shown as error bars. The t-RSI is the standardized gap between the
-      two rates within each regime.
-  (b) EFE decomposition (pragmatic + epistemic) for the funded channel at
-      each regime, showing the explore/exploit split.
-
-This is the key statistical evidence figure: it shows the CIs, the effect
-sizes, and the sign-discrimination property in one view.
+Panel (a) shows marginal 95% percentile draw intervals and paired-margin
+t-RSI at n=128 per regime, distinct from the canonical n=2560 headline.
+These are intervals of synthetic rate draws, not uncertainty bands for t-RSI.
+Panel (b) is the one-step EFE decomposition of the selected action, including hold.
 """
 
 from __future__ import annotations
@@ -25,7 +20,12 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
+from alphacogant.model.operating_points import (  # noqa: E402
+    BOOTSTRAP_CONCENTRATION,
+    BOOTSTRAP_SEED,
+)
 from alphacogant.stats.statistics import compare_regimes  # noqa: E402
+from alphacogant.trsi.t_rsi import DEFAULT_HORIZON  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
     BOOTSTRAP_FOOTER,
     COASTING_COLOR,
@@ -47,14 +47,17 @@ def main() -> int:
     out_fig = PROJECT_ROOT / "output" / "figures"
     out_fig.mkdir(parents=True, exist_ok=True)
 
-    comparison = compare_regimes(n=128)
+    n = 128
+    comparison = compare_regimes(
+        seed=BOOTSTRAP_SEED, n=n, horizon=DEFAULT_HORIZON,
+        concentration=BOOTSTRAP_CONCENTRATION,
+    )
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13.0, 5.5))
 
     # ── Panel (a): Create vs Decay with CIs ──
     regimes = [comparison.improving, comparison.coasting]
     regime_names = ["Improving", "Coasting"]
-    regime_markers = ["▲", "●"]  # redundant encoding beside IMPROVING/COASTING colors
     regime_colors = [IMPROVING_COLOR, COASTING_COLOR]
     x = np.arange(len(regimes))
     w = 0.35
@@ -99,19 +102,20 @@ def main() -> int:
     for i, reg in enumerate(regimes):
         ax1.text(
             x[i],
-            max(create_means[i], decay_means[i]) + 0.08,
-            f"{regime_markers[i]} t-RSI = {reg.t_rsi:.2f}",
+            0.97,
+            f"t-RSI = {reg.t_rsi:.2f}",
             ha="center",
-            va="bottom",
+            va="top",
             fontsize=8,
             fontweight="bold",
             color=regime_colors[i],
+            transform=ax1.get_xaxis_transform(),
         )
 
     ax1.set_xticks(x)
     ax1.set_xticklabels(regime_names)
     ax1.set_ylabel("Rate (nats / cycle)")
-    ax1.set_title("(a) Create vs decay rates with 95% bootstrap CIs")
+    ax1.set_title("(a) Rate means and 95% percentile draw intervals")
     ax1.axhline(0.0, color="black", linewidth=0.8)
     ax1.legend(fontsize=8)
     ax1.set_xlim(-0.6, 1.6)
@@ -165,19 +169,24 @@ def main() -> int:
 
     ax2.set_xticks(x)
     ax2.set_xticklabels(
-        [f"{name}\nfunds {label}" for name, label in zip(regime_names, funded_labels, strict=True)]
+        [
+            f"{name}\nselects {label}"
+            for name, label in zip(regime_names, funded_labels, strict=True)
+        ]
     )
     ax2.set_ylabel("Value (nats)")
-    ax2.set_title("(b) EFE decomposition of the funded channel")
+    ax2.set_title("(b) One-step EFE of the selected action")
     ax2.axhline(0.0, color="black", linewidth=0.8)
     ax2.legend(fontsize=8)
 
     fig.suptitle(
-        "Regime comparison: bootstrap confidence intervals and EFE decomposition",
+        "Regime comparison: synthetic draw intervals and one-step EFE\n"
+        f"n={n} per regime; seed={BOOTSTRAP_SEED} restarted per regime; "
+        f"concentration={BOOTSTRAP_CONCENTRATION:g}; horizon={DEFAULT_HORIZON}",
         fontsize=13,
         fontweight="bold",
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.tight_layout(rect=(0, 0, 1, 0.88))
     add_provenance_footer(fig, BOOTSTRAP_FOOTER)  # 95% bootstrap CIs
 
     out_path = out_fig / "regime_comparison.png"

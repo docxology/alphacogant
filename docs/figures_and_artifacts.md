@@ -35,8 +35,16 @@ artifacts. It also checks registered manuscript figures:
 - tiny files
 - invalid PNG magic bytes
 - missing producer scripts
+- registered PNG decoding, not only the signature
 
-The manifest `issues` array must be empty before render closeout.
+The manifest `issues` array must be empty before rendering. `--check` compares
+saved tokens, registry, file hashes and injected Markdown without writing them;
+tampered/missing/malformed output fails. Generation publishes text atomically
+and fails on artifact issues. A multi-file generation is not a transaction.
+
+Hash equality is an inventory check, not proof that a producer ran on current
+source. Regenerate, retain source/runtime/command receipts and inspect actual
+figure semantics and rendered pages before publication.
 
 ## Root copy
 

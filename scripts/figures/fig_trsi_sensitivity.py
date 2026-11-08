@@ -1,18 +1,10 @@
 #!/usr/bin/env python3
 """Figure: t-RSI sensitivity to belief precision and Theta freshness.
 
-Thin-orchestrator figure script. All engine math comes from
-``src/alphacogant.sensitivity`` (which wraps ``t_rsi.bootstrap_t_rsi``).
-
-Two-panel figure:
-  (a) t-RSI vs Dirichlet concentration — shows how the headline number
-      responds to the firm's belief precision. At low concentration the
-      perturbations are wide and the standardized distance shrinks; at high
-      concentration they collapse to a point mass and the distance inflates.
-  (b) t-RSI vs Theta-freshness prior — shows how the certificate responds
-      as the firm's belief about its own parameter quality moves from stale
-      to fresh. This is the belief axis the certificate is designed to
-      discriminate along.
+Engine sweeps use synthetic Dirichlet perturbations. Concentration changes
+both dispersion and center because alpha = concentration * belief + 1.
+The dimensionless statistic and the rate means occupy separate panels;
+no rate standard error is presented as uncertainty of t-RSI.
 """
 
 from __future__ import annotations
@@ -24,8 +16,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from alphacogant.model.generative_model import default_model  # noqa: E402
-from alphacogant.model.operating_points import IMPROVING  # noqa: E402
+from alphacogant.model.operating_points import (  # noqa: E402
+    BOOTSTRAP_CONCENTRATION,
+    BOOTSTRAP_SEED,
+    IMPROVING,
+)
 from alphacogant.stats.sensitivity import sweep_concentration, sweep_theta_freshness  # noqa: E402
+from alphacogant.trsi.t_rsi import DEFAULT_HORIZON  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
     BOOTSTRAP_FOOTER,
     CREATE_COLOR,
@@ -48,25 +45,18 @@ def main() -> int:
     out_fig.mkdir(parents=True, exist_ok=True)
 
     model = default_model()
-    conc_result = sweep_concentration(model, IMPROVING, n=128)
-    theta_result = sweep_theta_freshness(model, IMPROVING, n=128)
+    n = 128
+    conc_result = sweep_concentration(model, IMPROVING, seed=BOOTSTRAP_SEED, n=n)
+    theta_result = sweep_theta_freshness(
+        model, IMPROVING, seed=BOOTSTRAP_SEED, n=n,
+        concentration=BOOTSTRAP_CONCENTRATION,
+    )
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.0, 5.0))
+    fig, (ax1, ax2, ax_rate) = plt.subplots(1, 3, figsize=(15.0, 5.2))
 
-    # Panel (a): t-RSI vs concentration with shaded regions
+    # Panel (a): dimensionless t-RSI vs concentration, without an invalid SE band.
     concentrations = conc_result["concentrations"]
     t_rsi_conc = conc_result["t_rsi"]
-    create_ses = conc_result["create_se"]
-    decay_ses = conc_result["decay_se"]
-
-    ax1.fill_between(
-        concentrations,
-        t_rsi_conc - create_ses,
-        t_rsi_conc + decay_ses,
-        alpha=0.15,
-        color=EPISTEMIC_COLOR,
-        label="±1 SE band",
-    )
     ax1.plot(
         concentrations,
         t_rsi_conc,
@@ -78,10 +68,12 @@ def main() -> int:
         zorder=3,
     )
     ax1.axhline(0.0, color="#94a3b8", linestyle="--", linewidth=1.2, label="break-even")
-    ax1.set_xlabel("Dirichlet concentration (belief precision)")
-    ax1.set_ylabel("t-RSI (standardized units)")
-    ax1.set_title("(a) t-RSI vs belief precision")
+    ax1.set_xlabel("Dirichlet concentration (center and dispersion)")
+    ax1.set_ylabel("t-RSI (dimensionless)")
+    ax1.set_title("(a) t-RSI vs concentration")
     ax1.set_xscale("log")
+    ax1.set_xticks(concentrations, labels=[f"{value:g}" for value in concentrations])
+    ax1.minorticks_off()
     ax1.legend(fontsize=7, loc="lower right")
 
     # Panel (b): t-RSI vs Theta freshness
@@ -99,7 +91,7 @@ def main() -> int:
         label="t-RSI",
         zorder=3,
     )
-    ax2.plot(
+    ax_rate.plot(
         theta_vals,
         create_means,
         marker="^",
@@ -108,7 +100,7 @@ def main() -> int:
         alpha=0.8,
         label="create-rate mean",
     )
-    ax2.plot(
+    ax_rate.plot(
         theta_vals,
         decay_means,
         marker="v",
@@ -117,7 +109,7 @@ def main() -> int:
         alpha=0.8,
         label="decay-rate mean",
     )
-    ax2.fill_between(
+    ax_rate.fill_between(
         theta_vals,
         create_means,
         decay_means,
@@ -126,27 +118,34 @@ def main() -> int:
         color=CREATE_COLOR,
         label="create > decay",
     )
-    ax2.fill_between(
+    ax_rate.fill_between(
         theta_vals,
         create_means,
         decay_means,
         where=(create_means <= decay_means),
         alpha=0.10,
         color=DECAY_COLOR,
-        label="decay > create",
+        label="decay >= create",
     )
     ax2.axhline(0.0, color="#94a3b8", linestyle="--", linewidth=1.2)
     ax2.set_xlabel(r"$P(\Theta = \mathrm{fresh})$ prior")
-    ax2.set_ylabel("Rate / t-RSI")
-    ax2.set_title(r"(b) t-RSI vs $\Theta$-freshness prior")
+    ax2.set_ylabel("t-RSI (dimensionless)")
+    ax2.set_title("(b) t-RSI vs Theta freshness")
     ax2.legend(fontsize=7)
+    ax_rate.axhline(0.0, color="#94a3b8", linestyle="--", linewidth=1.2)
+    ax_rate.set_xlabel(r"$P(\Theta = \mathrm{fresh})$ prior")
+    ax_rate.set_ylabel("Rate mean (nats / cycle)")
+    ax_rate.set_title("(c) Rate means vs Theta freshness")
+    ax_rate.legend(fontsize=7)
 
     fig.suptitle(
-        "Sensitivity of the t-RSI certificate to belief precision and parameter freshness",
+        "Synthetic perturbation sensitivity (not t-RSI confidence bands)\n"
+        f"n={n} per point; seed={BOOTSTRAP_SEED} restarted per point; "
+        f"horizon={DEFAULT_HORIZON}; freshness-sweep concentration={BOOTSTRAP_CONCENTRATION:g}",
         fontsize=12,
         fontweight="bold",
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.tight_layout(rect=(0, 0, 1, 0.88))
     add_provenance_footer(fig, BOOTSTRAP_FOOTER)  # bootstrap sweeps (n=128)
 
     out_path = out_fig / "trsi_sensitivity.png"

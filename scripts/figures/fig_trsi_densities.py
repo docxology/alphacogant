@@ -1,25 +1,10 @@
 #!/usr/bin/env python3
 """Figure: t-RSI create/decay sample densities at the IMPROVING operating point.
 
-Mirrors the AlphaFund whitepaper Figures 2/9 in the AlphaCOGANT engine. At the
-self-improving (IMPROVING) operating belief, this thin orchestrator draws the
-create-rate and decay-rate sample distributions from a deterministic Dirichlet
-bootstrap (``Dirichlet(belief * concentration + 1)`` perturbations, fixed rng) by
-calling the engine's ``create_rate`` / ``decay_rate`` over each perturbed belief,
-then plots the two sample distributions as histograms with KDE overlays
-(create = blue, decay = red), draws vertical lines at the two means, and annotates
-the standardized t-RSI distance and pooled standard error.
-
-All numeric machinery lives in ``src/alphacogant`` (the generative model, the
-free-energy / marginal-return engine, and the t-RSI rates + bootstrap). This script
-only orchestrates the sampling and renders the figure — no business logic, no mocks,
-fully deterministic via a fixed ``numpy.random.default_rng`` seed.
-
-The headline t-RSI here is *modestly negative* (the honest-negative result the
-manuscript's Section 5 preserves): once belief uncertainty is propagated through the
-bootstrap, the residual decay rate sits above the create rate at this coarse
-two-level operating point. The figure reports that honestly rather than tuning the
-number favorable.
+The canonical paired sampler supplies the create/decay arrays. Histograms and
+KDE overlays show marginal draw distributions; t-RSI standardizes the mean
+PAIRED create-minus-decay margin by its Monte Carlo standard error.
+These synthetic perturbations are not calibrated corporate observations.
 
 Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_trsi_densities.py
@@ -41,7 +26,6 @@ import numpy as np
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-from alphacogant.model.channels import CHANNELS  # noqa: E402
 from alphacogant.model.generative_model import default_model  # noqa: E402
 from alphacogant.model.operating_points import (  # noqa: E402
     BOOTSTRAP_CONCENTRATION as CONCENTRATION,
@@ -57,9 +41,9 @@ from alphacogant.model.operating_points import (
 )
 from alphacogant.trsi.t_rsi import (  # noqa: E402
     DEFAULT_HORIZON,
-    bootstrap_t_rsi,
-    create_rate,
-    decay_rate,
+    _sample_statistics,
+    _stable_mean,
+    paired_bootstrap_samples,
     t_rsi,
 )
 from alphacogant.viz.plot_style import (  # noqa: E402
@@ -71,37 +55,8 @@ from alphacogant.viz.plot_style import (  # noqa: E402
     apply_style,
 )
 
-# Deterministic figure parameters — IDENTICAL to the canonical bootstrap that
-# manuscript_variables.generate_variables() uses for the HEADLINE_T_RSI token, so the
-# number displayed here is byte-identical to the manuscript's headline (asserted in
-# main()). Do not diverge these from manuscript_variables._BOOTSTRAP_{SEED,N}.
+# Match the canonical manuscript bootstrap recipe without resampling it twice.
 OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "trsi_densities.png"
-
-
-def _bootstrap_samples(
-    model,
-    belief: dict[str, np.ndarray],
-    rng: np.random.Generator,
-    n: int,
-    horizon: int,
-    concentration: float,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Draw create/decay rate samples over Dirichlet belief perturbations.
-
-    Mirrors ``t_rsi.bootstrap_t_rsi`` perturbation scheme so the returned per-sample
-    arrays (needed for the density plot) are consistent with the engine's bootstrap
-    summary, while the standardized distance itself is computed by ``t_rsi.t_rsi``.
-    """
-    create_samples = np.empty(n, dtype=float)
-    decay_samples = np.empty(n, dtype=float)
-    for index in range(n):
-        perturbed: dict[str, np.ndarray] = {}
-        for channel in CHANNELS:
-            alpha = np.clip(belief[channel], 1e-9, None) * concentration + 1.0
-            perturbed[channel] = rng.dirichlet(alpha)
-        create_samples[index] = create_rate(model, perturbed, horizon)
-        decay_samples[index] = decay_rate(model, perturbed, horizon)
-    return create_samples, decay_samples
 
 
 def _gaussian_kde(samples: np.ndarray, grid: np.ndarray) -> np.ndarray:
@@ -127,7 +82,7 @@ def main() -> Path:
     model = default_model()
     rng = np.random.default_rng(SEED)
 
-    create_samples, decay_samples = _bootstrap_samples(
+    create_samples, decay_samples = paired_bootstrap_samples(
         model,
         IMPROVING,
         rng,
@@ -136,27 +91,10 @@ def main() -> Path:
         concentration=CONCENTRATION,
     )
 
-    create_mean = float(np.mean(create_samples))
-    decay_mean = float(np.mean(decay_samples))
-    create_se = float(np.std(create_samples, ddof=1) / np.sqrt(create_samples.size))
-    decay_se = float(np.std(decay_samples, ddof=1) / np.sqrt(decay_samples.size))
-    pooled_se = float(np.sqrt(create_se**2 + decay_se**2))
+    create_mean = _stable_mean(create_samples)
+    decay_mean = _stable_mean(decay_samples)
+    margin_mean, _, paired_se = _sample_statistics(create_samples - decay_samples)
     value = t_rsi(create_samples, decay_samples)
-
-    # Self-check: this figure's draw MUST equal the engine's canonical bootstrap
-    # (the same call that produces the HEADLINE_T_RSI manuscript token). Fail loudly
-    # on any drift so the figure can never silently contradict the manuscript.
-    canonical = bootstrap_t_rsi(
-        model,
-        IMPROVING,
-        np.random.default_rng(SEED),
-        n=N_SAMPLES,
-        horizon=DEFAULT_HORIZON,
-        concentration=CONCENTRATION,
-    )
-    assert abs(value - canonical["t_rsi"]) < 1e-9, (value, canonical["t_rsi"])
-    assert abs(create_mean - canonical["create_mean"]) < 1e-9
-    assert abs(decay_mean - canonical["decay_mean"]) < 1e-9
 
     # Shared grid spanning both sample distributions.
     lo = float(min(create_samples.min(), decay_samples.min()))
@@ -203,15 +141,15 @@ def main() -> Path:
     )
 
     annotation = (
-        f"standardized t-RSI distance = {value:.3f}\n"
-        f"pooled SE = {pooled_se:.4f}\n"
-        f"create SE = {create_se:.4f}   decay SE = {decay_se:.4f}\n"
-        f"n = {N_SAMPLES}   horizon = {DEFAULT_HORIZON}   "
-        f"concentration = {CONCENTRATION:g}"
+        f"t-RSI = mean(create - decay) / paired SE = {value:.3f}\n"
+        f"mean paired margin = {margin_mean:+.4f}\n"
+        f"paired margin SE = {paired_se:.4f}\n"
+        f"n={N_SAMPLES}; seed={SEED}; horizon={DEFAULT_HORIZON}\n"
+        f"concentration={CONCENTRATION:g}"
     )
     ax.text(
-        0.02,
-        0.97,
+        0.36,
+        0.78,
         annotation,
         transform=ax.transAxes,
         va="top",
@@ -221,7 +159,7 @@ def main() -> Path:
         bbox={"facecolor": "white", "edgecolor": "#888888", "alpha": 0.9, "pad": 6.0},
     )
 
-    ax.set_xlabel("path-integral rate (horizon-mean pragmatic value, nats)")
+    ax.set_xlabel("path-integral rate (nats / cycle)")
     ax.set_ylabel("density")
     ax.set_title(
         f"t-RSI create/decay densities at the IMPROVING operating point (t-RSI = {value:.3f})"

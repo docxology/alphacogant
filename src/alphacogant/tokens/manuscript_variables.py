@@ -1,12 +1,9 @@
 """Deterministic manuscript-token generation for AlphaCOGANT.
 
-Every numeric the manuscript prose cites as a ``{{TOKEN}}`` is produced here from
-the live model and a fixed-seed bootstrap, so the rendered document is proof that
-the prose matches the engine. The headline t-RSI is reported at the *self-improving
-operating point* (weak channels, stale parameters — where the greedy policy has
-cheap epistemic and pragmatic gains to fund); a coasting operating point is also
-reported so the manuscript shows the certificate honestly failing rather than
-cherry-picking the one regime with a positive number.
+Model-result numerics in prose are generated from the live model and fixed-seed
+synthetic perturbations. Tokens check numeric substitution, not the truth of
+surrounding interpretation or arbitrary literals. IMPROVING and COASTING are
+illustrative operating-point names, not classifications of measured companies.
 
 Counts that are properties of *this* manuscript (number of numbered Definitions,
 number of engine-generated figures) are introspected from the markdown so they
@@ -138,6 +135,12 @@ def generate_variables(
 
     create_ci = bootstrap_ci(improving_create)
     decay_ci = bootstrap_ci(improving_decay)
+    margin_ci = bootstrap_ci(improving_margins)
+    paired_se = margin_ci.se
+    correlation = (
+        None if create_ci.std == 0.0 or decay_ci.std == 0.0
+        else float(np.corrcoef(improving_create, improving_decay)[0, 1])
+    )
 
     # The funded channel is reported at the neutral prior operating point. It comes
     # out epistemic (Sensors) with negative immediate pragmatic value — the firm
@@ -159,6 +162,8 @@ def generate_variables(
         "NUM_ACTIONS": str(model.B[CHANNELS[0]].shape[2]),
         "PLANNING_HORIZON": str(PLANNING_HORIZON),
         "BOOTSTRAP_N": str(bootstrap_n),
+        "BOOTSTRAP_CONCENTRATION": f"{BOOTSTRAP_CONCENTRATION:g}",
+        "BOOTSTRAP_CONFIDENCE_PERCENT": f"{100 * create_ci.confidence:g}",
         "EPISTEMIC_CHANNELS": _channels_with_role("epistemic"),
         "PRAGMATIC_CHANNELS": _channels_with_role("pragmatic"),
         "FUNDED_CHANNEL": CHANNELS[funded_action],
@@ -166,8 +171,8 @@ def generate_variables(
         "FUNDED_PRAGMATIC": _format_float(funded_result.pragmatic),
         "HEADLINE_T_RSI": _format_float(t_rsi(improving_create, improving_decay)),
         "COASTING_T_RSI": _format_float(t_rsi(coasting_create, coasting_decay)),
-        "CREATE_RATE_MEAN": _format_float(float(np.mean(improving_create))),
-        "DECAY_RATE_MEAN": _format_float(float(np.mean(improving_decay))),
+        "CREATE_RATE_MEAN": _format_float(create_ci.mean),
+        "DECAY_RATE_MEAN": _format_float(decay_ci.mean),
         "B_THETA_LEAK_PROB": _format_float(_theta_decay_leak_probability(model)),
         "NUM_DEFINITIONS": str(_count_definitions(active_manuscript)),
         "NUM_FIGURES": str(_count_figures(active_manuscript)),
@@ -188,7 +193,13 @@ def generate_variables(
         "COHEN_D_DECAY": _format_float(cohen_d(improving_decay, coasting_decay)),
         "BREAK_EVEN_PROB": _format_float(float(np.mean(improving_margins > 0.0))),
         "COASTING_BREAK_EVEN_PROB": _format_float(float(np.mean(coasting_margins > 0.0))),
-        "BREAK_EVEN_MARGIN_MEAN": _format_float(float(np.mean(improving_margins))),
+        "BREAK_EVEN_MARGIN_MEAN": _format_float(margin_ci.mean),
+        "PAIRED_MARGIN_SE": _format_float(paired_se),
+        "IMPROVING_RATE_CORRELATION": (
+            "undefined (constant rate)" if correlation is None else _format_float(correlation)
+        ),
+        "MARGIN_CI_LOWER": _format_float(margin_ci.ci_lower),
+        "MARGIN_CI_UPPER": _format_float(margin_ci.ci_upper),
     }
 
 

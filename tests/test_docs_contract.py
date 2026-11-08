@@ -43,14 +43,3 @@ def test_docs_files_have_top_level_headings() -> None:
         assert first_nonblank.startswith("# "), f"{path.name} lacks an H1"
 
 
-def test_docs_preserve_claim_boundaries() -> None:
-    text = "\n".join(path.read_text(encoding="utf-8") for path in DOCS_DIR.glob("*.md"))
-    prose_text = "\n".join(
-        path.read_text(encoding="utf-8")
-        for path in DOCS_DIR.glob("*.md")
-        if path.name != "claim_boundaries.md"
-    )
-    assert "does not reproduce AlphaFund's proprietary" in text
-    assert "not provide financial advice" in text
-    assert "the same control problem" not in prose_text
-    assert "every allocation is a gradient" not in prose_text

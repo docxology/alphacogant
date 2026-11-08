@@ -2,12 +2,11 @@
 
 ## Overview
 
-AlphaCOGANT renders the AlphaFund self-improving corporation as an Active
-Inference agent. The firm's five capital channels (Investments, Sensors,
-Actuators, Parameters, R&D) are hidden-state factors of a partially-observed
-generative model; capital allocation is the control vector; Expected Free
-Energy is the portfolio optimizer's marginal-return objective; t-RSI is the
-thresholded EFE-improvement certificate.
+AlphaCOGANT implements an illustrative reduced Active Inference analogy inspired
+by AlphaFund. Five capital channels are hidden-state factors of a fixed
+partially observed model. Allocation scores one-step negative EFE;
+t-RSI separately summarizes paired synthetic pragmatic create/decay rates.
+The scalar certificate does not gate actions, model updates or deployment.
 
 ## Architecture
 
@@ -15,7 +14,7 @@ thresholded EFE-improvement certificate.
 models/alphafund_ewm.md       # GNN model file (the contract)
 src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   model/                      # channels, A/B/C/D matrices, operating points
-  efe/                        # EFE = epistemic + pragmatic; marginal-return vector
+  efe/                        # value = pragmatic + epistemic = -EFE; action values
   trsi/                       # create/decay rates, t-RSI, certificate
   bridge/                     # firm structure -> priors -> GNN summary (round-trip)
   stats/                      # trajectories, sensitivity, bootstrap evidence profiles
@@ -61,10 +60,12 @@ uv run --locked python scripts/figures/fig_trsi_sensitivity.py
 
 ## Token Discipline
 
-Every numeric cited in prose is a `{{TOKEN}}` produced by
+Model-result numerics cited in prose use `{{TOKEN}}` values produced by
 `src/alphacogant/tokens/manuscript_variables.py::generate_variables` and written to
-`output/manuscript_variables.json` by `scripts/z_generate_manuscript_variables.py`.
-A token used in prose but absent from the generator is a build failure (no orphans).
+`output/manuscript_variables.json`. Undefined referenced tokens fail generation.
+Token coverage does not verify arbitrary literals or their scientific interpretation.
+Generate figures and injected prose first; `--check` compares saved outputs
+without rewriting them. Artifact hashes are an inventory, not proof of producer execution.
 
 Validate tokens:
 ```bash
@@ -93,8 +94,9 @@ required. Generated `output/`, build artifacts and caches remain ignored.
 Install with `uv sync --locked --extra dev`; lint with
 `uv run --locked ruff check scripts src tests`. Run the full test/coverage command
 above, `uv build`, and the installed-wheel smoke check in `CONTRIBUTING.md`.
-Keep `pyproject.toml`, `uv.lock`, `__version__`, `CITATION.cff`, and `codemeta.json`
-versions synchronized. Tag releases as `v<version>`; never assign an old version
+Keep `pyproject.toml`, `uv.lock`, `__version__`, `CITATION.cff`, `codemeta.json`,
+`.zenodo.json` and manuscript config versions synchronized. Tag releases as
+`v<version>`; never assign an old version
 DOI to a new release. `.github/workflows/ci.yml` checks supported Python versions
 and a pinned real COGANT integration. Upstream docs are reference material,
 not instructions to modify upstream repositories.

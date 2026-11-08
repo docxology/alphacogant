@@ -1,27 +1,20 @@
-"""t-RSI utilities: create-rate, decay-rate, standardized distance, and certificate.
+"""Synthetic create/decay diagnostics, paired t-RSI and a scalar predicate.
 
-t-RSI is the standardized distance between two posteriors over **genuinely
-different processes** (AlphaFund's own framing): the alpha *created* per cycle by
-the firm's active allocation policy, and the alpha *decayed* from the deployed book
-because parameters age. Crucially the two are NOT ordered by construction, so t-RSI
-can be positive (the firm self-improves) or negative (it bleeds), and the
-certificate can honestly fire or fail.
+These rates describe the supplied finite model, not observed corporate books.
+The predicate does not enforce allocation admission or coefficient learning.
+Both rates average the H post-action beliefs b1…bH; b0 is not an action outcome.
 
-Both rates are path integrals over the planning horizon, matching the whitepaper's
-"path integral along the planned allocation path":
-
-- ``create_rate`` = horizon-mean pragmatic value of the greedy Expected-Free-Energy
-  policy MINUS horizon-mean pragmatic value of passive holding. The value the
-  firm's optimal allocation creates over standing still.
-- ``decay_rate`` = horizon-mean residual parameter-staleness erosion that REMAINS
-  along the greedy trajectory. A policy that keeps refreshing Theta drives this
-  toward zero; a policy that neglects it pays the full Theta-freshness gap each
-  cycle.
+- ``create_rate``: horizon-mean pragmatic value under greedy EFE allocation
+  minus that under passive holding.
+- ``decay_rate``: residual Theta-staleness preference gap along the same greedy
+  predicted trajectory.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from fractions import Fraction
+from math import fsum, sqrt
 
 import numpy as np
 
@@ -47,10 +40,47 @@ def _as_sample_array(name: str, values: Sequence[float] | np.ndarray) -> np.ndar
     return array
 
 
-def _standard_error(samples: np.ndarray) -> float:
-    if samples.size < 2:
-        return 0.0
-    return float(np.std(samples, ddof=1) / np.sqrt(samples.size))
+def _scaled_sample_dispersion(samples: np.ndarray) -> tuple[float, float, float]:
+    """Return normalized sample SD, dispersion and outer scale.
+
+    Inputs are admitted nonempty samples. Center before scaling to preserve
+    close differences; scale first only when subtraction would overflow.
+    """
+    origin = float(samples[0])
+    outer_scale = 1.0
+    opposite = np.signbit(samples) != np.signbit(origin)
+    if np.any(opposite & (np.abs(samples) > np.finfo(float).max - abs(origin))):
+        outer_scale = float(np.max(np.abs(samples)))
+        shifted = samples / outer_scale - origin / outer_scale
+    else:
+        shifted = samples - origin
+    dispersion_scale = float(np.max(np.abs(shifted)))
+    if dispersion_scale == 0.0:
+        return 0.0, 0.0, outer_scale
+    scaled = shifted / dispersion_scale
+    std = float(np.std(scaled, ddof=1))
+    return std, dispersion_scale, outer_scale
+
+
+def _exact_mean(samples: Sequence[float] | np.ndarray) -> Fraction:
+    """Exact mean of admitted float samples, used when float sums cannot suffice."""
+    return sum((Fraction.from_float(float(value)) for value in samples), Fraction()) / len(samples)
+
+
+def _stable_mean(samples: Sequence[float] | np.ndarray) -> float:
+    try:
+        return fsum(samples) / len(samples)
+    except OverflowError:
+        # A finite mean can exist even when an intermediate or total sum overflows.
+        return float(_exact_mean(samples))
+
+
+def _sample_statistics(samples: np.ndarray) -> tuple[float, float, float]:
+    """Mean, sample SD and SE; rescale SD and SE independently."""
+    std, scale, outer_scale = _scaled_sample_dispersion(samples)
+    mean = _stable_mean(samples)
+    se = (std / sqrt(samples.size)) * scale * outer_scale if samples.size > 1 else 0.0
+    return mean, std * scale * outer_scale, se
 
 
 def _normalize_internal(belief: Mapping[str, np.ndarray]) -> dict[str, np.ndarray]:
@@ -66,11 +96,11 @@ def _greedy_trajectory(
     current = {channel: belief[channel].copy() for channel in CHANNELS}
     trajectory: list[dict[str, np.ndarray]] = []
     for _ in range(horizon):
-        trajectory.append({channel: current[channel].copy() for channel in CHANNELS})
         normalized = _normalize_internal(current)
         scores = _efe_vector_from_normalized(model, normalized)
         action = min(range(len(scores)), key=lambda a: scores[a].total)
         current = predicted_belief(model, current, action)
+        trajectory.append({channel: current[channel].copy() for channel in CHANNELS})
     return trajectory
 
 
@@ -83,9 +113,9 @@ def _hold_mean_pragmatic(
     current = {channel: belief[channel].copy() for channel in CHANNELS}
     values: list[float] = []
     for _ in range(horizon):
-        values.append(_static_pragmatic_from_normalized(model, _normalize_internal(current)))
         current = predicted_belief(model, current, hold)
-    return float(np.mean(values))
+        values.append(_static_pragmatic_from_normalized(model, _normalize_internal(current)))
+    return _stable_mean(values)
 
 
 def _create_from_trajectory(
@@ -94,10 +124,8 @@ def _create_from_trajectory(
     trajectory: list[dict[str, np.ndarray]],
     horizon: int,
 ) -> float:
-    greedy_mean = float(
-        np.mean(
-            [_static_pragmatic_from_normalized(model, _normalize_internal(b)) for b in trajectory]
-        )
+    greedy_mean = _stable_mean(
+        [_static_pragmatic_from_normalized(model, _normalize_internal(b)) for b in trajectory]
     )
     return greedy_mean - _hold_mean_pragmatic(model, normalized, horizon)
 
@@ -117,7 +145,7 @@ def _decay_from_trajectory(
                 - _static_pragmatic_from_normalized(model, _normalize_internal(b)),
             )
         )
-    return float(np.mean(erosions))
+    return _stable_mean(erosions)
 
 
 def create_rate(
@@ -154,11 +182,10 @@ def t_rsi(
     and decay-rate read off the *same* perturbed trajectory, as
     ``paired_bootstrap_samples`` produces. The denominator is therefore the
     standard error of the elementwise differences ``create - decay`` — the
-    pairing-aware SE. The independence-assuming pooled SE
-    ``sqrt(SE_create^2 + SE_decay^2)`` understates the margin's variability when
-    the shared trajectory induces rate correlation (measured
-    ``rho(create, decay) ~= -0.92`` at the IMPROVING operating point), which
-    inflates ``|t-RSI|`` and makes the certificate anti-conservative.
+    pairing-aware SE. Synthetic belief perturbations do not supply empirical
+    calibration; the statistic's magnitude depends on the number of draws.
+    Common scaling preserves a dimensionless statistic without underflowing
+    squared deviations or overflowing a finite sample's subtraction.
     """
     create = _as_sample_array("create_samples", create_samples)
     decay = _as_sample_array("decay_samples", decay_samples)
@@ -171,14 +198,22 @@ def t_rsi(
     if create.size < 2:
         return 0.0
 
-    margins = create - decay
-    margin_mean = float(np.mean(margins))
-    margin_se = _standard_error(margins)
-    if margin_se == 0.0:
-        if margin_mean == 0.0:
-            return 0.0
-        return float(np.sign(margin_mean) * np.inf)
-    return float(margin_mean / margin_se)
+    limit = np.finfo(float).max
+    opposite_sign = np.signbit(create) != np.signbit(decay)
+    if np.any(opposite_sign & (np.abs(create) > limit - np.abs(decay))):
+        # Only scale before subtraction when the true margin exceeds float64.
+        # Otherwise subtract first to retain tiny differences in paired data.
+        scale = max(float(np.max(np.abs(create))), float(np.max(np.abs(decay))))
+        margins = create / scale - decay / scale
+    else:
+        margins = create - decay
+    scaled_std, scale, outer_scale = _scaled_sample_dispersion(margins)
+    if scaled_std == 0.0:
+        return 0.0 if margins[0] == 0.0 else float(np.sign(margins[0]) * np.inf)
+    # Sum original values in dispersion units, not rounded centered offsets:
+    # the latter can erase a small nonzero mean through cancellation.
+    scaled_mean = fsum(float(value) / outer_scale / scale for value in margins) / margins.size
+    return scaled_mean / (scaled_std / sqrt(margins.size))
 
 
 def paired_bootstrap_samples(
@@ -235,18 +270,20 @@ def bootstrap_t_rsi(
     create_samples, decay_samples = paired_bootstrap_samples(
         model, belief, rng, n, horizon, concentration
     )
+    create_mean, _, create_se = _sample_statistics(create_samples)
+    decay_mean, _, decay_se = _sample_statistics(decay_samples)
 
     return {
         "t_rsi": float(t_rsi(create_samples, decay_samples)),
-        "create_mean": float(np.mean(create_samples)),
-        "decay_mean": float(np.mean(decay_samples)),
-        "create_se": _standard_error(create_samples),
-        "decay_se": _standard_error(decay_samples),
+        "create_mean": create_mean,
+        "decay_mean": decay_mean,
+        "create_se": create_se,
+        "decay_se": decay_se,
     }
 
 
 def certificate(t_rsi_value: float, delta: float) -> bool:
-    """Return whether a t-RSI value clears the required margin (the commit gate)."""
+    """Evaluate a scalar threshold; no action, model update or deployment is gated."""
     if np.isnan(t_rsi_value) or np.isnan(delta):
         raise ValueError("t_rsi_value and delta must not be NaN.")
     return bool(t_rsi_value >= delta)

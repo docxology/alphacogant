@@ -16,6 +16,7 @@ from alphacogant.model.operating_points import (  # noqa: E402
     IMPROVING,
 )
 from alphacogant.stats.statistics import break_even_profile  # noqa: E402
+from alphacogant.trsi.t_rsi import DEFAULT_HORIZON  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
     BOOTSTRAP_FOOTER,
     DPI,
@@ -45,12 +46,14 @@ def main() -> int:
 
     model = default_model()
     theta_values = np.linspace(0.05, 0.95, 10)
+    n = 96
     profiles = [
         break_even_profile(
             model,
             belief_with_theta_freshness(float(theta_value)),
             seed=BOOTSTRAP_SEED + index,
-            n=96,
+            n=n,
+            horizon=DEFAULT_HORIZON,
             concentration=BOOTSTRAP_CONCENTRATION,
         )
         for index, theta_value in enumerate(theta_values)
@@ -71,7 +74,7 @@ def main() -> int:
         linewidth=2.4,
         label="P(create > decay)",
     )
-    ax_prob.axhline(0.5, color="#64748b", linestyle="--", linewidth=1.2, label="coin-flip line")
+    ax_prob.axhline(0.5, color="#64748b", linestyle="--", linewidth=1.2, label="50% event mass")
     ax_prob.fill_between(
         theta_values,
         probabilities,
@@ -91,8 +94,8 @@ def main() -> int:
         hatch="\\",
     )
     ax_prob.set_xlabel(r"$P(\Theta=\mathrm{fresh})$ prior")
-    ax_prob.set_ylabel("paired bootstrap probability")
-    ax_prob.set_title("(a) Break-even event probability")
+    ax_prob.set_ylabel("synthetic paired-draw event mass")
+    ax_prob.set_title("(a) Fraction of draws with create > decay")
     ax_prob.set_ylim(-0.02, 1.02)
     ax_prob.legend(loc="best", fontsize=8)
 
@@ -110,7 +113,7 @@ def main() -> int:
         margin_uppers,
         color=EPISTEMIC_COLOR,
         alpha=0.16,
-        label="95% margin interval",
+        label="95% percentile draw interval",
     )
     ax_margin.axhline(0.0, color="#64748b", linestyle="--", linewidth=1.2)
     ax_margin.set_xlabel(r"$P(\Theta=\mathrm{fresh})$ prior")
@@ -118,8 +121,13 @@ def main() -> int:
     ax_margin.set_title("(b) Paired create-minus-decay margin")
     ax_margin.legend(loc="best", fontsize=8)
 
-    fig.suptitle("Break-even robustness across parameter-freshness beliefs", fontweight="bold")
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.suptitle(
+        "Break-even robustness under synthetic belief perturbations\n"
+        f"n={n} per point; seed={BOOTSTRAP_SEED}+index (index 0..9); "
+        f"concentration={BOOTSTRAP_CONCENTRATION:g}; horizon={DEFAULT_HORIZON}",
+        fontweight="bold",
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.88))
     add_provenance_footer(fig, BOOTSTRAP_FOOTER)  # paired bootstrap profile
 
     output_path = output_dir / "break_even_probability.png"

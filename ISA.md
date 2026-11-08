@@ -11,6 +11,12 @@ updated: 2026-06-27
 
 # AlphaCOGANT — Ideal State Artifact
 
+**Historical commissioning record (June 2026), not current policy or proof.**
+The project is now a standalone public repository. Its current contracts are
+`AGENTS.md`, `src/alphacogant/SPEC.md` and the revised manuscript. Historical
+claims of exact inference, enforced certification, confidentiality, test counts
+or publication completeness below are superseded, not current acceptance evidence.
+
 ## Problem
 
 The AlphaFund whitepaper formalizes recursive self-improvement (RSI) as a portfolio
@@ -50,8 +56,8 @@ not a numerically-calibrated replica of AlphaFund's books.
   epistemic value (a KL) is always ≥ 0.
 - GNN model file conforms to GNN section structure (StateSpaceBlock, Connections,
   InitialParameterization, ActInfOntologyAnnotation).
-- Lives local-only under `projects/ongoing/ActiveInference/alphacogant/` (2026-08: moved from the earlier `projects/working/alphacogant/` mirror; confidentiality invariant —
-  only `projects/templates/` is git-tracked).
+- Historical template-local storage/confidentiality assumptions no longer apply;
+  development and durable outputs belong to this standalone public checkout.
 
 ## Goal
 

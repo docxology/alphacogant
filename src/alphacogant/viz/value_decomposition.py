@@ -54,22 +54,22 @@ def render_value_decomposition(
         pragmatic,
         width,
         color=PRAGMATIC_COLOR,
-        label="pragmatic (expected log-equity)",
+        label="pragmatic (reward/loss log preference)",
     )
     ax.bar(
         x + width / 2,
         epistemic,
         width,
         color=EPISTEMIC_COLOR,
-        label="epistemic (information gain)",
+        label="epistemic (Theta information gain)",
     )
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.set_ylabel("value (nats)")
-    ax.set_title("AlphaCOGANT: epistemic vs pragmatic value per capital channel")
+    ax.set_title("AlphaCOGANT: epistemic vs pragmatic value per action")
     ax.legend()
-    add_provenance_footer(fig, ANALYTIC_FOOTER)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.12, 1, 1))
+    add_provenance_footer(fig, ANALYTIC_FOOTER, reserve_bottom=0.18)
     fig.savefig(output_path, dpi=DPI)
     plt.close(fig)
     return output_path

@@ -36,13 +36,12 @@ Read the previous paragraph again with one substitution. A system that maintains
 filtered history of observations, and selects actions that minimize **Expected Free
 Energy** — trading off the value of preferred outcomes against the value of
 information — is an **Active Inference** agent [@friston2010freeenergy; @friston2015epistemic; @dacosta2020synthesis; @friedman2026gnn; @friston2017process]. AlphaFund's
-corporation can be represented in that form: the EWM is its generative model, the
-five channels are its hidden-state factors, capital allocation is its action, and the
-marginal-return vector the portfolio optimizer maximizes is the negative-EFE value of
-each admissible funding move [@friston2015epistemic; @dacosta2020synthesis]. The two posteriors whose separation defines
-t-RSI — alpha created per dollar and alpha decayed from the deployed book — are
-represented here as the **pragmatic** and (the cost side of the) **epistemic** terms of
-that free energy [@friston2010freeenergy; @dacosta2020synthesis].
+corporation motivates a reduced representation: the EWM becomes a fixed
+generative model, the channels become hidden-state factors, and allocation
+becomes a discrete action [@friston2015epistemic; @dacosta2020synthesis].
+Negative EFE is an illustrative action score, not an established dollar-return
+gradient. The create/decay diagnostic is computed from pragmatic trajectories;
+its decay term is not epistemic information gain.
 
 **AlphaCOGANT** makes this correspondence concrete and executable. It does three
 things:
@@ -52,26 +51,23 @@ things:
    models. We write AlphaFund's five-channel EWM as a GNN model file
    (`models/alphafund_ewm.md`): channel factors, likelihood and transition
    matrices, log-preferences, and an Expected-Free-Energy objective annotated with
-   its epistemic and pragmatic parts [@friedman2026gnn]. The GNN pipeline is explicit about
-   typed parsing, validation, rendering, and executable exports, so the model is
-   readable and checkable before inference [@friedman2026gnn]. In this representation, the firm's
-   temporal assumptions are explicit graph objects and therefore directly reviewable.
+   its epistemic and pragmatic parts [@friedman2026gnn]. The local parser checks
+   fixed declarations, dependencies and numerical coefficients before inference.
+   Time and ontology text remain descriptive metadata, not an executed temporal
+   type system or proof of observation availability.
 
-2. **Produces that model by the COGANT pattern.** COGANT is a codebase-to-GNN
-   translator: it scans a system's structure and emits a GNN generative model of
-   it. It also emits a reverse map from generated artifacts, which we use as a
-   provenance check [@friedman2026cogant]. The differentiable corporation is a system whose every
-   operational degree
-   of freedom is, in AlphaFund's words, "API-complete" — a function call with a
-   structured, causal record. That is precisely the substrate COGANT consumes. We
-   use the COGANT translation step in miniature [@friedman2026cogant] to map a firm description onto
-   the generative model's priors and maintain a reproducible model provenance chain.
+2. **Uses a COGANT-inspired structure-to-prior mapping.** A supplied firm
+   description maps deterministically to channel priors; no proprietary codebase
+   or causal financial record is extracted. The authored coefficients round-trip
+   through a bounded GNN profile and export complete joint matrices for a pinned
+   real COGANT runtime [@friedman2026cogant]. Interoperability does not imply
+   equal filtering or policy objectives across engines.
 
-3. **Computes inference, value, and the certificate.** A small, deterministic,
-   fully-tested NumPy engine (`src/alphacogant/`) performs state inference over
-   the channels, computes the Expected-Free-Energy decomposition into epistemic
-   and pragmatic value [@friston2015epistemic; @dacosta2020synthesis], derives the marginal-return vector, and evaluates
-   the t-RSI improvement certificate.
+3. **Computes inference, value, and a threshold diagnostic.** The NumPy engine
+   performs a single factorized filtering sweep, scores one-step EFE, and
+   separately computes paired create/decay trajectory summaries
+   [@friston2015epistemic; @dacosta2020synthesis]. No model-update acceptance
+   mechanism is implemented.
 
 ## Why route AlphaFund through Active Inference and GNN
 
@@ -83,37 +79,32 @@ The first is **integrity of inference**. AlphaFund spends a full section arguing
 that a language model is *not* an EWM, because held-out validation only enforces
 **filtration discipline** — conditioning a forecast at time *t* only on
 information available at *t* — when the holdout is strictly after the training
-corpus [@westenhaver2026rsi]. Active Inference is built on this discipline: the generative model
-factorizes over time and the agent's posterior at *t* is, by construction, a
-function of the history filtration $\mathcal{F}_t = \sigma(H_t)$ and nothing
-resolved later [@friston2010freeenergy; @friston2015epistemic; @dacosta2020synthesis; @kaelbling1998pomdp; @friston2017process]. This is where COGANT and the GNN graph contract are doing
-most of the heavy lifting [@friedman2026gnn; @friedman2026cogant]. GNN makes this factorization explicit and
-checkable [@friedman2026gnn].
-The "no-peeking" property AlphaFund must bolt onto a wrapped LLM is the native
-semantics of the object COGANT emits [@friedman2026cogant; @friston2017process]. This is the same hard constraint that
-separates time-aware economic forecasting from post-fitted narrative claims [@westenhaver2026rsi; @friston2010freeenergy; @friston2015epistemic; @dacosta2020synthesis; @kaelbling1998pomdp].
+corpus [@westenhaver2026rsi]. The local inference loop filters the supplied current
+observation before selecting an action; a future supplied observation does not
+change earlier records. This inspectable order is narrower than verified
+filtration integrity: the engine has no timestamps or training-data provenance
+with which to detect an observation leaked from the future
+[@friston2010freeenergy; @kaelbling1998pomdp; @friston2017process].
 
 The second is a **single legible objective**. AlphaFund's central move is to put a
 researcher hire, a data feed, a GPU, and a position in AAPL on one dollar axis by
-differentiating a common objective. Expected Free Energy *is* that common axis, and
-its decomposition tells you *why* a channel is worth funding: because it pays in
-preferred outcomes (pragmatic) or because it sharpens the model that prices all
-future outcomes (epistemic) [@friston2015epistemic; @dacosta2020synthesis]. The chronic difficulty of comparing an
-explore dollar to an exploit dollar dissolves into the same quantity Active
-Inference has formalized for the past decade as a single value decomposition [@friston2010freeenergy; @friston2015epistemic; @dacosta2020synthesis; @lattimore2020bandits].
+differentiating a common objective. Expected Free Energy supplies a legible
+preference/information decomposition in this model [@friston2015epistemic; @dacosta2020synthesis].
+Adding terms expressed in nats does not establish their monetary calibration or
+equivalence to a corporate portfolio objective [@friston2010freeenergy; @lattimore2020bandits].
 
 AlphaFund's self-forecasting loop — predict (query the EWM for the marginal-return
 vector), optimize (the convex inner program), execute the funded action, and fold
-the realized outcome back in as the next training row — is, in Active Inference
-terms, the perception–action cycle that minimizes Expected Free Energy over the
-{{PLANNING_HORIZON}}-cycle horizon [@kaelbling1998pomdp]. [@fig:loop] renders that loop with each
-stage labelled by its engine symbol, so the reader can see the whole correspondence
-before the formalism arrives [@friston2010freeenergy; @friston2015epistemic; @dacosta2020synthesis; @friston2017process].
+the realized outcome back in as the next training row — motivates a
+perception–action analogy [@kaelbling1998pomdp]. Here action scoring is one-step;
+{{PLANNING_HORIZON}} is the rollout/diagnostic horizon, not a multi-step optimizer.
+[@fig:loop] is a conceptual schematic; the open-loop trajectory simulator does
+not consume observations or refit coefficients [@friston2017process].
 
-![The self-forecasting loop as the Active Inference perception–action cycle: predict via `free_energy.marginal_return_vector`, select via `free_energy.policy_posterior`, execute the funded action over {{PLANNING_HORIZON}} cycles, and fold the realized reward/loss back through `generative_model.infer_states`.](../output/figures/self_forecasting_loop.png){#fig:loop}
+![Conceptual corporate self-forecasting loop. The local engine computes one-step action values and a selected-action example. Observation acquisition, external execution and coefficient learning are conceptual handoffs here, not operations performed by this diagram or the open-loop trajectory simulator.](../output/figures/self_forecasting_loop.png){#fig:loop}
 
 The remainder of the paper builds the dictionary ([@sec:dictionary]), gives the
 GNN-via-COGANT realization ([@sec:gnn]), works through generative-model inference
 under the firm filtration ([@sec:inference]), derives the epistemic/pragmatic value
-split and recovers t-RSI as the EFE certificate ([@sec:value]), and argues the
-integrity case ([@sec:integrity]).
+split and the separate t-RSI diagnostic ([@sec:value]), and evaluates the
+implementation's integrity boundaries ([@sec:integrity]).

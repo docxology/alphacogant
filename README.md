@@ -5,12 +5,12 @@
 
 **Recursive corporate self-improvement as Active Inference, rendered in GNN via COGANT.**
 
-**Version 1.2.1 (2026-10-16).** Standalone NumPy research package with lossless
+**Version 1.2.2 (2026-11-07).** Standalone NumPy research package with lossless
 finite GNN serialization, complete COGANT joint-matrix export, and replayable
 observation-conditioned inference, batched action scoring and a versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
 [pinned upstream contract](docs/upstream_compatibility.md). CI runs lint, the full
 test suite with ≥90% coverage, model parity, and installed-wheel checks on
-Python 3.12, 3.14, and 3.15. The development interpreter is the one `.python-version` pins. The research scope is recorded in [`ISA.md`](ISA.md).
+Python 3.11, 3.12, 3.14, and 3.15. The development interpreter is the one `.python-version` pins. The research scope is recorded in [`ISA.md`](ISA.md).
 
 The [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) reframes recursive
 self-improvement (RSI) as a portfolio-optimization problem: a corporation recursively
@@ -18,18 +18,18 @@ improves when realized economic gains finance the next cycle of better predictio
 deployment, and the firm's standing is summarized by **t-RSI**, the standardized gap
 between alpha-creation and alpha-decay rates.
 
-AlphaCOGANT observes that this is, term for term, an **Active Inference** agent — and
-makes the correspondence executable:
+AlphaCOGANT implements an illustrative, reduced Active Inference analogy —
+not an equivalence proof of the firm's economic objective:
 
 | AlphaFund | Active Inference |
 | --- | --- |
 | Economic World Model (EWM) | generative model $P(o,s'\mid s,a)$ |
 | Five channels $I,S,U,\Theta,Z$ | hidden-state factors |
 | Capital allocation $a_t$ | control / policy |
-| Marginal-return objective $J_t$ | **Expected Free Energy** (minimized) |
-| Sensors / R&D returns | **epistemic value** (information gain) |
-| Investments / Actuators returns | **pragmatic value** (expected log-equity) |
-| t-RSI certificate | thresholded EFE-improvement gate |
+| Marginal-return analogy | discrete negative-EFE action scores |
+| Sensors / R&D roles | conceptual epistemic roles; implemented information gain targets Theta |
+| Investments / Actuators roles | expected reward/loss preference contributions |
+| t-RSI diagnostic | separately evaluated paired create-minus-decay threshold |
 
 Its design draws on three related projects:
 
@@ -121,8 +121,8 @@ measurements, profiler limits and numerical compatibility.
 ## Read the concept
 
 The manuscript writes the idea out in full: the AlphaFund↔Active Inference dictionary
-(§2), the GNN-via-COGANT realization (§3), filtration-safe inference (§4), the
-epistemic/pragmatic value split and t-RSI as the EFE certificate (§5), and the
+(§2), the GNN-via-COGANT realization (§3), ordered approximate inference (§4), the
+epistemic/pragmatic split and separate synthetic t-RSI diagnostic (§5), and the
 functionality + integrity case (§6), numbered formalisms (§8), limitations and
 sensitivity analysis (§9).
 
@@ -130,6 +130,5 @@ Implementation and artifact regeneration details live in
 [`docs/methods_and_artifacts.md`](docs/methods_and_artifacts.md).
 
 > **Not financial advice.** AlphaCOGANT is a modeling and integrity instrument. The
-> GNN model is an illustrative reduced encoding; every numeric in the manuscript is a
-> property of that model, generated and gated by the engine — not a claim about
-> AlphaFund's proprietary books.
+> GNN model is illustrative; generated numerics describe that model, not
+> AlphaFund's proprietary books. Token coverage is not empirical calibration.

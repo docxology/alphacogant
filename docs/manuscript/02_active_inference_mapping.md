@@ -4,8 +4,8 @@ Active Inference casts any adaptive system as an agent that holds a generative
 model of how hidden causes produce sensory data, infers those causes by minimizing
 variational free energy, and selects actions that minimize *expected* free energy
 over a planning horizon [@friston2010freeenergy; @friston2015epistemic; @dacosta2020synthesis]. Below, each AlphaFund construct is matched to its Active
-Inference counterpart. The match is structural, not metaphorical: the equations
-coincide.
+Inference-inspired reduced object. The mapping is an analogy with explicit
+omissions, not an identity of the economic and EFE equations.
 
 | AlphaFund construct | Active Inference object | Correspondence |
 | --- | --- | --- |
@@ -17,20 +17,20 @@ coincide.
 | Action vector $a_t$ (dollars per channel) | Control state / policy $\pi$ | Capital allocation = the agent's action |
 | Cumulative objective $J_t$ (expected $\sum \log$-equity) | Negative Expected Free Energy (pragmatic part) | Discounted log-return = preference satisfaction |
 | Marginal-return vector $g_t = \partial J_t/\partial a_t$ | Negative-EFE action value | Continuous marginal return becomes a discrete funding-move score |
-| Equimarginal identity $\hat g^k_t/\sigma^k_t = \lambda^*_{S,t}$ | Precision-weighted policy optimum | Risk-adjusted shadow price of capital |
-| Sensors / R&D returns (data-scaling, search laws) | **Epistemic value** (information gain) | What reduces EWM predictive loss |
-| Investments / Actuators returns (broker ledger, Sharpe) | **Pragmatic value** (expected utility) | What realizes preferred outcomes now |
-| t-RSI = std. gap(create, decay) | Thresholded EFE-improvement statistic | Certificate gating each commit |
-| Certificate of monotone improvement | Admissibility gate on a model update | Admit update iff value clears a margin |
-| Drift detection + refit | Precision / model revision under surprise | Refit when observations leave support |
+| Equimarginal identity $\hat g^k_t/\sigma^k_t = \lambda^*_{S,t}$ | Conceptual comparison only | Policy precision is not a solved risk-adjusted shadow price |
+| Sensors / R&D returns | Conceptual epistemic roles | Implemented information gain targets Theta, not fitted scaling laws |
+| Investments / Actuators returns | Expected reward/loss preference | No broker ledger or Sharpe calibration |
+| t-RSI = std. gap(create, decay) | Paired synthetic diagnostic | Computed separately from EFE action selection |
+| Certificate of monotone improvement | Scalar threshold predicate only | No deployed-update admission mechanism |
+| Drift detection + refit | Not implemented | Fixed matrices; no learned parameter update |
 
 [@fig:dictionary] lays the same correspondence out as a two-column dictionary
 panel, pairing each AlphaFund construct with its Active Inference object across the
-{{NUM_CHANNELS}} channels and {{NUM_ACTIONS}} actions of the engine — the equations
-coincide, so the panel is a map of where to find each AlphaFund symbol inside
-`src/alphacogant`.
+{{NUM_CHANNELS}} channels and {{NUM_ACTIONS}} actions of the engine. The panel
+locates the conceptual pairings; executable support and limitations are described
+separately below.
 
-![The AlphaFund ↔ Active Inference dictionary: each whitepaper construct (equity, reward, EWM, filtration, marginal-return vector, certificate) paired with its Active Inference object and the realizing engine symbol across {{NUM_CHANNELS}} channels and {{NUM_ACTIONS}} actions, with each pairing's value computed by `free_energy.marginal_return_vector`.](../output/figures/aif_dictionary.png){#fig:dictionary}
+![Conceptual AlphaFund–Active Inference dictionary with explicit implementation boundaries across {{NUM_CHANNELS}} factors and {{NUM_ACTIONS}} actions. Only the annotated example action values are computed from the finite engine; the conceptual pairings are not numerical outputs or implemented financial guarantees.](../output/figures/aif_dictionary.png){#fig:dictionary}
 
 ## The firm as a generative-model-carrying agent
 
@@ -43,15 +43,10 @@ under action. AlphaFund's channel histories $H_t^k$ — the $(o^k_\tau, a^k_\tau
 R_{\tau+1})$ rows the firm fits its row-laws on — are exactly the per-factor
 evidence streams an Active Inference agent accumulates.
 
-The EWM's structural promise is that it is the **only** model of the future the
-firm has access to, so improving it is itself an allocation with first-order
-effect on the objective. In Active Inference terms: the generative model is
-parameterized (by $\Theta$), those parameters are themselves hidden states subject
-to inference and to control, and the value of acting to improve them is
-quantified by the same expected-free-energy functional that values every other
-action. AlphaFund's insistence that "every input that lowers predictive loss is
-priced in dollars on the firm's books" is the economic image of Active Inference's
-unification of perception, learning, and action under one objective [@westenhaver2026rsi].
+In the reduced engine, Theta is a latent capability label, not the numerical
+parameters of $A$ or $B$. Funding Theta changes the distribution over this label;
+it does not refit coefficients. Information gain about the label is therefore
+not demonstrated improvement in a learned EWM [@westenhaver2026rsi].
 
 ## Channel-specific world models = factorized generative models
 
@@ -59,14 +54,11 @@ AlphaFund decomposes the joint EWM into **channel-specific world models** [@daco
 $\widehat{W}_t^k$, each trained on its own channel history — a scaling law, a
 market-impact curve, a refit-decay model, a search law. It is explicit that this
 is a practical approximation: "cross-channel coupling re-enters when the
-controller composes the rows." This is precisely the **mean-field / structured
-factorization** of a generative model in Active Inference [@vandemeent2021ppl]: the joint is
-approximated as a product of per-factor distributions for tractable inference, and
-coupling re-enters at the policy-evaluation step where Expected Free Energy is
-computed over the joint predicted outcome [@friston2015epistemic; @dacosta2020synthesis]. AlphaFund's supermodular cross-partials
-— "a marginal dollar on channel $j$ raises the marginal value of a dollar on
-channel $k$" — are the coupling terms that a fully factorized model drops and the
-EFE computation restores [@milgrom1990].
+controller composes the rows." Our factorized representation is similarly a
+tractability choice [@vandemeent2021ppl]. Coupled observation likelihoods enter
+filtering and EFE evaluation, but the retained product belief discards posterior
+dependence. Likelihood coupling does not prove economic supermodularity or restore
+omitted transition interactions [@friston2015epistemic; @dacosta2020synthesis; @milgrom1990].
 
 The GNN model file in [@sec:gnn] encodes exactly this: five factor blocks with per-factor
 transition matrices $B_k$, two likelihood matrices $A_R, A_L$ that couple factors

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from alphacogant import __version__
-from alphacogant.api import API_VERSION, Client, handle_request, json_value
+from alphacogant.api import API_VERSION, MAX_REQUEST_BYTES, Client, handle_request, json_value
 from alphacogant.bridge.inference import run_inference, verify_inference
 from alphacogant.io import MAX_JSON_BYTES, parse_json, read_text, write_text
 
@@ -28,12 +28,12 @@ def _stream() -> int:
     """One JSON request and response per line, with bounded frame and stream lengths."""
     failed = False
     for _ in range(1000):
-        raw = sys.stdin.buffer.readline(1_000_001)
+        raw = sys.stdin.buffer.readline(MAX_REQUEST_BYTES + 1)
         if not raw:
             return 2 if failed else 0
         try:
-            if len(raw) > 1_000_000:
-                raise ValueError("Request exceeds 1000000 bytes; stream closed.")
+            if len(raw) > MAX_REQUEST_BYTES:
+                raise ValueError(f"Request exceeds {MAX_REQUEST_BYTES} bytes; stream closed.")
             response = handle_request(parse_json(raw.decode("utf-8")))
         except (ValueError, UnicodeError) as exc:
             response = {
@@ -44,7 +44,7 @@ def _stream() -> int:
             }
         print(json.dumps(response, allow_nan=False), flush=True)
         failed |= not response["ok"]
-        if len(raw) > 1_000_000:
+        if len(raw) > MAX_REQUEST_BYTES:
             return 2  # never treat a remainder of the same oversized frame as a new request
     if sys.stdin.buffer.read(1):
         print(

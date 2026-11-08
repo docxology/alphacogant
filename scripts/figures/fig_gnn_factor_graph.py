@@ -16,16 +16,12 @@ factor graph:
   from ``sS, sTheta``), feeding observation nodes ``o_R`` and ``o_L``.
 * A control node ``u`` with ``B_k`` transition edges into each factor; the edge
   labels are read from :data:`alphacogant.channels.ACTIONS`.
-* An Expected-Free-Energy node ``G`` fed by *epistemic* value from the
-  ``S, Z, Theta`` factors and *pragmatic* value from the ``I, U`` factors. Sign
-  convention: ``G`` is minimized, value ``= -G``; epistemic (a KL) is ``>= 0``.
+* Expected Free Energy ``G`` uses both predictive likelihoods for pragmatic
+  preference and information gain about Theta. Z has a transition but no
+  likelihood/value dependency in this fixed model.
 
-Node layout is deterministic (fixed manual coordinates; networkx is used only
-for the edge-drawing convenience and a deterministic ``MultiDiGraph`` build —
-positions never depend on a layout RNG). The two manuscript operating points
-(IMPROVING / COASTING) are queried purely to annotate the ``G`` node with the
-funded channel and the pragmatic/epistemic split at each regime; this exercises
-the engine but does not change the deterministic geometry.
+Geometry is a manual deterministic schematic, not parser-generated topology.
+Two live one-step action-score decompositions annotate the diagram.
 
 Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_gnn_factor_graph.py
@@ -71,9 +67,8 @@ OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "gnn_factor_graph.png"
 # Likelihood wiring (which factors parameterize each likelihood column tensor).
 A_R_PARENTS = ("I", "U", "Theta")
 A_L_PARENTS = ("S", "Theta")
-# Epistemic vs pragmatic decomposition feeding the EFE node G.
-EPISTEMIC_PARENTS = ("S", "Z", "Theta")
-PRAGMATIC_PARENTS = ("I", "U")
+# Both likelihoods feed expected preference and Theta-only information gain.
+VALUE_LIKELIHOODS = ("A_R", "A_L")
 
 # Deterministic node coordinates (x, y) — fixed, no layout RNG.
 POSITIONS: dict[str, tuple[float, float]] = {
@@ -87,7 +82,7 @@ POSITIONS: dict[str, tuple[float, float]] = {
     "A_L": (6.0, 1.0),
     "o_R": (8.5, 3.0),
     "o_L": (8.5, 1.0),
-    "G": (4.6, -2.0),
+    "G": (4.6, -1.3),
 }
 
 # Palette.
@@ -98,7 +93,6 @@ C_CONTROL = "#6d28d9"
 C_EFE = "#b91c1c"
 C_EDGE = "#475569"
 C_EPI = "#0e7490"
-C_PRAG = "#a16207"
 
 
 def _build_belief(raw: dict[str, tuple[float, float]]) -> dict[str, np.ndarray]:
@@ -171,7 +165,10 @@ def _draw_edge(ax, src: str, dst: str, color: str, *, label: str = "", style: st
     )
     if label:
         mx, my = (x0 + x1) / 2.0, (y0 + y1) / 2.0
-        ax.text(mx, my, label, ha="center", va="center", fontsize=6.5, color=color, zorder=2)
+        ax.text(
+            mx, my, label, ha="center", va="center", fontsize=6.5, color=color,
+            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.9}, zorder=5,
+        )
 
 
 def build_figure(model, improving: dict[str, np.ndarray], coasting: dict[str, np.ndarray]):
@@ -181,7 +178,7 @@ def build_figure(model, improving: dict[str, np.ndarray], coasting: dict[str, np
 
     fig, ax = plt.subplots(figsize=(13.0, 9.0))
     ax.set_xlim(-1.6, 10.2)
-    ax.set_ylim(-3.6, 5.6)
+    ax.set_ylim(-4.7, 5.6)
     ax.set_aspect("equal")
     ax.axis("off")
     ax.set_title(
@@ -193,14 +190,13 @@ def build_figure(model, improving: dict[str, np.ndarray], coasting: dict[str, np
 
     factor_labels = {f"s{ch}": f"s{ch}" for ch in CHANNELS}
 
-    # --- Control -> factor transition edges (B_k), labelled from ACTIONS ---
-    # Show the action-set label once on the topmost factor edge to avoid clutter,
-    # but draw a B_k transition edge into every factor (engine-defined ACTIONS).
-    action_label = "B_k: " + ", ".join(ACTIONS)
-    for i, ch in enumerate(CHANNELS):
-        node = f"s{ch}"
-        lbl = action_label if i == 0 else f"B_{ch}"
-        _draw_edge(ax, "u", node, C_CONTROL, label=lbl, style="--")
+    # Keep transition labels short; put the action set in its own clear band.
+    for ch in CHANNELS:
+        _draw_edge(ax, "u", f"s{ch}", C_CONTROL, label=f"B_{ch}", style="--")
+    ax.text(
+        4.3, 5.15, "B_k actions: " + ", ".join(ACTIONS),
+        ha="center", va="center", fontsize=8, color=C_CONTROL,
+    )
 
     # --- Factor -> likelihood edges ---
     for ch in A_R_PARENTS:
@@ -212,11 +208,9 @@ def build_figure(model, improving: dict[str, np.ndarray], coasting: dict[str, np
     _draw_edge(ax, "A_R", "o_R", C_OBS)
     _draw_edge(ax, "A_L", "o_L", C_OBS)
 
-    # --- Factor -> EFE edges: epistemic (S,Z,Theta) and pragmatic (I,U) ---
-    for ch in EPISTEMIC_PARENTS:
-        _draw_edge(ax, f"s{ch}", "G", C_EPI, label="epistemic", style=":")
-    for ch in PRAGMATIC_PARENTS:
-        _draw_edge(ax, f"s{ch}", "G", C_PRAG, label="pragmatic", style=":")
+    # Predictive observation distributions supply both value components.
+    for likelihood in VALUE_LIKELIHOODS:
+        _draw_edge(ax, likelihood, "G", C_EPI, style=":")
 
     # --- Nodes (drawn after edges so they sit on top) ---
     _draw_node(ax, "u", "u", C_CONTROL, shape="circle")
@@ -231,19 +225,20 @@ def build_figure(model, improving: dict[str, np.ndarray], coasting: dict[str, np
     # --- Engine-derived annotation block at the two operating points ---
     annotation = (
         "Expected Free Energy G  (minimized; value = -G)\n"
-        f"  epistemic value = KL >= 0  from {{{', '.join('s' + c for c in EPISTEMIC_PARENTS)}}}\n"
-        f"  pragmatic value           from {{{', '.join('s' + c for c in PRAGMATIC_PARENTS)}}}\n"
+        "  epistemic: information gain about Theta (KL >= 0)\n"
+        "  pragmatic: expected reward/loss log preference\n"
+        "  both use A_R and A_L; Z is inert to value\n"
         "\n"
-        "Funded policy (engine marginal-return argmax):\n"
+        "Selected action (one-step marginal-return argmax):\n"
         f"  IMPROVING: {imp_action}  |  pragmatic {imp_prag:+.3f}  epistemic {imp_epi:+.3f}\n"
         f"  COASTING:  {coa_action}  |  pragmatic {coa_prag:+.3f}  epistemic {coa_epi:+.3f}"
     )
     ax.text(
-        7.1,
-        -2.2,
+        0.0,
+        -2.5,
         annotation,
         ha="left",
-        va="center",
+        va="top",
         fontsize=8.0,
         family="monospace",
         bbox={"boxstyle": "round,pad=0.4", "facecolor": "#f8fafc", "edgecolor": C_EDGE},
@@ -257,8 +252,7 @@ def build_figure(model, improving: dict[str, np.ndarray], coasting: dict[str, np
         mpatches.Patch(color=C_OBS, label="observation (o_R, o_L)"),
         mpatches.Patch(color=C_CONTROL, label="control u (B_k transitions)"),
         mpatches.Patch(color=C_EFE, label="Expected Free Energy G"),
-        mpatches.Patch(color=C_EPI, label="epistemic value -> G"),
-        mpatches.Patch(color=C_PRAG, label="pragmatic value -> G"),
+        mpatches.Patch(color=C_EPI, label="predictive likelihoods -> G"),
     ]
     ax.legend(handles=legend_handles, loc="upper left", fontsize=8, framealpha=0.95)
 

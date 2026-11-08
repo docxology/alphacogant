@@ -3,8 +3,8 @@
 # AlphaCOGANT — the self-improving corporation rendered as a partially-observed
 # Active Inference generative model. The firm's five capital channels are hidden
 # state factors; capital allocation is the control vector; Expected Free Energy is
-# the negated marginal-return objective the portfolio optimizer minimizes; the t-RSI
-# certificate is the EFE-improvement gate on each commit.
+# the negated discrete action-value objective the controller minimizes. t-RSI is a
+# separately evaluated diagnostic, not an enforced model-update or commit gate.
 
 ## GNNSection
 ActInfPOMDP_AlphaFund
@@ -26,26 +26,23 @@ capital channels of the whitepaper:
   generative model condition on more of the world (epistemic).
 - Factor U (Actuators): the execution surface — venues, routes, tradable universe
   (pragmatic, gates how forecasts are realized).
-- Factor Θ (Parameters): the learned EWM — predictive quality vs. staleness. This
-  IS the generative model's own A/B; refreshing it is alpha-creation, ageing it is
-  alpha-decay (both epistemic and pragmatic).
-- Factor Z (R&D): research-frontier position — how fast the firm improves the
-  other four channels (epistemic, compounds the whole loop).
+- Factor Θ (Parameters): hidden EWM-capability label {stale,fresh}; it is not
+  the fixed numerical A/B matrices, and funding it does not refit coefficients.
+- Factor Z (R&D): illustrative research-frontier factor. In this encoding it has
+  no likelihood or cross-channel transition effect and does not affect EFE.
 
 Each factor carries 2 capability levels {weak=0, strong=1}. The control vector
 a_t is the capital-allocation decision: which channel receives the marginal
 dollar this cycle. Funding a channel raises the probability it transitions to /
-stays strong; an unfunded Θ ages back toward weak (the empirically-measured
-alpha-decay). Observations are the firm's noisy sensor readings of its own state
+stays strong; an unfunded Θ ages back toward weak under the illustrative
+alpha-decay coefficients. Observations are synthetic sensor readings of state
 (the channel histories H_t^k): realized log-equity reward and EWM predictive loss.
 
-The Expected Free Energy G(π) the controller minimizes is exactly the
-whitepaper's marginal-return vector read as a path integral: its pragmatic term
-is expected log-equity growth (the J_t objective, the create-rate), its epistemic
-term is expected information gain about Θ (the data-scaling / forecast-sharpening
-that Sensors and R&D buy). t-RSI is the standardized distance between the
-create-rate posterior and the decay-rate posterior — the thresholded EFE gate
-that admits a candidate update only when create confidently exceeds decay.
+Expected Free Energy G(a) minimizes the negative sum of expected authored
+reward/loss preference and information gain about hidden Theta capability.
+It is not a continuous financial marginal-return gradient or a calibrated
+monetary objective. t-RSI standardizes paired synthetic create-minus-decay
+samples; its scalar threshold is evaluated separately from allocation.
 
 ## StateSpaceBlock
 # Five channel factors (the corporation tuple Ξ_t), each 2 capability levels
@@ -72,14 +69,14 @@ D_S[2,type=float]       # prior over Sensors capability
 D_U[2,type=float]       # prior over Actuators capability
 D_Theta[2,type=float]   # prior over Parameters capability
 D_Z[2,type=float]       # prior over R&D capability
-o_R[3,1,type=int]       # realized log-equity reward, bucketed {low, mid, high}
+o_R[3,1,type=int]       # illustrative reward category {low, mid, high}; not book data
 o_L[3,1,type=int]       # EWM predictive loss, bucketed {high, mid, low}
 pi[6,type=float]        # policy: allocate to {I, S, U, Theta, Z, hold}
 u[1,type=int]           # committed capital-allocation action
-G[6,type=float]        # Expected Free Energy per policy (the marginal-return vector)
-g_epistemic[6,type=float] # epistemic component of G (Sensors+R&D information gain)
-g_pragmatic[6,type=float] # pragmatic component of G (expected log-equity = create-rate)
-tRSI[1,type=float]      # standardized create-vs-decay distance (EFE improvement gate)
+G[6,type=float]        # Expected Free Energy per candidate allocation, minimized
+g_epistemic[6,type=float] # nonnegative expected information gain about Theta
+g_pragmatic[6,type=float] # expected illustrative reward/loss log-preference
+tRSI[1,type=float]      # paired create-minus-decay statistic; no enforced admission gate
 
 ## Connections
 D_I>sI
@@ -96,11 +93,6 @@ A_R-o_R
 A_L-o_L
 C_R>G
 C_L>G
-sS>g_epistemic
-sZ>g_epistemic
-sTheta>g_epistemic
-sI>g_pragmatic
-sU>g_pragmatic
 g_epistemic>G
 g_pragmatic>G
 G>pi
@@ -146,7 +138,7 @@ B_I={((0.6, 0.95, 0.95, 0.95, 0.95, 0.9), (0.05, 0.95, 0.95, 0.95, 0.95, 0.1)), 
 B_S={((0.9, 0.55, 0.9, 0.9, 0.9, 0.9), (0.9, 0.05, 0.9, 0.9, 0.9, 0.1)), ((0.1, 0.45, 0.1, 0.1, 0.1, 0.1), (0.1, 0.95, 0.1, 0.1, 0.1, 0.9))}
 B_U={((0.9, 0.9, 0.55, 0.9, 0.9, 0.9), (0.9, 0.9, 0.05, 0.9, 0.9, 0.1)), ((0.1, 0.1, 0.45, 0.1, 0.1, 0.1), (0.1, 0.1, 0.95, 0.1, 0.1, 0.9))}
 # Theta decays: under any non-Theta action the fresh->stale leak is large
-# (the empirically small-but-nonzero alpha-decay); funding Theta refreshes it.
+# (an illustrative uncalibrated staleness rate); funding Theta refreshes it.
 B_Theta={((0.85, 0.85, 0.85, 0.5, 0.85, 0.85), (0.35, 0.35, 0.35, 0.02, 0.35, 0.4)), ((0.15, 0.15, 0.15, 0.5, 0.15, 0.15), (0.65, 0.65, 0.65, 0.98, 0.65, 0.6))}
 B_Z={((0.9, 0.9, 0.9, 0.9, 0.55, 0.9), (0.9, 0.9, 0.9, 0.9, 0.05, 0.1)), ((0.1, 0.1, 0.1, 0.1, 0.45, 0.1), (0.1, 0.1, 0.1, 0.1, 0.95, 0.9))}
 
@@ -166,25 +158,17 @@ D_Z={(0.5, 0.5)}
 # Generative model (filtration-respecting; conditions only on F_t = sigma(H_t)):
 #   P(o_R, o_L, s_{t+1} | s_t, a_t) = A_R(o_R | sI,sU,sTheta) * A_L(o_L | sS,sTheta)
 #                                     * prod_k B_k(s^k_{t+1} | s^k_t, a_t)
-# Variational inference recovers the posterior q(s_t) over the five channel factors
-# from the observed reward/loss history (the channel histories H_t^k).
+# Local filtering retains one factorized sweep, not exact joint marginals.
+# G(a) = -( E_q[C_R(o_R)+C_L(o_L)] + I_q(Theta';o_R,o_L|a) ).
+# Preferences are illustrative scores, not measured log-equity.
+# R&D has no likelihood/value dependency; matrices remain fixed.
 #
-# Expected Free Energy of a policy pi (negated marginal return the controller maximizes):
-#   G(pi) = -g_pragmatic(pi) - g_epistemic(pi)
-#   g_pragmatic(pi) = E_q[ ln P(o | C) ]            # expected log-preference = expected log-equity (create-rate)
-#   g_epistemic(pi) = E_q[ D_KL[ q(Theta|o,pi) || q(Theta|pi) ] ]  # info gain on the EWM (Sensors+R&D)
-# The marginal-return vector g_t = -dG/da_t equates the risk-adjusted shadow price
-# of capital across funded channels at the optimum (equimarginal identity).
-#
-# t-RSI (improvement signal-to-noise ratio). create and decay are PAIRED — both
-# are read off the same perturbed trajectory per draw — so the denominator is
-# the paired SE of the per-draw differences (the independence-assuming pooled
-# SE understates the margin's variability under the induced rate correlation):
-#   t-RSI = mean[create - decay] / SE[create - decay]
-# create-rate posterior <- g_pragmatic bootstrap over channel-row fits
-# decay-rate posterior  <- Theta fresh->stale leak (B_Theta) under non-funding
-# Certificate of monotone improvement: admit a candidate Theta update iff
-#   t-RSI >= delta (Sharpe-margin) on every active channel.
+# create = mean pragmatic(greedy b1..bH) - mean pragmatic(hold b1..bH).
+# decay  = mean nonnegative Theta-refresh opportunity(greedy b1..bH).
+# Paired synthetic belief perturbations feed both rates:
+#   t-RSI = mean(create - decay) / SE(create - decay).
+# certificate(value,delta) compares scalars only. No candidate/incumbent,
+# per-channel readiness, deployment or action admission is implemented.
 
 ## Time
 Dynamic
@@ -232,10 +216,9 @@ policy_horizon: 1
 ## Footer
 AlphaFund Economic World Model v1 — GNN representation produced for AlphaCOGANT.
 The five whitepaper channels (I, S, U, Theta, Z) are the hidden-state factors;
-capital allocation is the control; Expected Free Energy is the portfolio
-optimizer's marginal-return objective; t-RSI is the EFE-improvement certificate.
-Reduced 2-level encoding for legibility; the manuscript carries the full continuous
-marginal-return formalism.
+capital allocation is discrete control; Expected Free Energy scores one-step
+authored preference plus hidden-Theta information. t-RSI is evaluated separately.
+Reduced two-level encoding, not a calibrated continuous financial controller.
 
 ## Signature
 AlphaCOGANT / Active Inference Institute — illustrative model, not financial advice.

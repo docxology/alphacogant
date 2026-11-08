@@ -3,8 +3,9 @@
 The manuscript's central move is a structural mapping from AlphaFund's
 recursive-corporate-self-improvement language to Active Inference. This file is
 the short operational dictionary.
-The mapping is grounded in the original framing [1] and Active Inference method
-sources [2, 3, 4].
+This is an analogy, not objective equivalence. The historical framing is recorded
+in [whitepaper_concepts.md](whitepaper_concepts.md); methodological references
+are identified in the [manuscript bibliography](manuscript/references.bib).
 
 | AlphaFund term | AlphaCOGANT / Active Inference term | Engine surface |
 | --- | --- | --- |

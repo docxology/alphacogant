@@ -1,24 +1,13 @@
 # AlphaCOGANT claim ledger — registered manuscript-facing facts.
 #
-# Every number below is flagged by the template evidence-registry gate when it
-# appears in docs/manuscript prose without an artifact-backed token. Each row
-# binds the value to a real, verifiable in-repo source so stage_04 validation
-# can trace it. In-repo engine-generated numbers are NOT claims about
-# AlphaFund's proprietary books (see docs/claim_boundaries.md).
+# Historical attribution inventory for optional external-template consumers.
+# Standalone checks do not use this ledger to authenticate numerical claims.
+# Model-result numerics come from output/manuscript_variables.json; empirical
+# AlphaFund claims below are historical transcriptions, not independent evidence.
 #
 # Schema: rows are consumed by the template evidence-registry collector
 # (claim_id, value, kind, source, artifact_path, source_tier, freshness).
 claims:
-  # Measured rate correlation induced by the paired bootstrap: both rates are
-  # read off the same perturbed trajectory, so the pooled (independence-
-  # assuming) SE understates the margin's variability. Documented in the
-  # t_rsi docstring from the paired-SE manuscript update (commit 40554c1).
-  - claim_id: rho_create_decay_paired
-    value: -0.92
-    kind: number
-    source: "Measured rho(create, decay) across the paired Dirichlet bootstrap at the IMPROVING operating point; documented in src/alphacogant/trsi/t_rsi.py (t_rsi docstring), introduced by the paired-SE update (commit 40554c1)."
-    artifact_path: "src/alphacogant/trsi/t_rsi.py"
-    source_tier: claim_ledger
 
   # AlphaFund's published 3-month headline t-RSI on its proprietary surfaces.
   # External reference point for what the full continuous marginal-return
@@ -26,7 +15,7 @@ claims:
   - claim_id: alphafund_headline_t_rsi
     value: 9.61
     kind: number
-    source: "AlphaFund published 3-month headline t-RSI; recorded in docs/whitepaper_concepts.md (t-RSI definition and headline t-RSI entries)."
+    source: "Historically transcribed AlphaFund 3-month t-RSI claim. The current whitepaper endpoint was unavailable on 2026-11-07; docs/whitepaper_concepts.md preserves attribution, not independent corroboration."
     artifact_path: "docs/whitepaper_concepts.md"
     source_tier: claim_ledger
 

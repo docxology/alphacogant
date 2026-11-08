@@ -124,14 +124,15 @@ def main() -> int:
         zorder=2,
     )
 
-    # Half-life annotation for the decay trajectory
+    # First crossing of half the initial probability, not an asymptotic half-life.
     half_level = THETA_FRESH[FRESH_INDEX] / 2.0
     crossing = np.where(p_fresh_hold <= half_level)[0]
     if len(crossing) > 0:
         hl = crossing[0]
         ax.axvline(hl, color="#b91c1c", linestyle="--", linewidth=0.8, alpha=0.5)
         ax.text(
-            hl + 0.2, 0.05, f"half-life\n≈ cycle {hl}", fontsize=7, color="#b91c1c", va="bottom"
+            hl + 0.2, 0.05, f"first freshness <= initial/2\ncycle {hl}",
+            fontsize=7, color="#b91c1c", va="bottom",
         )
 
     gap = p_fresh_fund[-1] - p_fresh_hold[-1]

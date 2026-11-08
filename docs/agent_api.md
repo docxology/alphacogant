@@ -22,8 +22,11 @@ statistics = client.call("statistics.bootstrap", {
 })
 ```
 
-`Client.call` returns result data and raises ordinary admission errors. Use
-`handle_request` for the same response envelope as the JSONL transport.
+`Client.call` returns result data and raises ordinary admission errors. Omitted
+parameters or Python `params=None` mean an empty parameter object. Use
+`handle_request` for the same response envelope as the JSONL transport; there,
+omitted `params` means `{}`, but explicitly supplied `params` must be an object
+(JSON `null` is rejected).
 
 ## JSONL transport
 
@@ -45,9 +48,15 @@ object with `code` and `message`. An unknown method uses `method_not_found`;
 admission, input and computation failures use `invalid_request`. Failed frames
 do not prevent subsequent valid frames from running. Exit status is 2 if any
 frame failed, otherwise 0. An oversized frame closes the stream after its error.
-At most 1000 frames of at most 1,000,000 UTF-8 bytes each are accepted. JSON nesting
-is bounded at 64 levels; duplicate keys, NaN/Infinity literals and overflowing
-floating-point literals are rejected. Stdout contains responses only.
+At most 1000 frames are accepted. `alphacogant.api.MAX_REQUEST_BYTES` is
+32,000,000 UTF-8 bytes per complete request line, including JSON escaping and the
+newline, matching the file-backed JSON budget. Source text retains its separate
+1,000,000-byte limit. The frame budget accommodates a maximum-source, 1000-step
+trace plus its source in a subsequent `inference.verify` request.
+JSON nesting is bounded at 64 levels; duplicate keys, NaN/Infinity literals and
+overflowing floating-point literals are rejected. Stdout contains responses only.
+Malformed GNN assignments and unrepresentable integer coefficients produce
+ordinary errors, so the next valid frame can still run.
 
 | Method | Result |
 | --- | --- |
@@ -71,8 +80,13 @@ research APIs, which retain their existing contracts.
 
 Mathematically infinite t-RSI results are encoded as the JSON strings `Infinity`
 or `-Infinity`; NaN, if present in a numerical result, is encoded as `NaN`.
-Ordinary finite results remain JSON numbers. This encoding prevents invalid JSON
-and is described by capability discovery.
+Ordinary finite results remain JSON numbers. Shared scalar/batch action scoring
+rejects nonfinite computed preference values before any policy can select an
+action or publish a scored trajectory. This applies to inference, simulation
+and bootstrap consumers, not just inference traces. Intentional t-RSI infinities
+are unaffected. Capability discovery describes the
+general numerical encoding.
+Joint-matrix export also rejects unrepresentable combined preference scores.
 
 ## CLI compatibility and files
 

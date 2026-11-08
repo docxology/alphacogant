@@ -111,3 +111,43 @@ def test_economic_world_model_constructor_rejects_missing_keys(model) -> None:
             C_L=model.C_L,
             D={channel: vector.copy() for channel, vector in model.D.items() if channel != "I"},
         )
+
+
+def test_rare_independent_observations_preserve_prior_instead_of_underflow(model, prior):
+    reward = np.zeros_like(model.A_R)
+    loss = np.zeros_like(model.A_L)
+    reward[0] = loss[0] = 1e-200
+    reward[1] = loss[1] = 1.0
+    rare = default_model(A_R=reward, A_L=loss)
+    with np.errstate(over="raise", invalid="raise", divide="raise"):
+        posterior = infer_states(rare, 0, 0, prior)
+    for channel in prior:
+        np.testing.assert_allclose(posterior[channel], prior[channel], atol=2e-14, rtol=2e-14)
+
+
+def test_rare_nonuniform_contractions_preserve_positive_support(model, prior):
+    reward = np.zeros_like(model.A_R)
+    reward[0, :, 1, 1] = [0.25, 0.5]
+    reward[1] = 1.0 - reward[0]
+    loss = np.zeros_like(model.A_L)
+    loss[0] = 1.0
+    rare = default_model(A_R=reward, A_L=loss)
+    prior["I"] = np.array([0.5, 0.5])
+    prior["U"] = np.array([1.0, 1e-200])
+    prior["Theta"] = np.array([1.0, 1e-200])
+    with np.errstate(over="raise", invalid="raise", divide="raise"):
+        posterior = infer_states(rare, 0, 0, prior)
+    # Reward requires rare U=Theta=1, with likelihood odds 1:2 over I.
+    np.testing.assert_allclose(posterior["I"], [1 / 3, 2 / 3], rtol=2e-13, atol=0)
+    np.testing.assert_array_equal(posterior["U"], [0.0, 1.0])
+    np.testing.assert_array_equal(posterior["Theta"], [0.0, 1.0])
+    np.testing.assert_allclose(posterior["S"], prior["S"], rtol=1e-14, atol=0)
+    np.testing.assert_array_equal(posterior["Z"], prior["Z"])
+
+
+def test_truly_impossible_observation_is_not_replaced_with_prior(model, prior):
+    reward = np.zeros_like(model.A_R)
+    reward[1] = 1.0
+    impossible = default_model(A_R=reward)
+    with pytest.raises(ValueError, match="positive total probability"):
+        infer_states(impossible, 0, 0, prior)

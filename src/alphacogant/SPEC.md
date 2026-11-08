@@ -8,9 +8,9 @@ arrays and real computation; fixed seeds. Target ≥90% coverage on `src/`.
 ## Channels (the corporation tuple Ξ_t)
 
 Five capital channels, fixed order `("I", "S", "U", "Theta", "Z")`:
-- `I` Investments (pragmatic, production), `S` Sensors (epistemic, filtration),
-- `U` Actuators (pragmatic, execution), `Theta` Parameters (the EWM itself),
-- `Z` R&D (epistemic, compounds the loop).
+- `I` Investments, `S` Sensors, `U` Actuators, `Theta` Parameters, `Z` R&D.
+Channel role labels are conceptual. Theta is a hidden capability state, not the
+learned numerical matrices; Z has no likelihood/value coupling in this profile.
 Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
 `(fund_I, fund_S, fund_U, fund_Theta, fund_Z, hold)`.
 
@@ -30,25 +30,30 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   (`assert allclose(sum, 1)`), every D sums to 1. Raise `ValueError` on malformed.
 - `belief_prior() -> dict[channel, np.ndarray]` from D.
 - `infer_states(model, obs_R, obs_L, prior) -> dict[channel, np.ndarray]`: one
-  Bayesian filtering update of the per-channel posterior from a bucketed reward
-  obs and loss obs (mean-field factorized; exact for this factor graph).
+  single-sweep factorized update from a bucketed reward/loss observation.
+  Coupled likelihoods induce posterior dependence, so this is not exact joint
+  filtering or exact joint marginals. Log-domain normalization admits rare
+  positive evidence while rejecting truly impossible observations.
 
 ### `efe/free_energy.py` — the heart
 - `expected_free_energy(model, belief, action) -> EFEResult` where `EFEResult`
   has `pragmatic: float`, `epistemic: float`, `total: float` and
   `total == -(pragmatic + epistemic)` (G is negated value; lower G = better).
-  - `pragmatic` = expected log-preference `E_q[ln P(o_R|C_R)] + E_q[ln P(o_L|C_L)]`
-    under the predicted post-action belief (this is the create-rate contribution /
-    expected log-equity).
-  - `epistemic` = expected information gain about `Theta` (and `S`,`Z` via their
-    effect on predicted obs): `D_KL[q(s'|o,a) || q(s'|a)]` summed over predicted
-    observations, weighted by predicted obs probability. Must be ≥ 0.
+  - `pragmatic` = expected authored reward/loss log-preference scores
+    `E_q[C_R(o_R) + C_L(o_L)]` under the predicted post-action belief.
+    These scores are illustrative, not measured log-equity growth.
+  - `epistemic` = expected information gain about the hidden `Theta` factor:
+    `E_o[KL(q(Theta'|o,a) || q(Theta'|a))]`. Must be ≥0. The matrices are
+    fixed; this is not parameter learning. Z has no likelihood/value effect.
 - `efe_vector(model, belief) -> list[EFEResult]`: the decomposition for every
   action, validating the belief exactly once (hot path for simulation and
   policy scoring).
+  Scalar, batched and static preference evaluation reject nonfinite computed
+  scores with `ValueError` before policy selection; finite coefficients alone
+  do not guarantee representable arithmetic.
 - `marginal_return_vector(model, belief) -> dict[action, float]`: `g_t` = the
-  negative-EFE per action = expected log-equity growth per channel-dollar. The
-  argmax is the channel the portfolio optimizer funds this cycle.
+  negative-EFE score for each discrete action, not an equity-gradient or
+  per-dollar derivative. Its argmax includes `hold`; no convex optimizer is run.
 - `greedy_action(model, belief) -> int`: the argmax action itself.
 - `predicted_belief(model, belief, action) -> dict[channel, np.ndarray]`: the
   one-step B-rollout `B_k[:, :, action] @ belief_k` (no validation; caller
@@ -58,25 +63,29 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   precomputed marginal returns to avoid a second EFE sweep.
 
 ### `trsi/t_rsi.py`
-- `create_rate(model, belief) -> float`: pragmatic value of the best funded policy
-  (gross alpha-creation rate).
-- `decay_rate(model, belief) -> float`: expected pragmatic loss per cycle from the
-  `B_Theta` fresh→stale leak under non-funding (alpha-decay).
+- `create_rate(model, belief) -> float`: horizon-mean greedy pragmatic value
+  minus horizon-mean hold value, evaluated on H post-transition beliefs b1…bH.
+- `decay_rate(model, belief) -> float`: mean nonnegative Theta-refresh
+  opportunity gap on those same H greedy post-transition beliefs.
 - `t_rsi(create_samples, decay_samples) -> float`: standardized distance
   `(mean(create) - mean(decay)) / se(create - decay)` where the samples are
   **paired** (entry `i` of each array comes from the same perturbed trajectory,
   as `paired_bootstrap_samples` produces) and `se(x)` is
   `std(x, ddof=1)/sqrt(n)`. The independence-assuming pooled SE
-  `sqrt(se(create)**2 + se(decay)**2)` is deliberately NOT used: it understates
-  the margin's variability when the shared trajectory induces rate correlation
-  (`rho ~= -0.92` at IMPROVING), inflating `|t-RSI|` anti-conservatively.
+  `sqrt(se(create)**2 + se(decay)**2)` is deliberately NOT used: pairing
+  requires covariance. Current correlation and paired margin SE are generated
+  from the same canonical samples rather than fixed historical literals.
   Return signed `inf` only if the margin SE is exactly 0 and the margin mean is
   nonzero; return 0 for n<2; raise if the arrays are non-empty but of unequal
   length (unpaired input).
+  Scale-stable reductions prevent finite small/large samples from producing
+  spurious zero/infinite dispersion. Synthetic perturbation count controls
+  Monte Carlo SE, not empirical corporate confidence.
 - `bootstrap_t_rsi(model, belief, rng, n=500) -> dict` returning
   `{"t_rsi", "create_mean", "decay_mean", "create_se", "decay_se"}` from a
   deterministic-seeded bootstrap over per-channel belief perturbations.
-- `certificate(t_rsi_value, delta) -> bool`: the monotone-improvement gate.
+- `certificate(t_rsi_value, delta) -> bool`: scalar threshold predicate only;
+  neither simulator enforces action/model-update admission or monotone EFE improvement.
 
 ### `bridge/cogant_bridge.py` — codebase→GNN→EWM provenance
 - `firm_structure_to_channels(spec: dict) -> dict`: map a small firm-description
@@ -132,11 +141,11 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
 
 ### `stats/simulation.py`
 - `simulate_trajectory(model, initial_belief, horizon, *, policy, seed) -> TrajectoryResult`:
-  run the firm for `horizon` cycles under a greedy, hold, fund_theta, or stochastic
-  policy. Each cycle records the full belief map, the selected action, the EFE
-  decomposition, and the marginal-return vector. This is the engine's most direct
-  evidence of self-improvement: beliefs move from weak to strong, the funded
-  channel shifts from exploration to exploitation.
+  predict `horizon` cycles under greedy, hold, fund_theta, or stochastic control.
+  Each cycle records the pre-action belief, selected action, EFE decomposition
+  and marginal-return vector. Matrices remain fixed; the rollout consumes no
+  observations and demonstrates neither learned improvement nor an inevitable
+  exploration-to-exploitation switch.
 - `TrajectoryResult`: frozen dataclass with `cycles` (list of `CycleRecord`),
   `belief_history` (channel→[p_strong per cycle]), `action_history`, and
   `cumulative_pragmatic`. `action_counts()` returns how many times each action

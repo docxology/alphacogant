@@ -1,88 +1,60 @@
-# Functionality and integrity AlphaCOGANT brings {#sec:integrity}
+# Functionality and integrity boundaries {#sec:integrity}
 
-The user-facing question is not only "can the firm be modeled this way" but "what
-does modeling it this way *give* AlphaFund." Five concrete things, each an
-integrity property that the Active Inference / GNN representation either makes
-explicit or gates with source-owned computation.
+The executable contribution is a reviewable reduced model, not a financial
+controller or proof that recursive self-improvement must occur. The relevant
+integrity properties have distinct acceptance checks and limits.
 
-## 1. Filtration integrity — the model cannot cheat on time
+## Ordered inference, caller-owned chronology
 
-AlphaFund's existential methodological risk is a controller that looks, even
-slightly, into the future — a backtest whose training data contains a later
-retrospective, an evaluation window contaminated by post-cutoff information. Such a
-controller posts a flattering t-RSI and then bleeds capital live. In a GNN
-generative model the no-peeking property is a **typing constraint**: beliefs are
-forward functions of the history filtration $\mathcal{F}_t$, and a valid factor
-graph has no edge that routes a future observation into a past belief. The
-factor-graph `Connections` block makes that temporal claim auditable by eye [@westenhaver2026rsi; @friston2010freeenergy; @kaelbling1998pomdp; @friston2017process].
-AlphaCOGANT thus converts AlphaFund's "we promise our holdout is strictly
-post-corpus" into a visible graph contract: every inference edge has to point
-from information available at decision time [@milgrom1990; @coase1937].
+`bridge.inference.run_inference` consumes the supplied current reward/loss pair,
+filters, scores actions, selects a minimum-EFE action, then predicts the next
+belief. Exact replay binds the source and every recorded computation. Later
+observations cannot change earlier trace records. This supports an inspectable
+online calculation [@kaelbling1998pomdp; @friston2017process]. It does not
+authenticate when observations became available, inspect a training corpus, or
+reject future-derived values supplied as current observations. GNN graph syntax
+is not a temporal type system [@friedman2026gnn].
 
-## 2. Auditable capital allocation — one objective, every move scored
+## One legible, limited objective
 
-A differentiable corporation is only as trustworthy as the legibility of the
-objective its controller optimizes. Expected Free Energy is a single scalar with a
-named decomposition: every admissible funding move is scored by negative EFE, and
-every funded channel's worth is reported as a pragmatic part (expected log-equity
-now) plus an epistemic part (information that prices future equity). A reviewer
-can ask of any allocation, "did it clear the shadow price, and was it bought for
-return or for knowledge?" and get a number, not a narrative. This is the integrity
-AlphaFund gestures at with "an auditable capital-allocation process"; the EFE
-decomposition is what makes the audit mechanical [@friston2015epistemic; @friston2017process].
+Each action has explicit pragmatic, Theta-information, and total-EFE scores
+[@friston2015epistemic; @friston2017process]. The scorer minimizes their stated
+combination. This makes model decisions auditable, but does not establish dollar
+calibration, solvency, continuous optimality, or the economic equimarginal identity
+[@milgrom1990; @coase1937]. A policy's numerical score is not evidence of realized
+financial gain.
 
-## 3. Reproducibility-by-construction — every prose number is a gate
+## Numeric substitution and artifact inventory
 
-AlphaCOGANT inherits the template's discipline: every numeric the manuscript cites
-is a generated token emitted by one function (`manuscript_variables.generate_variables`)
-and cross-checked by one test, so a drifted constant, a deleted result, or an
-out-of-sync narrative turns the build red before it can reach a PDF. Applied to a
-firm that grades itself, this is not cosmetic: it means the headline t-RSI in the
-document is provably the t-RSI the shipped engine computed from the shipped model,
-not a number typed by an optimist. This is the same reproducibility mechanism
-used across the manuscript pipeline [@westenhaver2026rsi], and the same mechanism is used in the
-template for source-only provenance [@friedman2026gnn]. The same gate that protects the template's
-optimization numbers protects AlphaCOGANT's create-rate, decay-rate, and certificate
-threshold [@friedman2026cogant]. Functionality (the engine runs and is ≥90%-covered, no mocks) and
-integrity (the prose cannot diverge from the engine) are enforced by the same CI.
+`manuscript_variables.generate_variables` computes model-result tokens.
+`z_generate_manuscript_variables.py` rejects referenced tokens missing from that
+generator and writes substituted Markdown. This checks token coverage; replacing
+a token with an incorrect literal can evade that check. Source review is still
+required for interpretation and literal claims.
 
-## 4. Artifact provenance — every figure has a producer
+The figure registry records labels, captions and expected producer paths. The
+artifact manifest inventories current files and their hashes, checks registered
+image/producer presence and basic image integrity, and detects duplicate or
+orphan registry entries. Neither a hash of current bytes nor a producer pathname
+proves that those bytes were generated by current source. Release verification
+must regenerate artifacts, retain command/source/runtime receipts, inspect the
+actual figures and rendered document, and distinguish these observations from
+historical output. The local claim ledger records attribution; it is not
+independent empirical corroboration [@friedman2026cogant].
 
-The same contract now covers visual evidence. The variable-generation script reads
-the manuscript's figure references after token injection and writes
-`output/figures/figure_registry.json`, a registry of labels, source manuscript
-files, captions, filenames, and producer scripts. The artifact manifest then hashes
-the stable output surface and records issues when a registered figure is missing,
-too small, not a PNG, duplicated by label or filename, or disconnected from a
-producer script. The verification pass (`z_generate_manuscript_variables.py --check`)
-fails the build when any such issue is present. This matters for a self-grading firm
-because figures are often where a manuscript can launder stale computation into fresh
-prose. AlphaCOGANT's contract instead requires the figure, its caption, and its
-generating script to remain mutually visible.
+## Threshold semantics without deployment admission
 
-## 5. The certificate as a tamper-resistant commit gate
+`certificate(value, delta)` compares supplied scalars. There is no candidate or
+incumbent model comparison, per-channel readiness check, deployment transaction,
+or monotonic-EFE guarantee. Neither simulation nor inference is gated by this
+predicate. The motivating corporate certificate [@westenhaver2026rsi] is a
+conceptual reference, not an implemented operational assurance primitive.
 
-The certificate of monotone improvement is the operational integrity primitive: a
-candidate $\Theta$ update is admitted into the deployed model **only** when t-RSI
-clears the margin on every active channel. This is the Active Inference
-admissibility test [@friston2015epistemic; @kaelbling1998pomdp; @friston2017process] (accept a model revision only when its expected free energy is
-reliably lower) and it is what distinguishes a self-improving corporation from one
-that promotes noise. Because it is a function of beliefs the engine computes and
-logs, the gate is reproducible and reviewable — a self-improvement step leaves an
-auditable record of *why* it was admitted, in the same currency every other
-decision uses.
+## What the evidence can support
 
-## What this does and does not claim
-
-AlphaCOGANT is a **modeling and integrity instrument**, not a trading system and
-not financial advice. It does not reproduce AlphaFund's proprietary execution-
-friction surface, its fitted scaling exponents, or its live track record — those
-are not public and are deliberately out of scope. The reduced two-level GNN model
-and the illustrative matrices are chosen for legibility and type-checkability, and
-every numeric in this manuscript is a property of *that* model, generated and
-gated by the engine. The transferable claim is structural and survives the
-reduction: AlphaFund's recursive-self-improvement-as-portfolio-optimization has
-an Active Inference representation, it is expressible in GNN, it is producible by
-the COGANT pattern from an API-complete firm, and casting it that way makes
-filtration integrity, a legible objective, reproducibility-by-construction, and
-an auditable commit gate explicit.
+The engine provides bounded finite GNN interchange, deterministic computations,
+real-array tests, and reproducible synthetic diagnostics. It does not reproduce
+AlphaFund's proprietary execution surfaces, fit financial data, learn its fixed
+matrices, or provide financial advice. Synthetic parameter-capability transitions
+are not actual EWM refits. Coverage and passing builds are software observations,
+not scientific calibration or publication-readiness certificates.

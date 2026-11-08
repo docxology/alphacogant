@@ -17,9 +17,11 @@ from alphacogant.stats.statistics import (
     RegimeStatistics,
     bootstrap_ci,
     break_even_profile,
+    cohen_d,
     compare_regimes,
     compute_regime_statistics,
 )
+from alphacogant.trsi.t_rsi import paired_bootstrap_samples
 
 
 def test_exploration_ratio_is_behavioral_not_a_structural_constant(model):
@@ -144,10 +146,16 @@ def test_compare_regimes_deltas():
 
 def test_compare_regimes_cohen_d():
     comparison = compare_regimes(n=32)
-    assert isinstance(comparison.cohen_d_create, float)
-    assert isinstance(comparison.cohen_d_decay, float)
-    assert np.isfinite(comparison.cohen_d_create)
-    assert np.isfinite(comparison.cohen_d_decay)
+    for field, actual in (
+        ("create_ci", comparison.cohen_d_create),
+        ("decay_ci", comparison.cohen_d_decay),
+    ):
+        a = getattr(comparison.improving, field)
+        b = getattr(comparison.coasting, field)
+        expected = (a.mean - b.mean) / np.sqrt(
+            ((a.n - 1) * a.std**2 + (b.n - 1) * b.std**2) / (a.n + b.n - 2)
+        )
+        assert actual == pytest.approx(expected)
 
 
 def test_compare_regimes_as_table():
@@ -196,3 +204,241 @@ def test_break_even_profile_as_dict():
     assert data["n"] == 32
     assert "probability" in data
     assert "margin_mean" in data
+
+
+@pytest.mark.parametrize("scale", [1e-200, 1.0, 1e200, -1e200])
+def test_cohen_d_unequal_groups_is_scale_invariant(scale):
+    a = np.array([0.0, 2.0]) * scale
+    b = np.array([2.0, 2.0, 2.0, 2.0]) * scale
+    expected = -np.copysign(np.sqrt(2.0), scale)
+    assert cohen_d(a, b) == pytest.approx(expected)
+    assert cohen_d(b, a) == pytest.approx(-expected)
+
+
+def test_cohen_d_extreme_groups_need_no_unscaled_variance_or_mean_difference():
+    maximum = np.finfo(float).max
+    assert cohen_d(
+        np.array([-maximum, maximum]), np.full(4, maximum)
+    ) == pytest.approx(-np.sqrt(2.0))
+    assert cohen_d(
+        np.array([maximum / 2, maximum]), np.array([-maximum / 2, -maximum])
+    ) == pytest.approx(3 * np.sqrt(2.0))
+
+
+@pytest.mark.parametrize(
+    ("a", "b", "expected"),
+    [
+        ([2.0, 2.0], [2.0, 2.0, 2.0], 0.0),
+        ([0.0, 0.0], [1.0, 1.0], -np.inf),
+        ([1.0, 1.0], [0.0, 0.0], np.inf),
+        ([1e308, 1e308], [-1e308, -1e308], np.inf),
+        ([1e-200, 1e-200], [2e-200, 2e-200], -np.inf),
+    ],
+)
+def test_cohen_d_constant_groups(a, b, expected):
+    assert cohen_d(np.array(a), np.array(b)) == expected
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [[], [1.0], [[1.0, 2.0]], 1.0, [np.nan, 1.0], [np.inf, 1.0], [-np.inf, 1.0]],
+)
+@pytest.mark.parametrize("invalid_first", [True, False])
+def test_cohen_d_rejects_malformed_groups(invalid, invalid_first):
+    valid = np.array([0.0, 1.0])
+    a, b = (invalid, valid) if invalid_first else (valid, invalid)
+    with pytest.raises(ValueError, match="finite one-dimensional group of at least 2"):
+        cohen_d(a, b)
+
+
+@pytest.mark.parametrize("scale", [1e-200, 1.0, 1e200])
+def test_bootstrap_ci_stable_moments_and_quantiles(scale):
+    ci = bootstrap_ci(np.array([1.0, 2.0, 3.0]) * scale, confidence=0.8)
+    assert ci.mean / scale == pytest.approx(2.0)
+    assert ci.std / scale == pytest.approx(1.0)
+    assert ci.se / scale == pytest.approx(1 / np.sqrt(3.0))
+    assert ci.ci_lower / scale == pytest.approx(1.2)
+    assert ci.ci_upper / scale == pytest.approx(2.8)
+
+
+def test_bootstrap_ci_extreme_opposite_endpoints():
+    ci = bootstrap_ci(np.array([-1e308, 1e308]), confidence=0.8)
+    assert ci.mean == 0.0
+    assert ci.std / 1e308 == pytest.approx(np.sqrt(2.0))
+    assert ci.se / 1e308 == pytest.approx(1.0)
+    assert ci.ci_lower / 1e308 == pytest.approx(-0.8)
+    assert ci.ci_upper / 1e308 == pytest.approx(0.8)
+
+
+@pytest.mark.parametrize("offset", [float(3 * 2**52), -float(3 * 2**52)])
+def test_moments_and_effect_size_preserve_large_common_offset(offset):
+    a = np.array([offset, offset + 4])
+    b = np.array([offset + 4, offset + 8])
+    ci = bootstrap_ci(a)
+    assert ci.mean == offset + 2
+    assert ci.se == pytest.approx(2.0)
+    assert cohen_d(a, b) == pytest.approx(-np.sqrt(2.0))
+    first = _sample_regime("a", a, a, 0.95, 0.95)
+    second = _sample_regime("b", b, b, 0.95, 0.95)
+    assert RegimeComparison(first, second).cohen_d_create == pytest.approx(-np.sqrt(2.0))
+
+
+def test_standard_error_can_be_finite_when_sample_sd_exceeds_float_range():
+    maximum = np.finfo(float).max
+    with np.errstate(over="raise", invalid="raise", divide="raise"):
+        ci = bootstrap_ci(np.array([-maximum, maximum]))
+    assert ci.mean == 0.0
+    assert np.isinf(ci.std)
+    assert ci.se == pytest.approx(maximum)
+
+
+def _sample_regime(name, create_samples, decay_samples, create_confidence, decay_confidence):
+    return RegimeStatistics(
+        name=name,
+        belief={},
+        t_rsi=0.0,
+        create_ci=bootstrap_ci(np.asarray(create_samples), create_confidence),
+        decay_ci=bootstrap_ci(np.asarray(decay_samples), decay_confidence),
+        efe_pragmatic_per_action={},
+        efe_epistemic_per_action={},
+        funded_channel="hold",
+        funded_pragmatic=0.0,
+        funded_epistemic=0.0,
+        exploration_ratio=0.0,
+    )
+
+
+@pytest.mark.parametrize("scale", [1e-200, 1.0, 1e200])
+def test_regime_comparison_weights_stored_sample_counts(scale):
+    a = _sample_regime(
+        "Improving", np.array([0.0, 2.0]) * scale, np.array([4.0, 4.0]) * scale, 0.8, 0.9
+    )
+    b = _sample_regime(
+        "Coasting", np.full(4, 2.0) * scale, np.array([0.0, 2.0, 2.0, 4.0]) * scale, 0.9, 0.8
+    )
+    comparison = RegimeComparison(a, b)
+    assert comparison.cohen_d_create == pytest.approx(-np.sqrt(2.0))
+    # Decay: means 4 and 2; sample variances 0 and 8/3; pooled variance 2.
+    assert comparison.cohen_d_decay == pytest.approx(np.sqrt(2.0))
+
+
+def test_regime_comparison_constant_summary_policy():
+    a = _sample_regime("Improving", [0.0, 0.0], [2.0, 2.0], 0.8, 0.8)
+    b = _sample_regime("Coasting", [1.0] * 4, [2.0] * 4, 0.8, 0.8)
+    comparison = RegimeComparison(a, b)
+    assert comparison.cohen_d_create == -np.inf
+    assert comparison.cohen_d_decay == 0.0
+
+
+@pytest.mark.parametrize(
+    ("levels", "create_cells", "decay_cells"),
+    [
+        ((0.8, 0.8, 0.8, 0.8), ("80%", "80%"), ("80%", "80%")),
+        ((0.8, 0.9, 0.95, 0.99), ("80%", "95%"), ("90%", "99%")),
+    ],
+)
+def test_regime_table_and_summary_preserve_each_confidence(levels, create_cells, decay_cells):
+    a = _sample_regime("Improving", [0.0, 2.0], [1.0, 3.0], *levels[:2])
+    b = _sample_regime("Coasting", [2.0] * 4, [1.0, 2.0, 3.0, 4.0], *levels[2:])
+    rows = [
+        [cell.strip() for cell in row.strip("|").split("|")]
+        for row in RegimeComparison(a, b).as_table().splitlines()
+    ]
+    create_row = next(row for row in rows if row[0] == "Create-rate CI")
+    decay_row = next(row for row in rows if row[0] == "Decay-rate CI")
+    for row, labels, intervals in (
+        (create_row, create_cells, (a.create_ci, b.create_ci)),
+        (decay_row, decay_cells, (a.decay_ci, b.decay_ci)),
+    ):
+        for cell, label, ci in zip(row[1:3], labels, intervals, strict=True):
+            assert cell == f"{label} CI [{ci.ci_lower:.4f}, {ci.ci_upper:.4f}]"
+    for regime in (a, b):
+        summary = regime.as_dict()
+        assert summary["create_ci_confidence"] == regime.create_ci.confidence
+        assert summary["decay_ci_confidence"] == regime.decay_ci.confidence
+        assert summary["create_n"] == regime.create_ci.n
+        assert summary["decay_n"] == regime.decay_ci.n
+
+
+def test_regime_and_break_even_summaries_share_paired_draws(model):
+    seed, n, horizon, concentration, confidence = 37, 12, 2, 8.0, 0.8
+    create, decay = paired_bootstrap_samples(
+        model, IMPROVING, np.random.default_rng(seed), n, horizon, concentration
+    )
+    margins = create - decay
+    stats = compute_regime_statistics(
+        model, IMPROVING, seed=seed, n=n, horizon=horizon,
+        concentration=concentration, confidence=confidence,
+    )
+    profile = break_even_profile(
+        model, IMPROVING, seed=seed, n=n, horizon=horizon,
+        concentration=concentration, confidence=confidence,
+    )
+    assert stats.t_rsi == pytest.approx(
+        margins.mean() / (margins.std(ddof=1) / np.sqrt(n))
+    )
+    for samples, ci in ((create, stats.create_ci), (decay, stats.decay_ci)):
+        assert ci.mean == pytest.approx(samples.mean())
+        assert ci.std == pytest.approx(samples.std(ddof=1))
+        assert ci.confidence == confidence
+        assert [ci.ci_lower, ci.ci_upper] == pytest.approx(np.percentile(samples, [10, 90]))
+    assert profile.probability == np.count_nonzero(margins > 0.0) / n
+    assert profile.margin_mean == pytest.approx(margins.mean())
+    assert profile.margin_std == pytest.approx(margins.std(ddof=1))
+    assert [profile.margin_ci_lower, profile.margin_ci_upper] == pytest.approx(
+        np.percentile(margins, [10, 90])
+    )
+    assert profile.create_mean == pytest.approx(stats.create_ci.mean)
+    assert profile.decay_mean == pytest.approx(stats.decay_ci.mean)
+    assert profile.as_dict()["confidence"] == confidence
+
+
+def test_regime_comparison_extreme_summary_moments():
+    a = _sample_regime(
+        "Improving", [-1e308, 1e308], [5e307, 1e308], 0.8, 0.8
+    )
+    b = _sample_regime(
+        "Coasting", [1e308] * 4, [-5e307, -1e308], 0.8, 0.8
+    )
+    comparison = RegimeComparison(a, b)
+    assert comparison.cohen_d_create == pytest.approx(-np.sqrt(2.0))
+    assert comparison.cohen_d_decay == pytest.approx(3 * np.sqrt(2.0))
+
+
+def test_opposite_large_offsets_do_not_erase_within_group_dispersion():
+    offset = float(3 * 2**52)
+    samples = np.array([offset, offset + 4])
+    assert cohen_d(samples, -samples) == pytest.approx(
+        (2 * offset + 4) / np.sqrt(8.0), rel=1e-15
+    )
+
+
+def test_regime_effect_retains_finite_se_when_raw_sd_overflows():
+    maximum = np.finfo(float).max
+    first = _sample_regime("a", [-maximum, maximum], [-maximum, maximum], 0.95, 0.95)
+    second = _sample_regime("b", [maximum] * 4, [maximum] * 4, 0.95, 0.95)
+    with np.errstate(over="raise", invalid="raise", divide="raise"):
+        comparison = RegimeComparison(first, second)
+        assert comparison.cohen_d_create == pytest.approx(-np.sqrt(2.0))
+
+
+def test_mean_and_effect_size_preserve_cancellation_residual():
+    magnitude = float(2**54)
+    samples = np.array([magnitude, -magnitude, -1.0])
+    assert bootstrap_ci(samples).mean == pytest.approx(-1 / 3)
+    assert cohen_d(samples, np.zeros(3)) == pytest.approx(
+        -np.sqrt(2) / (3 * magnitude), rel=1e-15, abs=0
+    )
+
+
+def test_unrelated_outlier_does_not_erase_positive_interval_endpoints():
+    small = 1e-100
+    ci = bootstrap_ci(np.array([small] * 80 + [1e308]))
+    assert ci.ci_lower == small
+    assert ci.ci_upper == small
+
+
+def test_finite_mean_survives_intermediate_sum_overflow():
+    maximum = np.finfo(float).max
+    ci = bootstrap_ci(np.array([maximum, maximum, -maximum]))
+    assert ci.mean / maximum == pytest.approx(1 / 3)

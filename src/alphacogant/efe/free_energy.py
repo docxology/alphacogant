@@ -119,6 +119,21 @@ def _epistemic_values(
     return np.clip(contributions.sum(axis=(-2, -1)), 0.0, None)
 
 
+def _preference_values(
+    model: EconomicWorldModel, reward: np.ndarray, loss: np.ndarray
+) -> np.ndarray | np.float64:
+    """Evaluate scalar/batched preferences before any policy can rank them."""
+    try:
+        with np.errstate(over="raise", invalid="raise"):
+            values = reward @ model.C_R + loss @ model.C_L
+    except FloatingPointError as exc:
+        raise ValueError("Computed action scores must be finite.") from exc
+    # BLAS reductions need not report their floating-point status to NumPy.
+    if not np.all(np.isfinite(values)):
+        raise ValueError("Computed action scores must be finite.")
+    return values
+
+
 def _efe_from_validated(
     model: EconomicWorldModel,
     validated_belief: Mapping[str, np.ndarray],
@@ -134,7 +149,7 @@ def _efe_from_validated(
     predicted = predicted_belief(model, validated_belief, action)
     reward_distribution = _reward_distribution(model, predicted)
     loss_distribution = _loss_distribution(model, predicted)
-    pragmatic = float(reward_distribution @ model.C_R + loss_distribution @ model.C_L)
+    pragmatic = float(_preference_values(model, reward_distribution, loss_distribution))
 
     theta_prior = predicted["Theta"]
     reward_given_theta, loss_given_theta = _theta_prior_likelihood_terms(model, predicted)
@@ -173,7 +188,7 @@ def _static_pragmatic_from_normalized(
     """Private evaluator for validated, normalized internal beliefs."""
     reward_distribution = _reward_distribution(model, normalized)
     loss_distribution = _loss_distribution(model, normalized)
-    return float(reward_distribution @ model.C_R + loss_distribution @ model.C_L)
+    return float(_preference_values(model, reward_distribution, loss_distribution))
 
 
 def efe_vector(model: EconomicWorldModel, belief: Mapping[str, np.ndarray]) -> list[EFEResult]:
@@ -195,7 +210,7 @@ def _efe_vector_from_normalized(
         "riut,ai,au,at->ar", model.A_R, predicted["I"], predicted["U"], predicted["Theta"]
     )
     loss = np.einsum("lst,as,at->al", model.A_L, predicted["S"], predicted["Theta"])
-    pragmatic = reward @ model.C_R + loss @ model.C_L
+    pragmatic = _preference_values(model, reward, loss)
     reward_theta = np.einsum("riut,ai,au->art", model.A_R, predicted["I"], predicted["U"])
     loss_theta = np.einsum("lst,as->alt", model.A_L, predicted["S"])
     epistemic = _epistemic_values(predicted["Theta"], reward_theta, loss_theta)

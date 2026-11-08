@@ -7,9 +7,11 @@ import pytest
 
 from alphacogant.efe.free_energy import (
     _epistemic_value,
+    efe_vector,
     expected_free_energy,
     policy_posterior,
     predicted_belief,
+    static_pragmatic_value,
 )
 from alphacogant.model.generative_model import default_model, infer_states, validate_belief_map
 from alphacogant.stats.simulation import simulate_trajectory
@@ -32,6 +34,17 @@ def test_extreme_finite_policy_scores_are_stable(model, prior):
     with np.errstate(all="raise"):
         posterior = policy_posterior(model, prior, gamma=1e308, values=values)
     np.testing.assert_array_equal(posterior, [1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+
+
+def test_overflow_is_rejected_by_scalar_batch_and_static_score_evaluators(prior):
+    model = default_model(C_R=[1e308] * 3, C_L=[1e308] * 3)
+    for evaluate in (
+        lambda: expected_free_energy(model, prior, 0),
+        lambda: efe_vector(model, prior),
+        lambda: static_pragmatic_value(model, prior),
+    ):
+        with np.errstate(over="raise", invalid="raise"), pytest.raises(ValueError):
+            evaluate()
 
 
 @pytest.mark.parametrize("value", [-1, 6, 1.0, True, float("nan")])

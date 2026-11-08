@@ -2,9 +2,9 @@
 
 AlphaCOGANT is source-owned: manuscript claims, figures, and registries should be
 regenerated from `src/alphacogant/` and `scripts/`, not edited in `output/`.
-This design follows the Whitepaper's closed-loop methodology [1], the
-Active Inference filtration contract [2, 3, 4], and the COGANT/GNN source-owned
-artifact pattern [5, 6].
+The [manuscript bibliography](manuscript/references.bib) identifies methodological
+sources; the [historical concept inventory](whitepaper_concepts.md) distinguishes
+external attribution from locally reproduced synthetic results.
 
 ## Method surfaces
 
@@ -12,8 +12,8 @@ artifact pattern [5, 6].
 | --- | --- | --- |
 | Generative model | `src/alphacogant/model/` | A/B/C/D matrices and state inference |
 | Expected Free Energy | `src/alphacogant/efe/free_energy.py` | pragmatic, epistemic, total G, policy posterior |
-| t-RSI certificate | `src/alphacogant/trsi/t_rsi.py` | create-rate, decay-rate, standardized gap |
-| Regime statistics | `src/alphacogant/stats/statistics.py` | confidence intervals, effect sizes, break-even probability |
+| t-RSI diagnostic | `src/alphacogant/trsi/t_rsi.py` | post-action create/decay rates, paired standardized gap |
+| Regime statistics | `src/alphacogant/stats/statistics.py` | synthetic percentile intervals, effect sizes, event mass |
 | Manuscript tokens | `src/alphacogant/tokens/manuscript_variables.py` | `output/manuscript_variables.json` |
 | Figure scripts | `scripts/figures/` via `scripts/y_generate_figures.py` | `output/figures/*.png` and `figure_registry.json` |
 
@@ -26,7 +26,7 @@ independent create and decay samples. The statistic complements t-RSI:
 
 - t-RSI reports standardized distance.
 - break-even probability reports event mass over the paired bootstrap cloud.
-- the margin interval reports uncertainty in `create_rate - decay_rate`.
+- the margin interval reports percentiles of the synthetic paired-margin cloud.
 
 ## Regeneration sequence
 
@@ -39,20 +39,18 @@ uv run --locked python scripts/y_generate_figures.py
 uv run --locked python scripts/z_generate_manuscript_variables.py
 ```
 
-For optional PDF rendering, run from a separately configured template root
-with this project linked under the indicated project identifier:
-
-```bash
-uv run python scripts/pipeline/stage_03_render.py --project ongoing/ActiveInference/alphacogant
-uv run python scripts/pipeline/stage_04_validate.py --project ongoing/ActiveInference/alphacogant
-```
+Use the contained Pandoc recipe in
+[rendering_and_validation.md](rendering_and_validation.md). External template
+integration is optional and requires independent authorization; standalone work
+does not run another checkout's pipeline.
 
 The validation gate expects `output/figures/figure_registry.json`; it is written by
 `scripts/z_generate_manuscript_variables.py` from live manuscript references.
 
-The same gate closes over numeric claims: `scripts/z_generate_manuscript_variables.py`
-injects `{{TOKEN}}` values from `src/alphacogant/tokens/` and fails the build if
-manuscript constants drift from engine outputs [5, 6].
+The token gate checks referenced token coverage. `--check` compares saved tokens,
+registry, manifest hashes and injected prose without rewriting them. Regenerate
+before checking. Arbitrary literals, scientific interpretations and producer
+execution are not certified by those structural comparisons.
 
 ## Modular references
 

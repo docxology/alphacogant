@@ -11,6 +11,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from fractions import Fraction
+from itertools import chain
+from math import fsum, hypot, sqrt
 
 import numpy as np
 
@@ -31,23 +34,76 @@ from alphacogant.model.operating_points import (
 from alphacogant.stats.simulation import simulate_trajectory, summarize_trajectory
 from alphacogant.trsi.t_rsi import (
     DEFAULT_HORIZON,
+    _exact_mean,
+    _sample_statistics,
+    _scaled_sample_dispersion,
+    _stable_mean,
     paired_bootstrap_samples,
     t_rsi,
 )
 
 
 def cohen_d(samples_a: np.ndarray, samples_b: np.ndarray) -> float:
-    """Pooled-standard-deviation Cohen's d between two sample sets (ddof=1)."""
-    std_a = float(np.std(samples_a, ddof=1))
-    std_b = float(np.std(samples_b, ddof=1))
-    return _cohen_d_from_moments(float(np.mean(samples_a)), std_a, float(np.mean(samples_b)), std_b)
+    """Degrees-of-freedom-pooled Cohen's d for finite 1D groups of size >=2.
 
-
-def _cohen_d_from_moments(mean_a: float, std_a: float, mean_b: float, std_b: float) -> float:
-    pooled_std = np.sqrt((std_a**2 + std_b**2) / 2)
-    if pooled_std == 0:
+    Identical constants have d=0; distinct constants have signed infinite d.
+    Both groups share a scale so finite extreme inputs need not have
+    representable unscaled variances (or even standard deviations).
+    """
+    groups = []
+    for name, values in (("samples_a", samples_a), ("samples_b", samples_b)):
+        group = np.asarray(values, dtype=float)
+        if group.ndim != 1 or group.size < 2 or not np.all(np.isfinite(group)):
+            raise ValueError(
+                f"{name} must be a finite one-dimensional group of at least 2 samples."
+            )
+        groups.append(group)
+    a, b = groups
+    scale = max(float(np.max(np.abs(a))), float(np.max(np.abs(b))))
+    if scale == 0.0:
         return 0.0
-    return float((mean_a - mean_b) / pooled_std)
+    std_a, dispersion_a, outer_a = _scaled_sample_dispersion(a)
+    std_b, dispersion_b, outer_b = _scaled_sample_dispersion(b)
+    unit_a = (dispersion_a / scale) * outer_a
+    unit_b = (dispersion_b / scale) * outer_b
+    if a.size == b.size:
+        try:
+            difference = fsum(chain(a, (-value for value in b))) / scale / a.size
+        except OverflowError:
+            difference = float((_exact_mean(a) - _exact_mean(b)) / Fraction.from_float(scale))
+    else:
+        # Do not round two large nearby means before taking their difference,
+        # or independently round unequal-count weights before cancellation.
+        difference = float((_exact_mean(a) - _exact_mean(b)) / Fraction.from_float(scale))
+    return _cohen_d_from_moments(
+        difference, std_a * unit_a, a.size, 0.0, std_b * unit_b, b.size
+    )
+
+
+def _cohen_d_from_moments(
+    mean_a: float, std_a: float, n_a: int, mean_b: float, std_b: float, n_b: int
+) -> float:
+    if n_a < 2 or n_b < 2:
+        raise ValueError("Cohen's d requires at least 2 samples in each group.")
+    if std_a == std_b == 0.0:
+        if mean_a == mean_b:
+            return 0.0
+        return float("inf") if mean_a > mean_b else -float("inf")
+    scale = max(std_a, std_b)
+    degrees = n_a + n_b - 2
+    pooled_std = hypot(
+        (std_a / scale) * sqrt((n_a - 1) / degrees),
+        (std_b / scale) * sqrt((n_b - 1) / degrees),
+    )
+    difference = float(mean_a) - float(mean_b)
+    difference = (
+        difference / scale
+        if np.isfinite(difference)
+        else mean_a / scale - mean_b / scale
+    )
+    if pooled_std == 0.0:
+        return 0.0 if difference == 0.0 else float(np.copysign(np.inf, difference))
+    return difference / pooled_std
 
 
 @dataclass(frozen=True)
@@ -65,6 +121,18 @@ class BootstrapCI:
     @property
     def ci_width(self) -> float:
         return self.ci_upper - self.ci_lower
+
+
+def _cohen_d_from_intervals(a: BootstrapCI, b: BootstrapCI) -> float:
+    if np.isfinite(a.std) and np.isfinite(b.std):
+        return _cohen_d_from_moments(a.mean, a.std, a.n, b.mean, b.std, b.n)
+    # Finite samples have representable SE even when their sample SD overflows.
+    # Normalize before reconstructing SD, retaining the stored sample counts.
+    scale = max(abs(a.mean), abs(b.mean), a.se, b.se)
+    return _cohen_d_from_moments(
+        a.mean / scale, (a.se / scale) * sqrt(a.n), a.n,
+        b.mean / scale, (b.se / scale) * sqrt(b.n), b.n,
+    )
 
 
 @dataclass(frozen=True)
@@ -123,8 +191,12 @@ class RegimeStatistics:
             "t_rsi": self.t_rsi,
             "create_mean": self.create_ci.mean,
             "create_ci": [self.create_ci.ci_lower, self.create_ci.ci_upper],
+            "create_ci_confidence": self.create_ci.confidence,
+            "create_n": self.create_ci.n,
             "decay_mean": self.decay_ci.mean,
             "decay_ci": [self.decay_ci.ci_lower, self.decay_ci.ci_upper],
+            "decay_ci_confidence": self.decay_ci.confidence,
+            "decay_n": self.decay_ci.n,
             "funded_channel": self.funded_channel,
             "funded_pragmatic": self.funded_pragmatic,
             "funded_epistemic": self.funded_epistemic,
@@ -154,25 +226,15 @@ class RegimeComparison:
     @property
     def cohen_d_create(self) -> float:
         """Cohen's d effect size for the create-rate difference between regimes."""
-        return _cohen_d_from_moments(
-            self.improving.create_ci.mean,
-            self.improving.create_ci.std,
-            self.coasting.create_ci.mean,
-            self.coasting.create_ci.std,
-        )
+        return _cohen_d_from_intervals(self.improving.create_ci, self.coasting.create_ci)
 
     @property
     def cohen_d_decay(self) -> float:
         """Cohen's d effect size for the decay-rate difference."""
-        return _cohen_d_from_moments(
-            self.improving.decay_ci.mean,
-            self.improving.decay_ci.std,
-            self.coasting.decay_ci.mean,
-            self.coasting.decay_ci.std,
-        )
+        return _cohen_d_from_intervals(self.improving.decay_ci, self.coasting.decay_ci)
 
     def as_table(self) -> str:
-        """Render the comparison as a markdown table."""
+        """Render intervals with each cell's stored confidence, even when levels differ."""
         rows = [
             "| Metric | Improving | Coasting | Delta |",
             "|--------|-----------|----------|-------|",
@@ -185,8 +247,10 @@ class RegimeComparison:
                 f"{self.coasting.create_ci.mean:.4f} | {self.create_rate_delta:.4f} |"
             ),
             (
-                f"| Create-rate 95% CI | [{self.improving.create_ci.ci_lower:.4f}, "
+                f"| Create-rate CI | {100 * self.improving.create_ci.confidence:g}% CI "
+                f"[{self.improving.create_ci.ci_lower:.4f}, "
                 f"{self.improving.create_ci.ci_upper:.4f}] | "
+                f"{100 * self.coasting.create_ci.confidence:g}% CI "
                 f"[{self.coasting.create_ci.ci_lower:.4f}, "
                 f"{self.coasting.create_ci.ci_upper:.4f}] | — |"
             ),
@@ -195,8 +259,10 @@ class RegimeComparison:
                 f"{self.coasting.decay_ci.mean:.4f} | {self.decay_rate_delta:.4f} |"
             ),
             (
-                f"| Decay-rate 95% CI | [{self.improving.decay_ci.ci_lower:.4f}, "
+                f"| Decay-rate CI | {100 * self.improving.decay_ci.confidence:g}% CI "
+                f"[{self.improving.decay_ci.ci_lower:.4f}, "
                 f"{self.improving.decay_ci.ci_upper:.4f}] | "
+                f"{100 * self.coasting.decay_ci.confidence:g}% CI "
                 f"[{self.coasting.decay_ci.ci_lower:.4f}, "
                 f"{self.coasting.decay_ci.ci_upper:.4f}] | — |"
             ),
@@ -214,6 +280,27 @@ class RegimeComparison:
         return "\n".join(rows)
 
 
+def _percentile_bounds(samples: np.ndarray, confidence: float) -> tuple[float, float]:
+    """Linear quantiles without scaling unrelated samples or overflowing a span."""
+    alpha = (1.0 - confidence) / 2.0
+    positions = np.array([alpha, 1.0 - alpha]) * (samples.size - 1)
+    lower = np.floor(positions).astype(int)
+    upper = np.ceil(positions).astype(int)
+    partitioned = np.partition(samples, np.concatenate((lower, upper)))
+    bounds = []
+    for position, left, right in zip(positions, lower, upper, strict=True):
+        lo, hi = float(partitioned[left]), float(partitioned[right])
+        weight = float(position - left)
+        if lo < 0.0 < hi and hi > np.finfo(float).max + lo:
+            value = (1.0 - weight) * lo + weight * hi
+        elif weight >= 0.5:
+            value = hi - (1.0 - weight) * (hi - lo)
+        else:
+            value = lo + weight * (hi - lo)
+        bounds.append(value)
+    return bounds[0], bounds[1]
+
+
 def bootstrap_ci(
     samples: np.ndarray,
     confidence: float = 0.95,
@@ -226,12 +313,8 @@ def bootstrap_ci(
         raise ValueError("Need at least 2 samples for a confidence interval.")
     if not (0.0 < confidence < 1.0):
         raise ValueError("confidence must be in (0, 1).")
-    mean = float(np.mean(samples))
-    std = float(np.std(samples, ddof=1))
-    se = std / np.sqrt(samples.size)
-    alpha = (1.0 - confidence) / 2.0
-    ci_lower = float(np.percentile(samples, 100 * alpha))
-    ci_upper = float(np.percentile(samples, 100 * (1 - alpha)))
+    mean, std, se = _sample_statistics(samples)
+    ci_lower, ci_upper = _percentile_bounds(samples, confidence)
     return BootstrapCI(
         mean=mean,
         std=std,
@@ -271,15 +354,16 @@ def break_even_profile(
         concentration,
     )
     margins = create_samples - decay_samples
-    alpha = (1.0 - confidence) / 2.0
+    margin_ci_lower, margin_ci_upper = _percentile_bounds(margins, confidence)
+    margin_mean, margin_std, _ = _sample_statistics(margins)
     return BreakEvenProfile(
         probability=float(np.mean(margins > 0.0)),
-        margin_mean=float(np.mean(margins)),
-        margin_std=float(np.std(margins, ddof=1)),
-        margin_ci_lower=float(np.percentile(margins, 100 * alpha)),
-        margin_ci_upper=float(np.percentile(margins, 100 * (1 - alpha))),
-        create_mean=float(np.mean(create_samples)),
-        decay_mean=float(np.mean(decay_samples)),
+        margin_mean=margin_mean,
+        margin_std=margin_std,
+        margin_ci_lower=margin_ci_lower,
+        margin_ci_upper=margin_ci_upper,
+        create_mean=_stable_mean(create_samples),
+        decay_mean=_stable_mean(decay_samples),
         n=n,
         horizon=horizon,
         concentration=concentration,
