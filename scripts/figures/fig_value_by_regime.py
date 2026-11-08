@@ -6,18 +6,14 @@ imported from ``src/alphacogant`` (the engine); this script only orchestrates th
 belief construction, calls ``free_energy.expected_free_energy`` for each funding
 action, and renders the result. No business logic lives here.
 
-For the manuscript's *improving* (stale-EWM) and *coasting* (fresh-EWM) operating
-points, it decomposes the Expected Free Energy of each of the five ``fund_*``
-actions into its pragmatic and epistemic value (value = -G; epistemic is a KL so
-always >= 0, pragmatic is the single-cycle expected log-preference and is
-negative). Grouped bars (five capital channels x {epistemic, pragmatic}) are drawn
-as a two-panel small multiple (improving vs coasting), making visible that
-pragmatic value rises (less negative) as the EWM freshens, while the epistemic
-peak shifts from Θ (when stale) to Sensors (when fresh).
+The two authored operating beliefs differ in several channels. This is a
+cross-sectional comparison, not a controlled Theta-only ablation or a learning
+trajectory. Bars show pragmatic and Theta-information components of value,
+whose sum is -G. Epistemic value is nonnegative; the default model's expected
+log-preference is negative.
 
-Deterministic: depends only on the engine's fixed default model and the two
-literal beliefs declared below. No RNG is required, but seeded generators would
-use ``np.random.default_rng(seed)`` rather than any global seed.
+Deterministic: the fixed default model and canonical operating beliefs fully
+determine the result. No RNG is required.
 
 Run (from the repository root):
     PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_value_by_regime.py
@@ -108,9 +104,9 @@ def _plot_panel(ax, title: str, epistemic: np.ndarray, pragmatic: np.ndarray) ->
         [CHANNEL_LABELS[channel] for channel in FUNDING_CHANNELS],
         rotation=30,
         ha="right",
-        fontsize=9,
+        fontsize=10,
     )
-    ax.set_ylabel("Value = -G (nats)")
+    ax.set_ylabel("Value components (nats)")
     ax.grid(axis="y", linestyle=":", alpha=GRID_ALPHA)
 
 
@@ -124,9 +120,15 @@ def main() -> Path:
     improving_epi, improving_prag = _value_matrix(model, IMPROVING_BELIEF)
     coasting_epi, coasting_prag = _value_matrix(model, COASTING_BELIEF)
 
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5.4), sharey=True)
-    _plot_panel(axes[0], "Improving belief (stale EWM)", improving_epi, improving_prag)
-    _plot_panel(axes[1], "Coasting belief (fresh EWM)", coasting_epi, coasting_prag)
+    fig, axes = plt.subplots(1, 2, figsize=(9, 5.4), sharey=True)
+    _plot_panel(
+        axes[0], f"IMPROVING: P(Theta fresh) = {IMPROVING_BELIEF['Theta'][1]:.2f}",
+        improving_epi, improving_prag,
+    )
+    _plot_panel(
+        axes[1], f"COASTING: P(Theta fresh) = {COASTING_BELIEF['Theta'][1]:.2f}",
+        coasting_epi, coasting_prag,
+    )
 
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(
@@ -136,25 +138,26 @@ def main() -> Path:
         ncol=2,
         bbox_to_anchor=(0.5, 1.02),
         frameon=False,
+        fontsize=10,
     )
     fig.suptitle(
-        "Epistemic vs pragmatic value per capital channel, across regimes",
+        "One-step value components at two fixed capability beliefs",
         fontsize=14,
         fontweight="bold",
         y=1.08,
     )
     fig.text(
         0.5,
-        -0.02,
-        "Pragmatic value rises (less negative) as the firm strengthens and the EWM "
-        "freshens (improving → coasting); epistemic value (info gain about Θ) "
-        "shifts locus, peaking at Θ when the EWM is stale and at Sensors when it is "
-        f"fresh. Actions evaluated: {', '.join(a for a in ACTIONS if a != 'hold')}.",
+        -0.06,
+        "Two authored point beliefs, not a learning trajectory; epistemic value is "
+        "information gain about Theta.\n"
+        "Its funding-action peak is at Theta for IMPROVING and Sensors for COASTING; "
+        f"actions: {', '.join(a for a in ACTIONS if a != 'hold')}.",
         ha="center",
-        fontsize=9,
+        fontsize=10,
         color="#333333",
     )
-    add_provenance_footer(fig, ANALYTIC_FOOTER, y=-0.05)  # below the explanatory caption
+    add_provenance_footer(fig, ANALYTIC_FOOTER, y=-0.12)  # below the explanatory caption
 
     fig.tight_layout()
     fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight")

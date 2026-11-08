@@ -4,11 +4,9 @@
 
 paper:
   title: "AlphaCOGANT: Recursive Corporate Self-Improvement as Active Inference"
-  subtitle: "Rendering the AlphaFund Economic World Model as a GNN generative model via COGANT"
-  version: "1.0.1"
-  date: ""
-  cover:
-    image: "figures/cover_art.png"
+  subtitle: "A fixed GNN–NumPy model of inference, action value and paired synthetic diagnostics"
+  version: "1.2.2"
+  date: "2026-11-08"
 
 authors:
   - name: "Daniel Ari Friedman"
@@ -27,8 +25,6 @@ publication:
   github_repository: "docxology/alphacogant"
   journal: ""
   year: "2026"
-  version_doi: "10.5281/zenodo.20977774"
-  version_record: "https://zenodo.org/records/20977774"
 
 keywords:
   - "active inference"
@@ -56,8 +52,8 @@ metadata:
     num_actions: 6
     planning_horizon: 12
     channels: ["I", "S", "U", "Theta", "Z"]
-    epistemic_channels: ["S", "Z"]
-    pragmatic_channels: ["I", "U"]
+    information_gain_factors: ["Theta"]
+    preference_likelihood_factors: ["I", "S", "U", "Theta"]
 
 render:
   formats:

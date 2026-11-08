@@ -6,13 +6,11 @@ Thin-orchestrator figure script. All engine math comes from
 evaluation, and transition machinery). This script only calls
 ``simulate_trajectory`` and renders the result.
 
-Two-panel figure:
-  (a) Self-improving start (stale Theta) — the greedy policy funds Theta
-      until it converges to fresh, then holds. Beliefs move weak→strong
-      for Theta; the funded action is epistemic then idle.
-  (b) Fresh-Theta start (weak production channels) — the greedy policy
-      funds Sensors then holds. Shows that with a fresh model, the
-      controller explores briefly then exploits the now-accurate forecasts.
+Two starts are simulated for twelve greedy prediction-only steps:
+IMPROVING and a separately authored fresh-Theta / weak-production belief.
+Curves are pre-action predicted beliefs, with the actually selected action
+shown each cycle. No realized observations or model fitting are performed,
+and no eventual hold or explore/exploit switch is assumed.
 """
 
 from __future__ import annotations
@@ -55,9 +53,9 @@ ACTION_SHORT = {
     "fund_I": "I",
     "fund_S": "S",
     "fund_U": "U",
-    "fund_Theta": "Θ",
+    "fund_Theta": "T",
     "fund_Z": "Z",
-    "hold": "·",
+    "hold": "H",
 }
 
 
@@ -75,7 +73,7 @@ def _draw_panel(ax, trajectory, title: str) -> None:
             label=CHANNEL_LABELS[channel],
         )
     for record in trajectory.cycles:
-        label = ACTION_SHORT.get(record.action_name, "?")
+        label = ACTION_SHORT[record.action_name]
         ax.annotate(
             label,
             (record.cycle, 0.03),
@@ -85,8 +83,8 @@ def _draw_panel(ax, trajectory, title: str) -> None:
             color="#475569",
             fontweight="bold",
         )
-    ax.set_xlabel("Cycle")
-    ax.set_ylabel(r"$P(\text{strong})$")
+    ax.set_xlabel("Prediction cycle (action labels: T = fund_Theta, H = hold)")
+    ax.set_ylabel("Pre-action P(strong / fresh)")
     ax.set_title(title, fontsize=10)
     ax.set_xlim(-0.5, len(trajectory.cycles) - 0.5)
     ax.set_ylim(-0.05, 1.05)
@@ -114,14 +112,15 @@ def main() -> int:
     traj_fresh = simulate_trajectory(model, fresh_theta_belief, horizon=HORIZON, policy="greedy")
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.0, 5.0))
-    _draw_panel(ax1, traj_improving, "(a) Self-improving start (stale Θ)")
-    _draw_panel(ax2, traj_fresh, "(b) Fresh-Θ start (weak production)")
+    _draw_panel(ax1, traj_improving, "(a) Improving start (stale Theta)")
+    _draw_panel(ax2, traj_fresh, "(b) Fresh-Theta start (weak production)")
 
     fig.suptitle(
-        "Belief trajectory under the greedy EFE policy — funded action per cycle shown at bottom",
+        f"Greedy prediction-only trajectory; horizon={HORIZON}; selected actions below\n"
+        "Fixed model matrices; no observations or model learning",
         fontsize=11,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.tight_layout(rect=(0, 0, 1, 0.89))
     add_provenance_footer(fig, REDUCED_SIM_FOOTER)  # greedy-trajectory simulation
 
     out_path = out_fig / "belief_trajectory.png"

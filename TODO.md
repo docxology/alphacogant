@@ -1,11 +1,12 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Current release: **1.2.1 (2026-10-16)**. Python 3.15 full validation: 352 passed,
-one optional upstream integration skipped in the base environment, 94.12% coverage.
-Fast suites pass on Python 3.10 and 3.14 (333 passed each). Native Linux wheel
-admission passes for Python 3.10, 3.12, 3.14 and 3.15. The real pinned COGANT
-integration passes separately. All 30 generated manuscript values match v1.1.1.
+Candidate package version: **1.2.2**. Integration/release status must be read from
+fresh evidence; local version metadata is not a remote publication receipt.
+
+Historical 1.2.1 validation (2026-10-16): 352 passed, one optional upstream
+integration skipped in the base environment, 94.12% coverage. Historical alternate
+runtime and token comparisons are not current-floor or current-release proof.
 See [CHANGELOG.md](CHANGELOG.md), [agent API](docs/agent_api.md), and
 [profiling](docs/performance.md) for scope and repeatable commands.
 

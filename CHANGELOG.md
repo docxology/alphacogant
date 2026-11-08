@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.2.2 — 2026-11-08
+
+- Correct create/hold/residual-decay horizons to include all H post-action
+  outcomes, including the first action at H=1. Regenerate affected diagnostics.
+- Stabilize paired t-RSI, sample moments and effect sizes at tiny/large finite
+  scales and large common offsets; preserve cancellation residuals and finite
+  horizon means, retain units through dimensionless ratios, and use count-weighted
+  Cohen's d with explicit constant-group semantics.
+- Interpolate percentile endpoints locally so unrelated outliers cannot erase
+  small finite interval bounds.
+- Evaluate rare positive observation contractions and normalization in log space;
+  preserve rejection of genuinely impossible observations.
+- Replace quadratic GNN assignment scanning, normalize oversized-integer errors,
+  and enforce the supported fixed declarations/dependency graph.
+- Reject unrepresentable joint preference matrices before GNN export.
+- Reject explicit JSON `params: null` and nonfinite scores in shared action evaluation. Expand
+  bounded JSONL framing to 32 MB so admitted 1000-step API traces can be replayed;
+  retain the separate 10,000-step Python/CLI research limit.
+- Make manuscript `--check` non-writing: compare saved tokens, registry, hashes
+  and injected prose; reject undecodable registered PNGs. Publish generated text
+  atomically, while retaining explicit limits on semantic/freshness guarantees.
+- Regenerate CI artifacts explicitly before non-writing checks instead of relying
+  on test side effects to supply generated files.
+- Correct reversed scatter event regions, paired-SE annotations, sensitivity
+  units, recipe disclosures and unsupported certificate/learning diagram labels.
+- Reconcile manuscript claims with approximate filtering, fixed coefficients,
+  synthetic uncertainty, inert R&D coupling and the unenforced scalar predicate;
+  correct bibliographic metadata and distinguish unavailable historical evidence.
+- Supply a contained bundled-font PDF/HTML recipe with numbered section references,
+  flush pending figures before the bibliography, and reconcile schematic captions.
+- Synchronize archival/manuscript/package versions, remove the stale version DOI,
+  include archival metadata in source distributions, and cover Python 3.11 in CI.
+- Register a computation-backed graphical abstract within the manuscript; replace
+  decorative art and dense diagrams with printable workflow, channel/dependency
+  and fixed-model schematics carrying their own evidence boundaries.
+- Align dictionary captions and accessibility text with the actual structural
+  figure; distinguish fixed-belief comparisons from coefficient learning.
+- Reorganize documentation around task-specific contract owners and informative
+  section titles. Require contained PDF/HTML rendering and actual inspection for
+  manuscript/visual releases, without adding document tools to engine-only use.
+
 ## 1.2.1 — 2026-10-16
 
 - Refresh native dependency locks for Python 3.15 Linux wheels. The prior Pillow

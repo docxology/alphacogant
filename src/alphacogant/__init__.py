@@ -5,8 +5,8 @@ hidden-state factors of a partially-observed generative model (the Economic Worl
 Model); capital allocation is the control vector; Expected Free Energy is the
 portfolio optimizer's marginal-return objective, decomposed into pragmatic value
 (expected log-equity / alpha-creation) and epistemic value (information gain on the
-EWM / what Sensors and R&D buy); t-RSI is the standardized create-vs-decay distance
-that gates each self-improvement commit.
+EWM); t-RSI is a separately evaluated standardized create-vs-decay diagnostic,
+not an enforced action or software-commit gate.
 
 Subpackage layout:
   model/    — channels, generative model, operating points
@@ -97,7 +97,7 @@ from alphacogant.trsi import (
     t_rsi,
 )
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 __all__ = [
     # model

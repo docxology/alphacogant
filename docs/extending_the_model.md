@@ -1,15 +1,15 @@
-# Extending the Model
+# Define new model contracts before extending the reduced engine
 
-This file records safe extension lanes. Each lane needs source changes, tests,
-figures or tokens as appropriate, and a regenerated PDF.
+This file records possible extension lanes, not implemented features. Each lane
+needs source changes, tests, regenerated evidence and revised claims as appropriate.
 
-## Continuous state
+## Replace binary capability with continuous state
 
 Replace two-level channel factors with continuous capability distributions, for
-example Beta-distributed channel strength. This would improve dynamic range but
-requires revising inference, figures, and limitations.
+example Beta-distributed channel strength. This would change representational
+resolution, not establish calibration; inference, figures and limitations need revision.
 
-## Continuous actions
+## Replace discrete moves with a continuous allocation policy
 
 Replace the six discrete actions with a capital-allocation vector. Candidate
 approaches:
@@ -18,32 +18,32 @@ approaches:
 - Gumbel-softmax relaxation for differentiable discrete approximations
 - normalizing-flow policy over allocation simplex
 
-This is the path from negative-EFE action values to a true continuous marginal
-return surface.
+This would permit a continuous action-value surface. A monetary marginal-return
+interpretation would still require a specified economic objective and calibration.
 
-## Endogenous learning
+## Learn coefficients rather than only infer capability
 
 Make model matrices update from observations. A minimal path is to make selected
 transition probabilities Dirichlet or Beta posteriors. The manuscript's current
 "no learning dynamics" limitation must be rewritten when this lands.
 
-## Coupled transitions
+## Add coupled state transitions with an explicit joint contract
 
 Move from factorized `B_k` transitions to a coupled transition over joint channel
 state. This would model supermodularity in state dynamics rather than only in
 the observation likelihood.
 
-## External capital amplification
+## Model external capital and evidence acquisition explicitly
 
 Add an observation-volume or capital-growth state so cumulative pragmatic value
 changes how much evidence the firm can buy next cycle.
 
-## Required gates for any extension
+## Regenerate evidence and revise claims for every extension
 
 - new or updated tests
 - updated manuscript tokens when numbers change
 - regenerated figures
-- `scripts/pipeline/stage_04_validate.py --project ongoing/ActiveInference/alphacogant`
-  (pipeline stages live in the template checkout root, not this repo — run from
-  the template root)
-- copied-output parity after stage 05
+- actual figure inspection and, for manuscript/visual releases, contained PDF/HTML
+  generation, page inspection and reference checks from [rendering_and_validation.md](rendering_and_validation.md)
+- optional template integration only when independently configured and authorized;
+  do not run another checkout's stages as a standalone project requirement

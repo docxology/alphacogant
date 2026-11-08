@@ -20,9 +20,10 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
+from alphacogant.io import MAX_JSON_BYTES, parse_json, read_text, write_text
 from alphacogant.tokens.manuscript_variables import generate_variables
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -91,7 +92,7 @@ def write_figure_registry(
         "figures": figure_registry_entries(manuscript_dir, variables),
         "schema_version": "alphacogant.figure_registry.v1",
     }
-    registry_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    write_text(json.dumps(payload, indent=2, sort_keys=True), registry_path, overwrite=True)
     return registry_path
 
 
@@ -105,11 +106,9 @@ def artifact_manifest_issues(
     seen_labels: set[str] = set()
     seen_filenames: set[str] = set()
     figures_dir = output_dir / "figures"
-    # PNGs consumed outside the manuscript registry: cover_art via the
-    # docs/manuscript/config.yaml ``cover.image`` key, value_decomposition as the
-    # run_alphacogant_demo.py output. Everything else in output/figures/ must be
-    # embedded in the manuscript prose.
-    NON_REGISTRY_FIGURES = frozenset({"cover_art.png", "value_decomposition.png"})
+    # The demo comparison is not a manuscript figure. Every other PNG,
+    # including the registered graphical abstract, must be embedded in prose.
+    NON_REGISTRY_FIGURES = frozenset({"value_decomposition.png"})
 
     for entry in figure_entries:
         label = entry["label"]
@@ -131,6 +130,15 @@ def artifact_manifest_issues(
             with figure_path.open("rb") as handle:
                 if handle.read(len(PNG_MAGIC)) != PNG_MAGIC:
                     issues.append(f"registered figure is not a PNG: {label} -> {relative_figure}")
+                else:
+                    try:
+                        from matplotlib.image import imread
+
+                        imread(figure_path)
+                    except (OSError, ValueError, SyntaxError):
+                        issues.append(
+                            f"registered figure cannot be decoded: {label} -> {relative_figure}"
+                        )
 
         producer = entry.get("generated_by", "")
         if producer and not (project_root / producer).exists():
@@ -191,9 +199,9 @@ def write_artifact_manifest(
     # Honor SOURCE_DATE_EPOCH for byte-reproducible manifests; else wall-clock UTC.
     source_date_epoch = os.environ.get("SOURCE_DATE_EPOCH")
     timestamp = (
-        datetime.fromtimestamp(int(source_date_epoch), tz=timezone.utc).isoformat()
+        datetime.fromtimestamp(int(source_date_epoch), tz=UTC).isoformat()
         if source_date_epoch
-        else datetime.now(timezone.utc).isoformat()
+        else datetime.now(UTC).isoformat()
     )
     entries = [
         {
@@ -210,23 +218,70 @@ def write_artifact_manifest(
     issues = artifact_manifest_issues(
         output_dir, read_figure_registry(output_dir), project_root=project_root
     )
-    manifest_path.write_text(
+    write_text(
         json.dumps({"entries": entries, "issues": issues}, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+        manifest_path,
+        overwrite=True,
     )
     return manifest_path
+
+
+def _saved_artifact_issues(
+    project_root: Path, manuscript_dir: Path, variables: dict[str, str]
+) -> list[str]:
+    """Compare saved artifacts without rewriting or blessing the observed bytes."""
+    output_dir = project_root / "output"
+    issues = artifact_manifest_issues(
+        output_dir, figure_registry_entries(manuscript_dir, variables), project_root=project_root
+    )
+    try:
+        saved = parse_json(
+            read_text(output_dir / "manuscript_variables.json", limit=MAX_JSON_BYTES)
+        )
+        if saved != variables:
+            issues.append("saved manuscript variables differ from current computation")
+        registry = parse_json(
+            read_text(output_dir / "figures/figure_registry.json", limit=MAX_JSON_BYTES)
+        )
+        if registry != {
+            "figures": figure_registry_entries(manuscript_dir, variables),
+            "schema_version": "alphacogant.figure_registry.v1",
+        }:
+            issues.append("saved figure registry differs from current manuscript")
+        manifest = parse_json(
+            read_text(output_dir / "reports/artifact_manifest.json", limit=MAX_JSON_BYTES)
+        )
+        expected = {
+            path.relative_to(project_root).as_posix(): (sha256(path), path.stat().st_size)
+            for path in stable_artifact_paths(output_dir)
+        }
+        entries = manifest["entries"]
+        observed = {entry["path"]: (entry["sha256"], entry["size_bytes"]) for entry in entries}
+        if len(observed) != len(entries) or observed != expected or manifest["issues"]:
+            issues.append("saved artifact manifest does not match current files")
+        for source in sorted(manuscript_dir.glob("*.md")):
+            injected = output_dir / "manuscript" / source.name
+            expected_text = inject(source.read_text(encoding="utf-8"), variables)
+            if not expected_text.endswith("\n"):
+                expected_text += "\n"
+            if read_text(injected, limit=MAX_JSON_BYTES) != expected_text:
+                issues.append(f"saved injected manuscript differs: {source.name}")
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        issues.append(f"saved artifact unavailable or malformed: {error}")
+    return issues
 
 
 def run(check: bool = False) -> int:
     """Generate manuscript tokens, gate integrity, and write all build artifacts.
 
-    Returns 0 on success, 1 on orphan tokens or (in ``check`` mode) on any
-    artifact-integrity issue.
+    Returns 0 on success, 1 on orphan tokens or any artifact-integrity issue.
+    ``check`` validates saved outputs without writing them.
     """
     manuscript_dir = _PROJECT_ROOT / "docs" / "manuscript"
     output_dir = _PROJECT_ROOT / "output"
     variables = generate_variables()
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if not check:
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     used = used_tokens(manuscript_dir)
     missing = sorted(used - set(variables))
@@ -234,8 +289,15 @@ def run(check: bool = False) -> int:
         print(f"ORPHAN TOKENS (used in prose, not generated): {missing}", file=sys.stderr)
         return 1
 
+    if check:
+        issues = _saved_artifact_issues(_PROJECT_ROOT, manuscript_dir, variables)
+        for issue in issues:
+            print(f"ARTIFACT INTEGRITY ISSUE: {issue}", file=sys.stderr)
+        print(f"tokens checked: {len(variables)} | orphans: {len(missing)}")
+        return 1 if issues else 0
+
     vars_path = output_dir / "manuscript_variables.json"
-    vars_path.write_text(json.dumps(variables, indent=2, sort_keys=True), encoding="utf-8")
+    write_text(json.dumps(variables, indent=2, sort_keys=True), vars_path, overwrite=True)
     print(str(vars_path))
     print(
         f"tokens generated: {len(variables)} | tokens used in prose: {len(used)} "
@@ -252,17 +314,13 @@ def run(check: bool = False) -> int:
         print("ARTIFACT INTEGRITY ISSUES:", file=sys.stderr)
         for issue in artifact_issues:
             print(f"  - {issue}", file=sys.stderr)
-        if check:
-            return 1
-
-    if check:
-        return 0
+        return 1
 
     injected_dir = output_dir / "manuscript"
     injected_dir.mkdir(parents=True, exist_ok=True)
     for md in sorted(manuscript_dir.glob("*.md")):
         out = injected_dir / md.name
-        out.write_text(inject(md.read_text(encoding="utf-8"), variables), encoding="utf-8")
+        write_text(inject(md.read_text(encoding="utf-8"), variables), out, overwrite=True)
         print(str(out))
     return 0
 

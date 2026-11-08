@@ -61,11 +61,11 @@ def main() -> int:
     fig, ax = plt.subplots(figsize=(10.0, 6.0))
 
     x = np.arange(len(ACTIONS))
-    w = 0.6
+    w = 0.34
 
-    # Draw pragmatic bars (negative — costs)
+    # Signed components use the shared grouped-bar convention.
     ax.bar(
-        x,
+        x - w / 2,
         prags,
         w,
         color=PRAGMATIC_COLOR,
@@ -75,14 +75,11 @@ def main() -> int:
         label="pragmatic (expected log-preference)",
     )
 
-    # Draw epistemic bars on top of pragmatic
-    # total = -(pragmatic + epistemic), so G = -pragmatic - epistemic
-    # We draw: pragmatic (negative) then epistemic (positive, reduces total)
+    # Information gain is plotted upward from zero, never as a negative stack.
     ax.bar(
-        x,
+        x + w / 2,
         epis,
         w,
-        bottom=prags,
         color=EPISTEMIC_COLOR,
         alpha=0.85,
         edgecolor="black",
@@ -102,7 +99,6 @@ def main() -> int:
     )
 
     # Highlight the greedy action
-    ax.bar(x[greedy_action], 0, w, color="none", edgecolor="#16a34a", linewidth=3)
     ax.annotate(
         "GREEDY\n(lowest G)",
         (x[greedy_action], totals[greedy_action]),
@@ -116,18 +112,18 @@ def main() -> int:
     # Value annotations
     for i in range(len(ACTIONS)):
         ax.text(
-            x[i],
-            prags[i] - 0.08,
+            x[i] - w / 2,
+            prags[i] / 2,
             f"{prags[i]:.3f}",
             ha="center",
             va="top",
             fontsize=7,
-            color="white",
+            color="black",
             fontweight="bold",
         )
         ax.text(
-            x[i],
-            prags[i] + epis[i] + 0.02,
+            x[i] + w / 2,
+            epis[i] + 0.02,
             f"+{epis[i]:.3f}",
             ha="center",
             va="bottom",
@@ -137,10 +133,10 @@ def main() -> int:
 
     ax.set_xticks(x)
     ax.set_xticklabels(list(ACTIONS), rotation=20, ha="right")
-    ax.set_ylabel("EFE components (nats)")
+    ax.set_ylabel("Signed value components and G (nats)")
     ax.set_title(
         "Expected Free Energy decomposition per action at the IMPROVING operating point\n"
-        "black diamonds show G = -(pragmatic + epistemic); greedy selects lowest G"
+        "bars are signed values; diamonds show G = -(pragmatic + epistemic), minimized"
     )
     ax.axhline(0.0, color="black", linewidth=1.0)
     ax.legend(loc="upper right", fontsize=8)

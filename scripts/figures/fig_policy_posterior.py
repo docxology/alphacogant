@@ -5,11 +5,10 @@ Thin-orchestrator figure script. All engine math comes from
 ``src/alphacogant.simulation`` and ``alphacogant.free_energy.policy_posterior``.
 
 Shows the precision-weighted softmax posterior over the six actions at each
-cycle of the greedy trajectory from the self-improving operating point.
-Early cycles concentrate probability on epistemic actions (Sensors, R&D,
-Theta); as the model freshens, probability mass shifts to pragmatic actions
-(Investments, Actuators). The explore→exploit transition is visible as a
-redistribution of probability mass, not a hard switch.
+cycle of a greedy prediction-only trajectory from IMPROVING.
+The softmax is recomputed at each predicted belief; the trajectory itself
+selects the greedy action, not a draw from this posterior. No observations,
+model fitting or explore/exploit switch are assumed.
 """
 
 from __future__ import annotations
@@ -76,8 +75,8 @@ def main() -> int:
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Policy posterior probability")
     ax.set_title(
-        f"Policy posterior evolution (γ={GAMMA}) — explore→exploit transition\n"
-        "under the greedy trajectory from the self-improving operating point"
+        f"Softmax action probabilities (gamma={GAMMA}) along greedy predictions\n"
+        f"Improving start; horizon={HORIZON}; fixed model, no observations or learning"
     )
     ax.set_xticks(range(HORIZON))
     ax.set_xlim(-0.5, HORIZON - 0.5)

@@ -13,7 +13,7 @@ import pytest
 from alphacogant.bridge.gnn import model_to_gnn
 from alphacogant.bridge.inference import run_inference, verify_inference
 from alphacogant.efe.free_energy import efe_vector, predicted_belief
-from alphacogant.model.generative_model import infer_states
+from alphacogant.model.generative_model import default_model, infer_states
 
 
 def test_trace_orders_filter_score_predict_and_replays(model):
@@ -145,8 +145,6 @@ def test_cli_in_process_runs_every_command_and_checks_errors(tmp_path, capsys):
 
 
 def test_model_rollout_chooses_supported_joint_observation():
-    from alphacogant.model.generative_model import default_model
-
     reward = np.zeros((3, 2, 2, 2))
     loss = np.zeros((3, 2, 2))
     reward[0, :, :, 0] = 1.0
@@ -163,3 +161,41 @@ def test_model_rollout_chooses_supported_joint_observation():
     assert trace["trace"][0]["observation"] == [0, 1]
     assert all(tuple(record["observation"]) in {(0, 1), (1, 0)} for record in trace["trace"])
     verify_inference(source, trace)
+
+
+@pytest.mark.parametrize("preference", [1e308, -1e308])
+def test_finite_preferences_cannot_publish_overflowed_action_scores(preference):
+    source = model_to_gnn(default_model(C_R=[preference] * 3, C_L=[preference] * 3))
+    with pytest.raises(ValueError, match="action scores must be finite"):
+        run_inference(source, steps=1)
+
+
+def test_large_representable_action_scores_still_replay():
+    source = model_to_gnn(default_model(C_R=[1e150] * 3, C_L=[1e150] * 3))
+    trace = run_inference(source, steps=1)
+    assert all(
+        np.isfinite(value)
+        for record in trace["trace"]
+        for score in record["efe"]
+        for value in score.values()
+    )
+    verify_inference(source, json.loads(json.dumps(trace, allow_nan=False)))
+
+
+@pytest.mark.parametrize("failure", ["integer", "score"])
+def test_cli_numeric_failures_are_json_error_envelopes(tmp_path, failure):
+    if failure == "integer":
+        source = model_to_gnn(default_model()).replace(
+            "D_I={(0.6, 0.4)}", "D_I={(" + "9" * 401 + ", 0)}"
+        )
+        args = ["validate"]
+    else:
+        source = model_to_gnn(default_model(C_R=[1e308] * 3, C_L=[1e308] * 3))
+        args = ["infer"]
+    path = tmp_path / "numeric-failure.gnn.md"
+    path.write_text(source)
+    result = _cli(*args, path, "--json")
+    assert result.returncode == 2 and not result.stderr
+    response = json.loads(result.stdout)
+    assert not response["ok"]
+    assert response["error"]["code"] == "invalid_request"

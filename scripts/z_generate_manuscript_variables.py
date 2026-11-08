@@ -27,7 +27,7 @@ def main() -> int:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="Only validate token coverage; do not write injected manuscript.",
+        help="Check saved tokens, registry, manifest and injected prose without writing.",
     )
     args = parser.parse_args()
     return run(check=args.check)

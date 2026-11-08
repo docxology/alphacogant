@@ -5,11 +5,9 @@ Thin-orchestrator figure script. All engine math comes from
 ``src/alphacogant.simulation`` and ``alphacogant.free_energy``.
 
 The figure shows the negative-EFE value (= pragmatic + epistemic) for each
-of the six actions across all cycles of a greedy trajectory from the
-self-improving operating point. This makes visible the explore→exploit
-transition: early cycles show high value on epistemic actions (Sensors, R&D,
-Theta), while later cycles shift toward pragmatic actions (Investments,
-Actuators) as the model freshens and epistemic value falls.
+of the six actions across all cycles of a greedy prediction-only trajectory
+from IMPROVING. Markers show the action actually selected each cycle;
+no explore/exploit switch, eventual hold, observations or learning is assumed.
 """
 
 from __future__ import annotations
@@ -68,7 +66,11 @@ def main() -> int:
 
     # Mark the greedy (selected) action each cycle
     for cycle_idx, record in enumerate(trajectory.cycles):
-        ax.plot(cycle_idx, record.action, marker="*", color="black", markersize=12, zorder=5)
+        ax.plot(
+            cycle_idx + 0.32, record.action - 0.28,
+            marker="*", color="black", markeredgecolor="white", markeredgewidth=0.5,
+            markersize=7, zorder=5,
+        )
 
     ax.set_xticks(range(HORIZON))
     ax.set_xticklabels([f"{i}" for i in range(HORIZON)])
@@ -77,14 +79,18 @@ def main() -> int:
     ax.set_xlabel("Cycle")
     ax.set_ylabel("Action")
     ax.set_title(
-        "Marginal-return vector (negative EFE) over the greedy trajectory\n★ = selected action"
+        "Marginal-return vector (negative EFE) over the greedy prediction-only trajectory\n"
+        f"star marker = selected action; horizon={HORIZON}; fixed model, no observations"
     )
 
     # Add value annotations
     for action_idx in range(len(ACTIONS)):
         for cycle_idx in range(HORIZON):
             value = value_matrix[action_idx, cycle_idx]
-            color = "white" if abs(value) > abs(value_matrix).max() * 0.6 else "black"
+            rgb = np.array(im.cmap(im.norm(value))[:3])
+            linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+            luminance = float(linear @ np.array([0.2126, 0.7152, 0.0722]))
+            color = "white" if luminance < 0.179 else "black"
             ax.text(
                 cycle_idx,
                 action_idx,

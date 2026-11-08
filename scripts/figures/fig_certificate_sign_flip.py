@@ -5,25 +5,9 @@ Thin-orchestrator figure script. All create/decay math comes from
 ``alphacogant.t_rsi`` (the engine); this script only orchestrates the engine calls
 and renders the grouped bar chart.
 
-The integrity property of t-RSI is that its create-rate and decay-rate are
-posteriors over **genuinely different processes**, so the comparator can order
-either way across operating points — the certificate can honestly fire OR fail. A
-green-by-construction comparator (``decay <= create`` always) could never produce a
-regime where ``create < decay``. This figure plots the POINT-ESTIMATE
-``create_rate`` and ``decay_rate`` at three operating points and shows the ordering
-**flips**:
-
-- ``prior``     — the model's default ``belief_prior`` operating point.
-- ``IMPROVING`` — weak channels, stale parameters: the greedy policy funds cheap
-  gains, so ``create > decay`` (the certificate would admit at this point estimate).
-- ``COASTING``  — strong channels, fresh parameters: the greedy policy coasts on
-  ``hold``, so ``create < decay`` (the certificate rejects).
-
-This is exactly what ``tests/test_t_rsi.py::test_comparator_is_not_green_by_construction``
-asserts. Consistent with section 5, the honest result is preserved, not softened:
-under belief uncertainty the bootstrap t-RSI is negative at both regimes (the reduced
-two-level encoding does not robustly certify net improvement); the sign-discrimination
-shown here is the point-estimate evidence that the gate is genuinely conditional.
+This plots deterministic POINT-ESTIMATE create/decay rates at three beliefs.
+The labels report only the sign of create minus decay. No bootstrap t-RSI,
+threshold predicate, candidate comparison or deployment gate is evaluated.
 """
 
 from __future__ import annotations
@@ -46,7 +30,7 @@ import numpy as np
 from alphacogant.model.channels import CHANNELS
 from alphacogant.model.generative_model import belief_prior, default_model
 from alphacogant.model.operating_points import COASTING_RAW, IMPROVING_RAW
-from alphacogant.trsi.t_rsi import create_rate, decay_rate
+from alphacogant.trsi.t_rsi import DEFAULT_HORIZON, create_rate, decay_rate
 
 
 def _as_belief(raw: dict[str, tuple[float, float]]) -> dict[str, np.ndarray]:
@@ -78,9 +62,8 @@ def main() -> None:
     ]
 
     labels = [name for name, _ in operating_points]
-    creates = [create_rate(model, belief) for _, belief in operating_points]
-    decays = [decay_rate(model, belief) for _, belief in operating_points]
-    admits = [c > d for c, d in zip(creates, decays, strict=True)]
+    creates = [create_rate(model, belief, DEFAULT_HORIZON) for _, belief in operating_points]
+    decays = [decay_rate(model, belief, DEFAULT_HORIZON) for _, belief in operating_points]
 
     x = np.arange(len(labels))
     w = 0.38
@@ -90,7 +73,7 @@ def main() -> None:
         x - w / 2,
         creates,
         w,
-        label="create-rate (active policy)",
+        label="create-rate (greedy advantage over hold)",
         color=CREATE_COLOR,
         edgecolor="black",
         linewidth=0.8,
@@ -130,23 +113,25 @@ def main() -> None:
             color=DECAY_COLOR,
         )
 
-    # Arrows showing the gap direction
+    # Raw margins are not standardized certificate or deployment decisions.
     ymax = max(creates + decays) or 1.0
-    for i, ok in enumerate(admits):
-        gap = creates[i] - decays[i]
+    for i, (create, decay) in enumerate(zip(creates, decays, strict=True)):
+        gap = create - decay
+        sign = "positive" if gap > 0 else "negative" if gap < 0 else "zero"
+        color = POSITIVE_COLOR if gap > 0 else NEGATIVE_COLOR if gap < 0 else "#64748b"
         ax.text(
             x[i],
             ymax * 1.10,
-            f"{'ADMIT ✓' if ok else 'REJECT ✗'}\n(gap = {gap:+.3f})",
+            f"raw {sign} margin\n(create - decay = {gap:+.3f})",
             ha="center",
             va="bottom",
             fontsize=9,
             fontweight="bold",
-            color=POSITIVE_COLOR if ok else NEGATIVE_COLOR,
+            color=color,
             bbox=dict(
                 boxstyle="round,pad=0.3",
                 facecolor="white",
-                edgecolor=POSITIVE_COLOR if ok else NEGATIVE_COLOR,
+                edgecolor=color,
                 alpha=0.9,
             ),
         )
@@ -155,7 +140,8 @@ def main() -> None:
     ax.set_xticklabels(labels)
     ax.set_ylabel("pragmatic rate (nats / cycle)")
     ax.set_title(
-        "Comparator is not green-by-construction\ncreate vs decay orders oppositely across regimes"
+        "Point-estimate create vs decay (not a certificate decision)\n"
+        f"raw margins at three beliefs; horizon={DEFAULT_HORIZON}; no sampling"
     )
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=2, frameon=False, fontsize=8)
     ax.margins(y=0.30)

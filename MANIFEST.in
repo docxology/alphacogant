@@ -1,4 +1,4 @@
-include README.md LICENSE CHANGELOG.md CONTRIBUTING.md CITATION.cff codemeta.json uv.lock
+include README.md LICENSE CHANGELOG.md CONTRIBUTING.md CITATION.cff codemeta.json .zenodo.json uv.lock
 include AGENTS.md ISA.md TODO.md .python-version
 recursive-include models *.md
 recursive-include docs *.md *.yaml *.bib

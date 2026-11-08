@@ -1,35 +1,13 @@
 #!/usr/bin/env python3
-"""Schematic of the Self-Forecasting Loop (whitepaper Figure 1).
+"""Responsibility map for the self-forecasting cycle and external handoffs.
 
-Thin-orchestrator figure script. All engine math is sourced from
-``src/alphacogant``; this script only orchestrates the engine query and draws a
-pure-matplotlib schematic of the four-node cycle that defines the
-self-forecasting loop in the AlphaFund whitepaper, mapped onto the
-Active-Inference / AlphaCOGANT formalism:
-
-    PREDICT  → query the Economic World Model (EWM) for the marginal-return
-               vector g_t (= -EFE.total per action). Active-Inference
-               counterpart: expected free energy evaluation under the
-               generative model.
-    OPTIMIZE → convex inner program over the Expected Free Energy. AIF
-               counterpart: precision-weighted policy posterior G* = softmax(g_t).
-    EXECUTE  → commit the argmax allocation a*_t. AIF counterpart: action
-               selection / control.
-    LEARN    → the realized row (Xi_{t+1}, E_{t+1}, R_t) tightens the next
-               forecast. AIF counterpart: belief update / evidence accrual
-               that widens the filtration F_t.
-
-The schematic is fully deterministic (no RNG draws affect geometry; the engine
-is queried only to label the PREDICT node with the real funded channel /
-action from a fixed operating-point belief). No engine data file is required.
-
-Run (from the repository root):
-    PYTHONPATH=src MPLBACKEND=Agg python scripts/figures/fig_self_forecasting_loop.py
+Solid arrows show local computations. Dashed arrows show conceptual observation
+and execution handoffs, not an implemented corporate deployment or learning loop.
+Illustrative selected-action labels are queried from the fixed engine.
 """
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
@@ -37,265 +15,110 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch  # noqa: E402
+from matplotlib.path import Path as PlotPath  # noqa: E402
 
-# --- engine import (thin orchestrator: all math comes from src/alphacogant) ---
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_SRC = _PROJECT_ROOT / "src"
-if str(_SRC) not in sys.path:
-    sys.path.insert(0, str(_SRC))
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from alphacogant.efe.free_energy import marginal_return_vector  # noqa: E402
-from alphacogant.model.channels import ACTIONS, CHANNELS  # noqa: E402
+from alphacogant.efe.free_energy import greedy_action  # noqa: E402
+from alphacogant.model.channels import ACTIONS  # noqa: E402
 from alphacogant.model.generative_model import default_model  # noqa: E402
-
-# Two operating-point beliefs used in the manuscript. The self-improving regime
-# drives the PREDICT-node label so the schematic reflects a real engine output.
 from alphacogant.model.operating_points import COASTING, IMPROVING  # noqa: E402
 from alphacogant.viz.plot_style import (  # noqa: E402
-    ANALYTIC_FOOTER,
+    CHANNEL_COLORS,
     DPI,
-    add_provenance_footer,
+    EPISTEMIC_COLOR,
+    NEUTRAL_COLOR,
     apply_style,
 )
 
-OUTPUT_PATH = _PROJECT_ROOT / "output" / "figures" / "self_forecasting_loop.png"
+OUTPUT_PATH = PROJECT_ROOT / "output" / "figures" / "self_forecasting_loop.png"
+INK = "#172033"
 
 
-def _belief_map(spec: dict[str, tuple[float, float]]) -> dict[str, np.ndarray]:
-    """Build a validated dict[channel, array([weak, strong])] from a spec."""
-    return {ch: np.array(spec[ch], dtype=float) for ch in CHANNELS}
+def _box(ax, x, y, w, h, title, body, color, *, external=False):
+    ax.add_patch(FancyBboxPatch(
+        (x, y), w, h, boxstyle="round,pad=0.008,rounding_size=0.012",
+        facecolor="white", edgecolor=color, linewidth=1.8,
+        linestyle="--" if external else "-",
+    ))
+    ax.text(x + w / 2, y + h - 0.028, title, ha="center", va="top",
+            fontsize=14, fontweight="bold", color=INK)
+    ax.text(x + w / 2, y + h / 2 - 0.024, body, ha="center", va="center",
+            fontsize=13, color=INK, linespacing=1.35)
 
 
-def _funded_channel(belief: dict[str, np.ndarray]) -> tuple[str, str]:
-    """Return (action_name, channel_label) the engine funds at this belief.
-
-    All scoring is delegated to ``free_energy.marginal_return_vector`` — the
-    script only reads its argmax.
-    """
-    mrv = marginal_return_vector(default_model(), belief)
-    best_action_idx = max(mrv, key=mrv.__getitem__)
-    action_name = ACTIONS[best_action_idx]
-    # action names are "fund_<CHANNEL>" or "hold"
-    channel = action_name.split("_", 1)[1] if action_name.startswith("fund_") else "—"
-    return action_name, channel
-
-
-def _draw_node(ax, xy, title, subtitle, color):
-    """Draw a rounded box node centered at xy with a title and subtitle."""
-    x, y = xy
-    w, h = 2.7, 1.5
-    box = FancyBboxPatch(
-        (x - w / 2, y - h / 2),
-        w,
-        h,
-        boxstyle="round,pad=0.08,rounding_size=0.18",
-        linewidth=2.0,
-        edgecolor=color,
-        facecolor="white",
-        zorder=3,
-    )
-    ax.add_patch(box)
-    ax.text(
-        x,
-        y + 0.32,
-        title,
-        ha="center",
-        va="center",
-        fontsize=13,
-        fontweight="bold",
-        color=color,
-        zorder=4,
-    )
-    ax.text(
-        x,
-        y - 0.22,
-        subtitle,
-        ha="center",
-        va="center",
-        fontsize=8.0,
-        color="#222222",
-        zorder=4,
-        wrap=True,
-    )
-
-
-def _draw_arrow(ax, start, end, label, color, rad):
-    """Draw a curved arrow between two node-edge anchor points with a label."""
-    arrow = FancyArrowPatch(
-        start,
-        end,
-        connectionstyle=f"arc3,rad={rad}",
-        arrowstyle="-|>",
-        mutation_scale=22,
-        linewidth=2.0,
-        color=color,
-        zorder=2,
-    )
-    ax.add_patch(arrow)
-    mx, my = (start[0] + end[0]) / 2, (start[1] + end[1]) / 2
-    # nudge label outward along the curve normal
-    nx, ny = -(end[1] - start[1]), (end[0] - start[0])
-    norm = np.hypot(nx, ny) or 1.0
-    off = 0.62 * np.sign(rad if rad != 0 else 1.0)
-    lx, ly = mx + off * nx / norm, my + off * ny / norm
-    ax.text(
-        lx,
-        ly,
-        label,
-        ha="center",
-        va="center",
-        fontsize=7.6,
-        style="italic",
-        color="#444444",
-        bbox=dict(boxstyle="round,pad=0.25", facecolor="#f5f5f5", edgecolor="none"),
-        zorder=5,
-    )
+def _route(ax, points, *, external=False):
+    path = PlotPath(points, [PlotPath.MOVETO] + [PlotPath.LINETO] * (len(points) - 1))
+    ax.add_patch(FancyArrowPatch(
+        path=path, arrowstyle="-|>", mutation_scale=15, linewidth=1.8,
+        color=NEUTRAL_COLOR if external else CHANNEL_COLORS["S"],
+        linestyle="--" if external else "-",
+    ))
 
 
 def main() -> int:
-    """Render the Self-Forecasting Loop schematic deterministically."""
     apply_style()
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    model = default_model()
+    improving_action = ACTIONS[greedy_action(model, IMPROVING)]
+    coasting_action = ACTIONS[greedy_action(model, COASTING)]
 
-    # Query the engine (real model outputs) for the PREDICT-node label.
-    improving = _belief_map(IMPROVING)
-    coasting = _belief_map(COASTING)
-    imp_action, imp_channel = _funded_channel(improving)
-    coast_action, _coast_channel = _funded_channel(coasting)
-
-    fig, ax = plt.subplots(figsize=(10.0, 8.0))
-    ax.set_xlim(0, 12)
-    ax.set_ylim(0, 11)
+    fig, ax = plt.subplots(figsize=(9.0, 6.4))
+    fig.subplots_adjust(left=0.02, right=0.98, bottom=0.01, top=0.99)
+    ax.set(xlim=(0, 1), ylim=(0, 1))
     ax.axis("off")
-    ax.set_aspect("equal")
+    ax.text(0.02, 0.965, "Self-forecasting: who closes the loop?", fontsize=20,
+            fontweight="bold", color=INK, va="top")
+    ax.text(0.02, 0.905,
+            "Solid = local computation     Dashed = conceptual external handoff",
+            fontsize=13, color=INK, va="top")
 
-    # Node centers arranged in a clockwise cycle.
-    P_PREDICT = (3.0, 8.2)
-    P_OPTIMIZE = (9.0, 8.2)
-    P_EXECUTE = (9.0, 2.8)
-    P_LEARN = (3.0, 2.8)
+    ax.add_patch(FancyBboxPatch(
+        (0.02, 0.487), 0.96, 0.347,
+        boxstyle="round,pad=0.008,rounding_size=0.012",
+        facecolor="#eff6ff", edgecolor=CHANNEL_COLORS["S"], linewidth=1.2,
+    ))
+    ax.text(0.045, 0.822, "LOCAL ENGINE • fixed A/B/C/D", fontsize=13,
+            fontweight="bold", color=CHANNEL_COLORS["S"], va="top")
+    _box(ax, 0.055, 0.53, 0.25, 0.177, "FILTER",
+         "Supplied observations\n+ current factor prior\none local sweep", CHANNEL_COLORS["S"])
+    _box(ax, 0.375, 0.53, 0.25, 0.177, "SCORE / SELECT",
+         f"{len(ACTIONS)} discrete actions\nminimize G\nmaximize value = −G", EPISTEMIC_COLOR)
+    _box(ax, 0.695, 0.53, 0.25, 0.177, "PREDICT",
+         "$B_k$ state transitions\nnext factor prior\nnot model refitting", CHANNEL_COLORS["U"])
+    _route(ax, [(0.315, 0.615), (0.365, 0.615)])
+    _route(ax, [(0.635, 0.615), (0.685, 0.615)])
+    _route(ax, [(0.82, 0.715), (0.82, 0.748), (0.18, 0.748), (0.18, 0.715)])
+    ax.text(0.5, 0.759, "prediction becomes the next prior", fontsize=13,
+            ha="center", va="bottom", color=CHANNEL_COLORS["S"])
 
-    colors = {
-        "predict": "#1f6feb",
-        "optimize": "#8957e5",
-        "execute": "#2da44e",
-        "learn": "#bf8700",
-    }
+    _box(ax, 0.055, 0.225, 0.29, 0.17, "OBSERVE • EXTERNAL",
+         "Obtain reward / loss\nevidence; supply buckets", NEUTRAL_COLOR, external=True)
+    _box(ax, 0.655, 0.225, 0.29, 0.17, "EXECUTE • EXTERNAL",
+         "Decide and commit\nreal-world resources", NEUTRAL_COLOR, external=True)
+    _route(ax, [(0.50, 0.52), (0.50, 0.425), (0.80, 0.425), (0.80, 0.405)], external=True)
+    ax.text(0.65, 0.435, "selected-action handoff", ha="center", va="bottom",
+            fontsize=13, color=INK)
+    _route(ax, [(0.645, 0.296), (0.355, 0.296)], external=True)
+    ax.text(0.50, 0.319, "new evidence", ha="center", va="bottom", fontsize=13, color=INK)
+    _route(ax, [(0.18, 0.405), (0.18, 0.52)], external=True)
 
-    _draw_node(
-        ax,
-        P_PREDICT,
-        "PREDICT",
-        f"query EWM for marginal-return\nvector g_t  (funds {imp_channel})",
-        colors["predict"],
-    )
-    _draw_node(
-        ax,
-        P_OPTIMIZE,
-        "OPTIMIZE",
-        "convex inner program\nover EFE  (G* = softmax g_t)",
-        colors["optimize"],
-    )
-    _draw_node(
-        ax,
-        P_EXECUTE,
-        "EXECUTE",
-        f"commit a*_t\n({imp_action})",
-        colors["execute"],
-    )
-    _draw_node(
-        ax,
-        P_LEARN,
-        "LEARN",
-        "realized row tightens\nthe next forecast",
-        colors["learn"],
-    )
+    ax.text(0.5, 0.165,
+            f"Engine examples, not company results: IMPROVING → {improving_action};\n"
+            f"COASTING → {coasting_action} (one-step point-belief selections).",
+            ha="center", va="center", fontsize=13, color=INK, linespacing=1.35)
+    ax.text(0.5, 0.064,
+            "No refitting, convex allocator, temporal validation or deployment commitment is run.\n"
+            "Source: fixed NumPy engine; corporate cycle is an analogy, not financial evidence.",
+            ha="center", va="center", fontsize=13, color=INK, linespacing=1.4)
 
-    # Clockwise arrows between node edges, each annotated with its
-    # Active-Inference counterpart.
-    _draw_arrow(
-        ax,
-        (P_PREDICT[0] + 1.35, P_PREDICT[1]),
-        (P_OPTIMIZE[0] - 1.35, P_OPTIMIZE[1]),
-        "AIF: expected free energy\nevaluation, value = -G",
-        colors["predict"],
-        rad=-0.18,
-    )
-    _draw_arrow(
-        ax,
-        (P_OPTIMIZE[0], P_OPTIMIZE[1] - 0.78),
-        (P_EXECUTE[0], P_EXECUTE[1] + 0.78),
-        "AIF: precision-weighted\npolicy posterior",
-        colors["optimize"],
-        rad=-0.18,
-    )
-    _draw_arrow(
-        ax,
-        (P_EXECUTE[0] - 1.35, P_EXECUTE[1]),
-        (P_LEARN[0] + 1.35, P_LEARN[1]),
-        "AIF: action selection\n(control a*_t)",
-        colors["execute"],
-        rad=-0.18,
-    )
-    _draw_arrow(
-        ax,
-        (P_LEARN[0], P_LEARN[1] + 0.78),
-        (P_PREDICT[0], P_PREDICT[1] - 0.78),
-        "AIF: belief update,\nfiltration F_t widens",
-        colors["learn"],
-        rad=-0.18,
-    )
-
-    ax.text(
-        6.0,
-        10.4,
-        "The Self-Forecasting Loop",
-        ha="center",
-        va="center",
-        fontsize=17,
-        fontweight="bold",
-        color="#111111",
-    )
-    ax.text(
-        6.0,
-        9.75,
-        "Whitepaper Figure 1 — the corporate loop as Active-Inference perception-action",
-        ha="center",
-        va="center",
-        fontsize=9.5,
-        color="#555555",
-    )
-
-    # Center caption tying the cycle to the engine + the two operating points.
-    ax.text(
-        6.0,
-        5.5,
-        f"engine: {len(CHANNELS)} channels {CHANNELS}\n"
-        f"{len(ACTIONS)} actions  •  improving regime funds {imp_channel}\n"
-        f"coasting regime selects {coast_action}",
-        ha="center",
-        va="center",
-        fontsize=8.2,
-        color="#333333",
-        bbox=dict(
-            boxstyle="round,pad=0.45",
-            facecolor="#fbfbfb",
-            edgecolor="#cccccc",
-        ),
-    )
-
-    fig.tight_layout()
-    add_provenance_footer(fig, ANALYTIC_FOOTER)  # deterministic schematic, not data
-    fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight", facecolor="white")
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUTPUT_PATH, dpi=DPI, bbox_inches="tight", facecolor="white", pad_inches=0.08)
     plt.close(fig)
-
-    abs_path = OUTPUT_PATH.resolve()
-    print(str(abs_path))
+    print(str(OUTPUT_PATH.resolve()))
     return 0
 
 
 if __name__ == "__main__":
-    os.environ.setdefault("MPLBACKEND", "Agg")
     raise SystemExit(main())

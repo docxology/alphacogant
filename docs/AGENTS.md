@@ -16,7 +16,7 @@ Run these from the project root:
 
 ```bash
 uv run --locked pytest tests/test_docs_contract.py tests/test_manuscript_contract.py -q
-uvx ruff check scripts src tests
+uv run --locked ruff check scripts src tests
 ```
 
 For PDF-facing changes, also regenerate:
@@ -26,10 +26,7 @@ uv run --locked python scripts/y_generate_figures.py
 uv run --locked python scripts/z_generate_manuscript_variables.py
 ```
 
-Then render from the template root with:
-
-```bash
-uv run python scripts/pipeline/stage_03_render.py --project ongoing/ActiveInference/alphacogant
-uv run python scripts/pipeline/stage_04_validate.py --project ongoing/ActiveInference/alphacogant
-uv run python scripts/pipeline/stage_05_copy.py --project ongoing/ActiveInference/alphacogant
-```
+Use the contained Pandoc recipe in [rendering_and_validation.md](rendering_and_validation.md).
+Template stages are optional external integration, not a required standalone gate
+or permission to write another checkout. Inspect regenerated figures and rendered
+pages; token/manifest checks alone do not establish scientific correctness.

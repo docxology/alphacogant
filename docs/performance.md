@@ -1,10 +1,10 @@
 # Python 3.15 profiling and performance
 
 The development interpreter is the one `.python-version` pins. The package still
-supports Python 3.11+; CI exercises 3.12, 3.14 and 3.15. Select an alternate
+supports Python 3.11+; CI exercises 3.11, 3.12, 3.14 and 3.15. Select an alternate
 interpreter with `uv sync --python 3.11 --locked --extra dev`.
 
-## Reproduce a profile
+## Collect matched workload timings with source and runtime provenance
 
 ```bash
 uv sync --locked --extra dev
@@ -22,7 +22,7 @@ all actions `n` times. Inputs have finite work limits exposed by `capabilities`.
 
 Python 3.15 uses the standard library's
 [`profiling.tracing`](https://docs.python.org/3.15/library/profiling.tracing.html).
-Python 3.10–3.14 use `cProfile`. Hotspots are exported as bounded JSON records;
+Python 3.11–3.14 use `cProfile`. Hotspots are exported as bounded JSON records;
 no pickle stats are loaded or exposed. Reports bind package-source SHA256,
 version, runtime, NumPy, workload, seed and thread settings. Changed package
 sources during a run invalidate it. Existing tracing profilers are preserved by
@@ -36,7 +36,7 @@ absolute time thresholds as CI gates. Compare matched environments and workloads
 and retain the raw samples. CI publishes a Python 3.15 profile artifact on every
 run.
 
-## Optimizations and numerical guarantees
+## Preserve model semantics while permitting floating-point roundoff
 
 `efe_vector` validates a public belief once, predicts all six actions in a batch,
 and broadcasts masked KL across the action axis. KL uses log probabilities to
@@ -51,12 +51,13 @@ visualization module is imported. Existing top-level plotting access is retained
 This also removes plotting backend initialization from agent and CLI startup.
 
 Differential tests cover randomized models/priors, sparse likelihoods and point
-mass priors, paired bootstrap rates and RNG continuation. Rounded manuscript
-tokens must agree with the previous release at the full published sample count.
+mass priors, paired bootstrap rates and RNG continuation.
+Rate-timeline corrections in 1.2.2 intentionally change manuscript diagnostics;
+regenerate rather than require equality with the old, truncated-horizon rates.
 Batched contractions can change the final bits of floating-point values; exact
 trace replay requires a matching engine/numerical environment.
 
-## Sampling availability
+## Treat external sampling availability separately from measured cost
 
 Python 3.15 also provides
 [`profiling.sampling`](https://docs.python.org/3.15/library/profiling.sampling.html).
@@ -67,12 +68,12 @@ uv run --locked python -m profiling.sampling run -d 3 --jsonl \
   -o output/sampling.jsonl -m alphacogant bootstrap --n 256 --horizon 32
 ```
 
-The local macOS sampling attempt for this release was unavailable because process
+The historical 1.2.1 macOS sampling attempt was unavailable because process
 memory access was denied. No elevated access was requested. Deterministic tracing,
 unprofiled timings and memory reports were collected successfully; sampling
 absence is recorded separately and is not a zero-cost observation.
 
-## Release measurement
+## Historical 1.2.1 release measurement
 
 A matched local Python 3.15.0 / NumPy 2.5.4 macOS arm64 run, with all three
 recorded BLAS/OpenMP thread settings set to 1 and five wall samples per workload,

@@ -11,8 +11,14 @@ import hashlib
 import json
 from pathlib import Path
 
+import numpy as np
+import pytest
+from matplotlib.image import imsave
+
 from alphacogant.tokens.manuscript_artifacts import (
     PNG_MAGIC,
+    _saved_artifact_issues,
+    artifact_manifest_issues,
     figure_registry_entries,
     inject,
     read_figure_registry,
@@ -106,3 +112,60 @@ def test_write_artifact_manifest_hashes_outputs_relative_to_project_root(
     }
     assert all(entry["contract_match"] for entry in manifest["entries"])
     assert manifest["issues"] == []
+
+
+@pytest.mark.parametrize("tamper", ["variables", "injected", "figure", "duplicate_manifest"])
+def test_saved_artifact_validation_rejects_tampering_without_rewriting(tmp_path, tamper):
+    manuscript = tmp_path / "docs/manuscript"
+    manuscript.mkdir(parents=True)
+    source = manuscript / "00_example.md"
+    source.write_text("Mean {{MEAN}}.\n![Data](figures/data.png){#fig:data}\n")
+    output = tmp_path / "output"
+    figures = output / "figures"
+    figures.mkdir(parents=True)
+    values = np.linspace(0.0, 1.0, 1024).reshape(32, 32)
+    variables = {"MEAN": f"{values.mean():.1f}"}
+    imsave(figures / "data.png", values, cmap="viridis")
+    producer = tmp_path / "scripts/figures/fig_data.py"
+    producer.parent.mkdir(parents=True)
+    producer.write_text("# Inventory checks producer presence, not execution provenance.\n")
+    tokens = output / "manuscript_variables.json"
+    tokens.write_text(json.dumps(variables))
+    injected = output / "manuscript/00_example.md"
+    injected.parent.mkdir()
+    injected.write_text(inject(source.read_text(), variables))
+    write_figure_registry(manuscript, variables, project_root=tmp_path)
+    manifest_path = write_artifact_manifest(output, project_root=tmp_path)
+    assert _saved_artifact_issues(tmp_path, manuscript, variables) == []
+
+    if tamper == "variables":
+        tokens.write_text('{"MEAN":"999"}')
+    elif tamper == "injected":
+        injected.write_text("Mean 999.\n")
+    elif tamper == "figure":
+        image = figures / "data.png"
+        image.write_bytes(image.read_bytes()[:120])
+    else:
+        manifest = json.loads(manifest_path.read_text())
+        manifest["entries"].append(manifest["entries"][0])
+        manifest_path.write_text(json.dumps(manifest))
+    before = {
+        path: (path.read_bytes(), path.stat().st_mtime_ns)
+        for path in output.rglob("*") if path.is_file()
+    }
+    assert _saved_artifact_issues(tmp_path, manuscript, variables)
+    assert {
+        path: (path.read_bytes(), path.stat().st_mtime_ns) for path in before
+    } == before
+
+
+def test_registered_signature_only_png_cannot_pass_decode(tmp_path):
+    figures = tmp_path / "output/figures"
+    figures.mkdir(parents=True)
+    (figures / "forged.png").write_bytes(PNG_MAGIC + b"0" * 128)
+    issues = artifact_manifest_issues(
+        tmp_path / "output",
+        [{"filename": "forged.png", "label": "fig:forged", "generated_by": ""}],
+        project_root=tmp_path,
+    )
+    assert any("cannot be decoded" in issue for issue in issues)

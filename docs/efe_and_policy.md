@@ -1,22 +1,23 @@
-# Expected Free Energy and Policy
+# Minimize one-step EFE and rank discrete actions
 
 `src/alphacogant/efe/free_energy.py` owns the project's action scoring.
 
-## Sign convention
+## Minimized G versus maximized action value
 
-Active Inference minimizes Expected Free Energy `G` [2, 3]. AlphaCOGANT reports:
+Active Inference motivates minimizing Expected Free Energy `G`
+([epistemic-value paper](https://doi.org/10.1080/17588928.2015.1020053)). AlphaCOGANT reports:
 
 - `pragmatic`: expected log-preference value
-- `epistemic`: expected information gain [3, 4]
+- `epistemic`: expected information gain about the hidden Theta capability only
 - `total`: the minimized quantity, `-(pragmatic + epistemic)`
 
 The action value used for ranking is therefore `-total`.
 
-## Policy evaluation
+## Score each action's predicted belief
 
 For each action:
 
-1. `_predict_belief()` advances the current belief through the action-specific
+1. `predicted_belief()` advances the current belief through the action-specific
    transition tensor.
 2. Reward and loss distributions are computed under the predicted belief.
 3. Pragmatic value is computed from preferences `C_R` and `C_L`.
@@ -24,23 +25,29 @@ For each action:
    and prior beliefs over Theta.
 5. `marginal_return_vector()` returns the negative-EFE value for every action.
 
-## Policy posterior
+## Softmax policy precision is separate from perturbation concentration
 
 `policy_posterior()` applies a precision-weighted softmax to the action values.
-`gamma` must be positive and finite. The posterior is used in figures to show
-how mass shifts from exploration to exploitation as beliefs change.
+`gamma` must be positive and finite. Figure probabilities are evaluated along a
+greedy prediction-only rollout; they do not establish an explore/exploit switch.
 
-## Claim boundary
+`gamma` is not the Dirichlet concentration used in synthetic belief perturbations.
+`simulate_trajectory` repeatedly selects and predicts without filtering observations
+or learning coefficients. The [paired diagnostic](trsi_statistics.md) separately
+contrasts greedy and hold trajectories; its threshold predicate never controls
+action selection.
 
-This is a discrete action scorer. It is the reduced-model image of AlphaFund's
-continuous marginal-return formalism, not a continuous optimizer.
+## Discrete scoring is not a continuous portfolio solver
 
-## Numerical admission
+This is the reduced-model image of AlphaFund's continuous marginal-return
+formalism, not a continuous optimizer, convex solve or dollar-calibrated gradient.
+
+## Admit finite action scores and valid indices
 
 Actions and observations must be integer indices (booleans and floats are
 rejected). Precomputed policy values must cover all six actions and be finite.
 The softmax centers before scaling so extreme finite scores produce valid
 probabilities. KL calculations mask impossible Theta entries before division;
 point-mass beliefs therefore produce finite, nonnegative information gain
-without invalid floating-point warnings. Loop horizons and bootstrap draw
-counts must be positive integers; Dirichlet concentration must also be finite.
+without invalid floating-point warnings. Sampling bounds and concentration
+admission belong to the [paired diagnostic contract](trsi_statistics.md).
