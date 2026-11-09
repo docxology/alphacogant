@@ -32,10 +32,13 @@ checkout="$PWD"
 mkdir -p "$checkout/output"
 export UV_CACHE_DIR="$checkout/output/.cache/uv"
 work="$(mktemp -d "$checkout/output/installed-smoke.XXXXXX")"
-cd "$work"
-uv run --isolated --no-project \
-  --with "$checkout/dist/alphacogant-1.3.0-py3-none-any.whl" \
-  python "$checkout/scripts/smoke_installed.py" --source-root "$checkout"
+uv venv --python "$checkout/.venv/bin/python" "$work/environment"
+uv pip install --python "$work/environment/bin/python" \
+  "$checkout/dist/alphacogant-1.3.0-py3-none-any.whl"
+mkdir "$work/cwd"
+cd "$work/cwd"
+PATH="$work/environment/bin:$PATH" "$work/environment/bin/python" \
+  "$checkout/scripts/smoke_installed.py" --source-root "$checkout"
 ```
 
 The smoke requires the installed module/console to belong to that environment,
