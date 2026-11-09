@@ -256,9 +256,17 @@ def policy_posterior(
     vals = np.array([values[action] for action in range(len(ACTIONS))], dtype=float)
     if not np.all(np.isfinite(vals)):
         raise ValueError("values must be finite.")
-    # Center first; legitimate extreme score gaps tend to zero probability.
+    # Center first to preserve close scores sharing a large common offset.
     with np.errstate(over="ignore", under="ignore"):
-        logits = gamma * (vals - np.max(vals))
+        maximum = np.max(vals)
+        gaps = vals - maximum
+        logits = gamma * gaps
+        if gamma < 1.0:
+            overflowing = np.isneginf(gaps)
+            if np.any(overflowing):
+                # These opposite-sign gaps may become finite after scaling.
+                # Scale only them: scaling all scores first can erase close gaps.
+                logits[overflowing] = gamma * vals[overflowing] - gamma * maximum
         weights = np.exp(logits)
     return weights / weights.sum()
 

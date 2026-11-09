@@ -142,3 +142,33 @@ def test_constructor_rejects_non_normalized_d(model) -> None:
             C_L=c_l,
             D=bad_d,
         )
+
+
+@pytest.mark.parametrize("as_lists", [False, True])
+def test_constructor_and_gnn_preserve_toleranced_transition_coefficients(model, prior, as_lists):
+    from alphacogant.bridge.cogant_bridge import model_to_gnn_summary
+    from alphacogant.bridge.gnn import model_from_gnn
+    from alphacogant.efe.free_energy import predicted_belief
+
+    transitions = {channel: matrix.copy() for channel, matrix in model.B.items()}
+    transitions["I"][0, 0, 0] += 4e-9
+    supplied = {
+        channel: matrix.tolist() if as_lists else matrix
+        for channel, matrix in transitions.items()
+    }
+    constructed = EconomicWorldModel(
+        A_R=model.A_R,
+        A_L=model.A_L,
+        B=supplied,
+        C_R=model.C_R,
+        C_L=model.C_L,
+        D=model.D,
+    )
+    prior["I"] = np.array([1.0, 0.0])
+    restored = model_from_gnn(model_to_gnn_summary(constructed))
+    for candidate in (constructed, restored):
+        for channel in transitions:
+            np.testing.assert_array_equal(candidate.B[channel], transitions[channel])
+        np.testing.assert_array_equal(
+            predicted_belief(candidate, prior, 0)["I"], [0.60 + 4e-9, 0.40]
+        )

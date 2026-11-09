@@ -15,7 +15,7 @@ Documentation in this directory is authored source, not generated output.
 Run these from the project root:
 
 ```bash
-uv run --locked pytest tests/test_docs_contract.py tests/test_manuscript_contract.py -q
+uv run --locked pytest tests/test_manuscript_contract.py tests/test_rendering.py tests/test_rendering_inputs.py -q
 uv run --locked ruff check scripts src tests
 ```
 

@@ -1,4 +1,4 @@
-# Generate demo, figure and manuscript artifacts
+# Generate, render and prove source-owned research artifacts
 
 Top-level scripts coordinate package computations; figure scripts additionally
 own layout and annotations. Scientific model computations live in
@@ -14,6 +14,9 @@ owns registry/manifest semantics.
 | `run_alphacogant_demo.py` | Demo: model, filtering, EFE/action values and separate t-RSI predicate example; writes a non-manuscript comparison figure | `alphacogant.model.generative_model`, `alphacogant.efe.free_energy`, `alphacogant.trsi.t_rsi`, `alphacogant.viz.value_decomposition` | `uv run --locked python scripts/run_alphacogant_demo.py` |
 | `y_generate_figures.py` | Batch runner: executes every `scripts/figures/fig_*.py` deterministically (Agg backend), verifies each PNG lands, stops on first failure | all `scripts/figures/fig_*.py` | `uv run --locked python scripts/y_generate_figures.py` |
 | `z_generate_manuscript_variables.py` | Manuscript build gate: generates {{TOKEN}}s, fails on orphan tokens, writes figure registry + artifact manifest, and (default mode) writes token-substituted chapters | `alphacogant.tokens.manuscript_variables`, `alphacogant.tokens.manuscript_artifacts` | `uv run --locked python scripts/z_generate_manuscript_variables.py [--check]` |
+| `render_manuscript.py` | Checked source/artifact preflight, contained PDF/HTML, retained tool diagnostics and a successful-bundle receipt; external POSIX tools required | `alphacogant.rendering` plus trusted Pandoc/crossref/XeLaTeX/qpdf | See [rendering and validation](../docs/rendering_and_validation.md) |
+| `smoke_installed.py` | Independently installed wheel console/JSONL, resource and model proof from a separate temporary cwd | Installed `alphacogant` distribution and console | See [contributing](../CONTRIBUTING.md#prove-the-installed-wheel-and-console-in-an-independent-environment) |
+| `check_release_identity.py` | On tag builds, bind the annotated version ref and checked-out commit to main history | Read-only Git identity checks | `uv run --locked python scripts/check_release_identity.py` |
 
 ## Locate registered manuscript figure producers
 
@@ -51,3 +54,4 @@ in-diagram provenance rather than relying on a shared tiny footer.
 - `output/figures/*.png` — engine-generated manuscript figures
 - `output/manuscript_variables.json`, `output/figures/figure_registry.json`,
   `output/reports/artifact_manifest.json`, `output/manuscript/*.md` — manuscript build
+- `output/<fresh-render-bundle>/alphacogant.{pdf,html}`, logs and `render.json` — contained renderer; no success receipt on failure

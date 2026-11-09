@@ -33,3 +33,12 @@ Use `from alphacogant.api import Client, capabilities, handle_request` for the
 CLI behavior. `alphacogant.profiling.profile_workload` produces
 [bounded performance evidence](performance.md). Neither surface is an external
 execution service or a financial controller.
+
+## Validate trusted local render products without adding agent capabilities
+
+`alphacogant.rendering` provides `prepare_render`, `render_inputs`,
+`render_destination`, `html_metrics` and `check_render_diagnostics` for the
+source-owned [manuscript producer](rendering_and_validation.md). These read local
+project/render data; they are not top-level engine exports or agent methods.
+`tokens.manuscript_artifacts.saved_artifact_issues` is the shared non-writing
+saved-consistency checker used by token validation and render preflight.

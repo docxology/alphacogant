@@ -5,10 +5,14 @@ No mocks; all tests use real model computation and fixed seeds.
 
 from __future__ import annotations
 
+from dataclasses import replace
+from math import fsum, isfinite
+
 import numpy as np
 import pytest
 
-from alphacogant.model.channels import ACTIONS, CHANNELS
+from alphacogant.model.channels import ACTIONS, CHANNELS, action_index
+from alphacogant.model.generative_model import belief_prior, default_model
 from alphacogant.model.operating_points import IMPROVING
 from alphacogant.stats.simulation import (
     CycleRecord,
@@ -93,15 +97,69 @@ def test_belief_history_tracks_p_strong(model):
             assert 0.0 <= val <= 1.0
 
 
-def test_cumulative_pragmatic_monotone(model):
-    traj = simulate_trajectory(model, IMPROVING, horizon=6, policy="greedy")
-    assert len(traj.cumulative_pragmatic) == 6
-    # cumulative should be a running sum
-    for i in range(1, len(traj.cumulative_pragmatic)):
-        assert (
-            traj.cumulative_pragmatic[i] >= traj.cumulative_pragmatic[i - 1] - 1e-10
-            or traj.cumulative_pragmatic[i] <= traj.cumulative_pragmatic[i - 1] + 1e-10
-        )
+def test_cumulative_pragmatic_matches_signed_prefix_totals(model):
+    # Rewards depend only on Theta. Funding yields q' = .25 + .6q,
+    # so the expected preference 2q' - 1 crosses from negative to positive.
+    reward = np.zeros((3, 2, 2, 2))
+    reward[0, :, :, 0] = 1.0
+    reward[2, :, :, 1] = 1.0
+    transitions = {channel: matrix.copy() for channel, matrix in model.B.items()}
+    transitions["Theta"][:, :, action_index("fund_Theta")] = [
+        [0.75, 0.15], [0.25, 0.85]
+    ]
+    signed_model = default_model(
+        A_R=reward, B=transitions, C_R=[-1.0, 0.0, 1.0], C_L=np.zeros(3)
+    )
+    traj = simulate_trajectory(signed_model, IMPROVING, horizon=8, policy="fund_theta")
+    q = float(IMPROVING["Theta"][1])
+    expected_scores = []
+    for _ in range(8):
+        q = 0.25 + 0.6 * q
+        expected_scores.append(2 * q - 1)
+    scores = [record.efe_pragmatic for record in traj.cycles]
+    assert min(scores) < 0 < max(scores)
+    assert scores == pytest.approx(expected_scores, abs=1e-14)
+    expected_prefixes = [fsum(scores[:end]) for end in range(1, 9)]
+    assert traj.cumulative_pragmatic == pytest.approx(expected_prefixes, abs=1e-14)
+    assert summarize_trajectory(traj)["total_pragmatic"] == f"{fsum(scores):.4f}"
+
+
+@pytest.mark.parametrize("sign", [-1, 1])
+def test_large_finite_scores_preserve_representable_aggregate(sign):
+    value = sign * 1e307
+    model = default_model(C_R=np.full(3, value), C_L=np.zeros(3))
+    traj = simulate_trajectory(model, belief_prior(model), horizon=17, policy="hold")
+    scores = [record.efe_pragmatic for record in traj.cycles]
+    assert scores == pytest.approx([value] * 17)
+    expected = [fsum(scores[:end]) for end in range(1, 18)]
+    assert all(isfinite(total) for total in traj.cumulative_pragmatic)
+    assert traj.cumulative_pragmatic == pytest.approx(expected, rel=1e-14)
+    summary = summarize_trajectory(traj)
+    assert isfinite(float(summary["total_pragmatic"]))
+    assert float(summary["total_pragmatic"]) == pytest.approx(expected[-1], rel=1e-14)
+    assert float(summary["total_epistemic"]) == pytest.approx(
+        fsum(record.efe_epistemic for record in traj.cycles), abs=5e-5
+    )
+
+
+@pytest.mark.parametrize("sign", [-1, 1])
+@pytest.mark.parametrize("horizon", [18, 32])
+def test_trajectory_rejects_first_unrepresentable_prefix(sign, horizon):
+    model = default_model(C_R=np.full(3, sign * 1e307), C_L=np.zeros(3))
+    with pytest.raises(ValueError, match="cumulative pragmatic.*finite float at cycle 18"):
+        simulate_trajectory(model, belief_prior(model), horizon=horizon, policy="hold")
+
+
+def test_summary_rejects_unrepresentable_total_from_finite_records():
+    model = default_model(C_R=np.full(3, 1e307), C_L=np.zeros(3))
+    traj = simulate_trajectory(model, belief_prior(model), horizon=17, policy="hold")
+    # The public record list may be assembled outside the simulator. Reuse
+    # actual finite cycle scores, not nonfinite or fabricated EFE values.
+    overflowing = replace(
+        traj, cycles=[*traj.cycles, replace(traj.cycles[-1], cycle=17)]
+    )
+    with pytest.raises(ValueError, match="cumulative pragmatic.*finite float at cycle 18"):
+        summarize_trajectory(overflowing)
 
 
 def test_action_counts_sum_to_horizon(model):

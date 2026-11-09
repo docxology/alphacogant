@@ -42,6 +42,14 @@ actual figures and rendered document, and distinguish these observations from
 historical output. The local claim ledger records attribution; it is not
 independent empirical corroboration [@friedman2026cogant].
 
+The contained source-owned renderer adds matching source/version preflight,
+saved-artifact checks and registered image-byte/anchor checks in HTML. It selects
+current authored chapters, retains tool diagnostics and records consumed
+source/runtime/font/tool identities. A successful render is still not a semantic
+or visual acceptance decision, and disk fingerprints do not authenticate code
+already imported into a changing process. Fresh execution and actual page,
+equation, citation and figure inspection remain required.
+
 ## Threshold semantics without deployment admission
 
 `certificate(value, delta)` compares supplied scalars. There is no candidate or

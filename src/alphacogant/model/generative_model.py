@@ -14,7 +14,13 @@ ArrayMap = Mapping[str, np.ndarray]
 
 @dataclass
 class EconomicWorldModel:
-    """Container for the AlphaFund Active Inference model matrices."""
+    """Validated float coefficients, with observation/next-state axes first.
+
+    Construction converts lists and integer arrays without normalizing values.
+    B and D get new mappings; compatible float arrays (including views) remain
+    shared with their original writeability. Callers must preserve invariants
+    whenever those arrays are mutable.
+    """
 
     A_R: np.ndarray
     A_L: np.ndarray
@@ -24,6 +30,12 @@ class EconomicWorldModel:
     D: dict[str, np.ndarray]
 
     def __post_init__(self) -> None:
+        self.A_R = np.asarray(self.A_R, dtype=float)
+        self.A_L = np.asarray(self.A_L, dtype=float)
+        self.B = {channel: np.asarray(values, dtype=float) for channel, values in self.B.items()}
+        self.C_R = np.asarray(self.C_R, dtype=float)
+        self.C_L = np.asarray(self.C_L, dtype=float)
+        self.D = {channel: np.asarray(values, dtype=float) for channel, values in self.D.items()}
         _validate_model(self)
 
 

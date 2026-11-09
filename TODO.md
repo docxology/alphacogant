@@ -1,14 +1,21 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Candidate package version: **1.2.2**. Integration/release status must be read from
-fresh evidence; local version metadata is not a remote publication receipt.
+Implementation candidate: **1.3.0**. Release state is authoritative at the
+[version tags/releases](https://github.com/docxology/alphacogant/releases), not this
+backlog or local version metadata. Historical completion rows retain their dates.
 
 Historical 1.2.1 validation (2026-10-16): 352 passed, one optional upstream
 integration skipped in the base environment, 94.12% coverage. Historical alternate
 runtime and token comparisons are not current-floor or current-release proof.
 See [CHANGELOG.md](CHANGELOG.md), [agent API](docs/agent_api.md), and
 [profiling](docs/performance.md) for scope and repeatable commands.
+
+## Current 1.3.0 verification and release
+
+- [ ] Prove numerical/model/profiling/aggregate corrections through native regressions and actual interfaces (`src/alphacogant/`, `tests/`, `scripts/smoke_installed.py`).
+- [ ] Prove contained render diagnostics, regenerated artifact/PDF reproducibility and actual visual inspection (`scripts/render_manuscript.py`, `.github/workflows/ci.yml`, `docs/manuscript/`).
+- [ ] Integrate on green main and verify annotated tag, published assets and attributable branch/lane cleanup (`CHANGELOG.md`, release receipts).
 
 ## Completed for 1.2.1
 

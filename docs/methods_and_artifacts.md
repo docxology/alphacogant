@@ -15,6 +15,7 @@ cross-surface map, not the detailed numerical or build contracts.
 | Manuscript image references | `docs/manuscript/` and `tokens/manuscript_artifacts.py` | substituted `output/manuscript/*.md`, `output/figures/figure_registry.json` |
 | Figure content | `scripts/figures/` via `scripts/y_generate_figures.py` | `output/figures/*.png`; [figure/provenance contract](figures_and_artifacts.md) |
 | Artifact inventory | `tokens/manuscript_artifacts.py` | `output/reports/artifact_manifest.json` |
+| Contained manuscript rendering | `rendering.py`, `scripts/render_manuscript.py` | Fresh PDF/HTML, raw diagnostics and successful `render.json` source/runtime/input receipt |
 
 The graphical abstract is a registered manuscript figure in `00_abstract.md`,
 produced by `scripts/figures/fig_cover_art.py` as `cover_art.png`. It is not a

@@ -34,11 +34,15 @@ uv run --with './output/upstream/COGANT/cogant' pytest tests/test_cogant_integra
 ```
 
 CI checks out the pinned source without submodules and runs this check separately
-on Python 3.12. Direct `git+` package installation recursively fetches unrelated
+using the development interpreter discovered from `.python-version`.
+The workflow verifies that actual runtime against the pin. Direct `git+`
+package installation recursively fetches unrelated
 upstream evaluation fixtures; a source-only checkout avoids that dependency and
 its unrelated transfer/integrity failures. The base suite explicitly skips it
 when COGANT is absent. The test compares every parsed matrix coefficient and
-executes a three-observation trace in COGANT's actual runtime. It does not equate
+executes a three-observation trace in COGANT's actual runtime, checking the first
+full-joint posterior against independent Bayes arithmetic and the selected
+transition against matrix multiplication. It does not equate
 COGANT's full-joint filtering or risk-plus-ambiguity objective with AlphaCOGANT's
 mean-field filtering and Theta-information objective.
 

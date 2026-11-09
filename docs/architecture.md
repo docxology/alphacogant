@@ -16,6 +16,7 @@ style is a design choice, not a dependency on an external template.
 | `bridge/` | Firm priors, numeric GNN round trips, joint export and source-bound traces. | General COGANT indexing beyond this reduced project. |
 | `tokens/` | Manuscript token generation from live model computations. | Direct rendering to PDF. |
 | `viz/` | Shared figure style constants and utility helpers. | Per-figure scientific computation. |
+| `rendering.py` | Source/version/artifact preflight, HTML figure/anchor identity, emitted diagnostic checks. | Tool installation, external process execution or publication acceptance. |
 
 ## From fixed model to traces and manuscript artifacts
 
@@ -32,9 +33,10 @@ style is a design choice, not a dependency on an external template.
    - `output/figures/figure_registry.json`
    - `output/reports/artifact_manifest.json`
 6. The standalone CLI validates/exports GNN and produces replayable traces.
-7. Contained PDF/HTML rendering consumes the generated manuscript and is required
-   for manuscript releases; external-template integration is optional. See the single
-   [rendering recipe](rendering_and_validation.md).
+7. `scripts/render_manuscript.py` orchestrates trusted local PDF/HTML tools into
+   a fresh contained bundle; `rendering.py` owns the content checks. Manuscript
+   releases require actual page/figure inspection. External-template integration
+   is optional; see the single [rendering recipe](rendering_and_validation.md).
 
 ## Standalone runtime; optional publication integration
 

@@ -21,9 +21,14 @@ t_rsi = mean(create - decay) / (std(create - decay, ddof=1) / sqrt(n))
 
 Each pair comes from the same perturbed belief and trajectory. Covariance belongs
 in the denominator; pooling marginal SE squares assumes independence and is not
-the implemented formula. Scaling prevents intermediate underflow/overflow from
-manufacturing a constant margin. A truly constant nonzero margin yields signed
-infinity; zero margin or fewer than two paired samples returns zero.
+the implemented formula. Centered dispersion is used when paired subtraction is
+exact; adaptive rational arithmetic handles inexact/overflowing subtraction and
+rounded-zero results. This preserves paired variation and cancellation residuals
+that raw floating subtraction can erase even without overflow.
+A truly constant nonzero margin yields signed infinity; a zero mean yields zero.
+One paired sample returns zero by convention. Empty or unequal arrays are rejected.
+An unrepresentable nonzero, nonconstant statistic raises `ValueError`, not a false
+zero-variance infinity or rounded zero.
 
 ## Treat the threshold as a scalar predicate, not an admission mechanism
 

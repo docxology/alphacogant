@@ -1,7 +1,7 @@
-# Python 3.15 profiling and performance
+# Collect instrumentation-aware, source-bound performance evidence
 
 The development interpreter is the one `.python-version` pins. The package still
-supports Python 3.11+; CI exercises 3.11, 3.12, 3.14 and 3.15. Select an alternate
+supports Python 3.11+; CI exercises 3.11, 3.12, 3.13, 3.14 and 3.15. Select an alternate
 interpreter with `uv sync --python 3.11 --locked --extra dev`.
 
 ## Collect matched workload timings with source and runtime provenance
@@ -14,11 +14,11 @@ uv run --locked alphacogant profile --workload inference --horizon 32 \
   --samples 5 -o output/inference-profile.json
 ```
 
-The workload runs once to warm up, then records unprofiled wall-time samples,
-then executes a separate deterministic tracing run, then an optional separate
-`tracemalloc` run. `--no-memory` disables the last run. `bootstrap` uses `n`
-paired samples of `horizon` cycles; `inference` uses `horizon` steps; `efe` scores
-all actions `n` times. Inputs have finite work limits exposed by `capabilities`.
+In a fresh, uninstrumented process the workload runs once to warm up, records
+raw wall-time samples, then executes a separate deterministic tracing run and an
+optional separate `tracemalloc` run. `--no-memory` disables the last pass.
+`bootstrap` uses `n` paired samples of `horizon` cycles; `inference` uses `horizon`
+steps; `efe` scores all actions `n` times. Inputs have finite limits in `capabilities`.
 
 Python 3.15 uses the standard library's
 [`profiling.tracing`](https://docs.python.org/3.15/library/profiling.tracing.html).
@@ -26,15 +26,21 @@ Python 3.11–3.14 use `cProfile`. Hotspots are exported as bounded JSON records
 no pickle stats are loaded or exposed. Reports bind package-source SHA256,
 version, runtime, NumPy, workload, seed and thread settings. Changed package
 sources during a run invalidate it. Existing tracing profilers are preserved by
-refusing nested profiling; an existing tracemalloc session makes that report's
-memory measurement unavailable without stopping the caller's session.
+refusing nested profiling. Detected caller `sys.settrace`, `tracemalloc`, or
+registered `sys.monitoring` tools disable wall sampling: `timing.status` is
+`unavailable`, samples are empty, median/min/max are `null`, and reasons plus
+instrumentation metadata are retained. Clean timing reports `status: ok`.
+Caller instrumentation is never suspended/reset; an existing tracemalloc
+session also makes the report's memory measurement unavailable.
 
-Wall samples exclude instrumentation but include the complete selected engine
-workflow. Tracemalloc excludes some native NumPy allocations. Shared machines,
-CPU scheduling, thermal state and BLAS choices can affect timings; do not use
-absolute time thresholds as CI gates. Compare matched environments and workloads
-and retain the raw samples. CI publishes a Python 3.15 profile artifact on every
-run.
+Detection describes the collection entry state, not every possible external
+instrument. Source fingerprints cover Python files on disk, not already-imported
+code; collect comparable evidence from fresh processes/stable installations.
+Recorded thread environment variables do not prove the loaded BLAS build or its
+actual thread count. Tracemalloc excludes some native NumPy allocations.
+Shared scheduling, thermal state and BLAS choices affect timings: compare matched
+workloads/environments and retain raw samples, never wall-time CI thresholds.
+CI retains the Python 3.15 profile separately from numerical acceptance.
 
 ## Preserve model semantics while permitting floating-point roundoff
 

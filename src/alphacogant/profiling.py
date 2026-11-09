@@ -23,9 +23,9 @@ from alphacogant.trsi.t_rsi import bootstrap_t_rsi
 from alphacogant.validation import positive_integer
 
 
-def source_fingerprint() -> str:
-    """Bind evidence to the installed Python sources, independent of checkout path."""
-    root = Path(__file__).resolve().parent
+def source_fingerprint(*, root: Path | None = None) -> str:
+    """Fingerprint disk sources, not already-imported code; optionally compare a checkout."""
+    root = Path(__file__).resolve().parent if root is None else Path(root)
     digest = hashlib.sha256()
     for path in sorted(root.rglob("*.py")):
         digest.update(path.relative_to(root).as_posix().encode())
@@ -46,8 +46,9 @@ def profile_workload(
     """Profile a fixed default-model workload without accepting executable code.
 
     Python 3.15 uses ``profiling.tracing``; older supported runtimes use its
-    ``cProfile`` predecessor. Unprofiled wall timings are separate from tracing
-    and tracemalloc. Reports contain JSON data, never executable pickle stats.
+    ``cProfile`` predecessor. Wall timings are separate from our tracing and
+    tracemalloc passes, and unavailable under detected caller instrumentation.
+    Reports contain JSON data, never executable pickle stats.
     """
     if workload not in {"bootstrap", "inference", "efe"}:
         raise ValueError("workload must be bootstrap, inference or efe.")
@@ -63,6 +64,25 @@ def profile_workload(
         raise ValueError("memory must be boolean.")
     if sys.getprofile() is not None:
         raise ValueError("A tracing profiler is already active; run profiling separately.")
+    monitoring_tools = []
+    if hasattr(sys, "monitoring"):
+        for tool_id in range(6):  # sys.monitoring reserves tool IDs 0 through 5
+            name = sys.monitoring.get_tool(tool_id)
+            if name is not None:
+                monitoring_tools.append({"id": tool_id, "name": name})
+    instrumentation = {
+        "sys_settrace": sys.gettrace() is not None,
+        "tracemalloc": tracemalloc.is_tracing(),
+        "sys_monitoring_tools": monitoring_tools,
+    }
+    timing_reasons = []
+    if instrumentation["sys_settrace"]:
+        timing_reasons.append("sys.settrace tracing is already active")
+    if instrumentation["tracemalloc"]:
+        timing_reasons.append("tracemalloc is already active")
+    if monitoring_tools:
+        timing_reasons.append("sys.monitoring tools are already registered")
+
     if sys.version_info >= (3, 15):
         from profiling import tracing as profiler_module
     else:
@@ -82,10 +102,11 @@ def profile_workload(
 
     reference = run()  # warm allocations and imports before measuring
     timings = []
-    for _ in range(samples):
-        started = time.perf_counter()
-        run()
-        timings.append(time.perf_counter() - started)
+    if not timing_reasons:
+        for _ in range(samples):
+            started = time.perf_counter()
+            run()
+            timings.append(time.perf_counter() - started)
     profiler = profiler_module.Profile()
     profiler.runcall(run)
     rows = []
@@ -147,17 +168,23 @@ def profile_workload(
             "seed": seed,
         },
         "timing": {
+            "status": "unavailable" if timing_reasons else "ok",
+            "reasons": timing_reasons,
+            "instrumentation": instrumentation,
             "unprofiled_seconds": timings,
-            "median_seconds": statistics.median(timings),
-            "min_seconds": min(timings),
-            "max_seconds": max(timings),
+            "median_seconds": statistics.median(timings) if timings else None,
+            "min_seconds": min(timings) if timings else None,
+            "max_seconds": max(timings) if timings else None,
         },
         "tracing": {"module": profiler_module.__name__, "hotspots": rows},
         "memory": memory_result,
         "result_sha256": hashlib.sha256(json.dumps(reference, sort_keys=True).encode()).hexdigest(),
         "limitations": [
             "Timings are machine-specific; compare matched workloads and environments.",
-            "Tracing and memory instrumentation timings are excluded from wall samples.",
+            "This report's tracing and memory passes are separate from wall sampling; "
+            "detected caller instrumentation disables wall sampling.",
+            "External instrumentation not exposed by Python may be undetectable.",
+            "The source fingerprint covers files on disk, not already-imported module code.",
             "tracemalloc excludes some native NumPy allocations.",
         ],
     }
