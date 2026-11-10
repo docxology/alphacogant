@@ -88,15 +88,23 @@ holding or exploitation is assumed.
 
 ![Open-loop greedy belief trajectories from IMPROVING and a separate fresh-Theta initial belief. Curves and action annotations are the actual predicted states and selected actions; no observations, matrix refitting or eventual-hold claim is implied. Computed by `simulation.simulate_trajectory`.](../output/figures/belief_trajectory.png){#fig:trajectory}
 
-## Finite inputs do not guarantee representable diagnostic arithmetic
+## Finite inputs, rounded summaries and representable diagnostics
 
 Paired floating subtraction can erase variation or a mean residual even without
 overflow. The engine distinguishes genuine constant margins from rounded
-coincidence using adaptive exact arithmetic. Unrepresentable nonconstant
-statistics and cumulative trajectory totals fail explicitly rather than being
+coincidence using adaptive exact arithmetic. Unrepresentable nonconstant paired
+t-RSI statistics and cumulative trajectory totals fail explicitly rather than being
 reported as numerical certificates. A truly constant nonzero paired margin has
 zero sample SE and signed infinite standardized value by convention; that is not
 evidence of corporate certainty or empirical improvement.
+
+Central percentile endpoints retain the supplied confidence and interpolation
+terms until final float rounding; finite endpoints do not ensure a representable
+interval width or sample SD. Regime-comparison effect sizes use rounded summary
+moments and can lose a small difference or dispersion before standardization.
+This does not establish that the original sample clouds were identical or
+constant. The manuscript's effect-size tokens instead use the original generated
+draws.
 
 ## Research directions and evidence prerequisites
 

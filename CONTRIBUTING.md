@@ -34,7 +34,7 @@ export UV_CACHE_DIR="$checkout/output/.cache/uv"
 work="$(mktemp -d "$checkout/output/installed-smoke.XXXXXX")"
 uv venv --python "$checkout/.venv/bin/python" "$work/environment"
 uv pip install --python "$work/environment/bin/python" \
-  "$checkout/dist/alphacogant-1.3.0-py3-none-any.whl"
+  "$checkout/dist/alphacogant-1.3.1-py3-none-any.whl"
 mkdir "$work/cwd"
 cd "$work/cwd"
 PATH="$work/environment/bin:$PATH" "$work/environment/bin/python" \

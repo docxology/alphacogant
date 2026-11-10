@@ -169,14 +169,17 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   how the certificate responds to the firm's belief about its own parameter quality.
 
 ### `stats/statistics.py`
-- `bootstrap_ci(samples, confidence) -> BootstrapCI`: percentile interval summary
-  for generated rate samples.
+- `bootstrap_ci(samples, confidence) -> BootstrapCI`: central linear percentile
+  summary for generated binary64 rate samples. Confidence ranks and interpolation
+  are exact until one final float rounding per endpoint, including confidence
+  adjacent to zero or one; finite endpoints do not imply finite width or SD.
 - `cohen_d(samples_a, samples_b) -> float`: pooled-std Cohen's d between two
   sample sets.
 - `compute_regime_statistics(...) -> RegimeStatistics`: bootstrap CIs, EFE
   decomposition, funded action, and effect-size inputs for one operating point.
 - `compare_regimes(...) -> RegimeComparison`: improving-vs-coasting table and
-  Cohen's d summaries.
+  pooled Cohen's d from stored binary64 summary moments, not retained raw samples.
+  Rounding can erase effect magnitude/sign; use raw `cohen_d` when clouds remain.
 - `break_even_profile(...) -> BreakEvenProfile`: paired bootstrap estimate of
   `P(create_rate > decay_rate)` plus the create-minus-decay margin interval. The
   same belief perturbation feeds both rates, so the probability is an event-level
