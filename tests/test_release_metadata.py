@@ -29,5 +29,4 @@ def test_release_identity_is_consistent():
     lock = tomllib.loads((ROOT / "uv.lock").read_text())
     package = next(row for row in lock["package"] if row["name"] == "alphacogant")
     assert package["version"] == expected
-    assert f"## {expected}" in (ROOT / "CHANGELOG.md").read_text()
     assert citation["doi"] == "10.5281/zenodo.20976824"

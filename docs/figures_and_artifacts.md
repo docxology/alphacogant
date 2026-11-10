@@ -55,6 +55,13 @@ figures. The demo-only `value_decomposition.png` is separate from the manuscript
 The raw LaTeX page breaks around the graphical abstract affect PDF only; HTML
 ignores those raw blocks and keeps the image after the abstract text.
 
+The [contained producer](rendering_and_validation.md) checks the saved artifacts
+before rendering and verifies that embedded HTML PNG bytes match the registered
+figures, with nonempty alt text and resolvable unique anchors. Its `render.json`
+records consumed source/artifact hashes, runtime, tool binaries/versions, bundled
+fonts and explicit epoch. It is successful-producer evidence, not a replacement
+for visual/semantic inspection or empirical validation.
+
 ## Optional publication-copy parity
 
 An independently configured template workflow may copy the project output tree

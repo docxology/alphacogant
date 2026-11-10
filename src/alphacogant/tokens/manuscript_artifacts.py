@@ -226,7 +226,7 @@ def write_artifact_manifest(
     return manifest_path
 
 
-def _saved_artifact_issues(
+def saved_artifact_issues(
     project_root: Path, manuscript_dir: Path, variables: dict[str, str]
 ) -> list[str]:
     """Compare saved artifacts without rewriting or blessing the observed bytes."""
@@ -290,7 +290,7 @@ def run(check: bool = False) -> int:
         return 1
 
     if check:
-        issues = _saved_artifact_issues(_PROJECT_ROOT, manuscript_dir, variables)
+        issues = saved_artifact_issues(_PROJECT_ROOT, manuscript_dir, variables)
         for issue in issues:
             print(f"ARTIFACT INTEGRITY ISSUE: {issue}", file=sys.stderr)
         print(f"tokens checked: {len(variables)} | orphans: {len(missing)}")
@@ -334,6 +334,7 @@ __all__ = [
     "inject",
     "read_figure_registry",
     "run",
+    "saved_artifact_issues",
     "sha256",
     "stable_artifact_paths",
     "used_tokens",

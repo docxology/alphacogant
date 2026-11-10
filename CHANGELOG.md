@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.3.0 — 2026-11-09
+
+- Add a contained, source-owned manuscript render producer with checked saved
+  artifacts, matching source/version identities, bundled-font and tool hashes,
+  a recorded source epoch, retained diagnostics and a successful-bundle receipt.
+  Bind each embedded HTML image to its registered figure label, bytes and alt text,
+  check internal anchors, and select current authored chapters over stale output.
+- Preserve valid policy mass when opposite extreme scores overflow before a small
+  precision is applied, without sacrificing close common-offset score gaps.
+- Standardize overflowing or inexact paired differences without manufacturing
+  constant margins, erased means or false t-RSI threshold passes. Preserve
+  subnormal mean ratios, genuine constant-margin infinities and finite-range errors.
+- Canonicalize integer/list model coefficients to floating storage once, without
+  normalizing values or changing axes. Preserve shared float-array writeability
+  while keeping caller mappings and detached belief priors independent.
+- Mark wall timing unavailable under detected caller tracing, allocation tracing
+  or registered monitoring tools; preserve caller instrumentation and retain
+  clean raw samples, separate tracing/memory passes and result identities.
+- Reject unrepresentable trajectory totals at the first offending cycle, including
+  summaries assembled from finite records, rather than publishing inconsistent
+  infinite aggregates.
+- Replace ineffective prefix/copy checks and emitted-wording tests with real
+  numerical, filtering, joint-axis, instrumentation and render-boundary regressions;
+  remove incidental documentation-inventory tests.
+- Strengthen installed-wheel console/JSONL/SPEC checks, annotated tag/main identity
+  gates, supported-minor CI and retained build artifacts. Pin the proven build
+  backend and keep archival, citation, manuscript and package identities aligned.
+
 ## 1.2.2 — 2026-11-08
 
 - Correct create/hold/residual-decay horizons to include all H post-action

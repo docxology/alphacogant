@@ -13,13 +13,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.11', '3.12', '3.14', '3.15']
+        python: ['3.11', '3.12', '3.13', '3.14', '3.15']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # Node 24
         with:
           python-version: ${{ matrix.python }}
       - run: uv sync --locked --extra dev --no-build-package numpy --no-build-package matplotlib --no-build-package pillow --no-build-package contourpy --no-build-package kiwisolver
+      - run: uv --version
+      - name: Bind annotated tag builds to package version and main history
+        run: uv run --locked python scripts/check_release_identity.py
       - run: uv run --locked ruff check scripts src tests
       - run: uv run --locked pytest tests/ --cov=alphacogant --cov-fail-under=90 -q
         env:
@@ -46,36 +52,45 @@ jobs:
           name: python-3.15-profile
           path: output/profile.json
       - run: uv build
-      - name: Installed wheel smoke check outside checkout
+      - name: Record package digests
+        run: sha256sum dist/*.whl dist/*.tar.gz > dist/SHA256SUMS
+      - name: Installed wheel console, JSONL and package-data smoke
         shell: bash
         run: |
           wheel=("$GITHUB_WORKSPACE"/dist/*.whl)
-          cd "$RUNNER_TEMP"
-          uv run --isolated --no-project --with "${wheel[0]}" python - <<'PY'
-          import alphacogant
-          from importlib.metadata import version
-          from alphacogant.bridge.gnn import model_from_gnn, model_to_gnn
-          assert alphacogant.__version__ == version("alphacogant")
-          model_from_gnn(model_to_gnn(alphacogant.default_model()))
-          from alphacogant.api import Client
-          assert Client().call("diagnostics")["healthy"]
-          assert Client().call("simulation.run", {"horizon": 2})["summary"]["horizon"] == "2"
-          try:
-              alphacogant.generate_variables(n=2)
-          except FileNotFoundError:
-              pass
-          else:
-              raise AssertionError("Wheel token generation must require manuscript sources")
-          PY
+          test "${#wheel[@]}" -eq 1
+          work="$(mktemp -d "$RUNNER_TEMP/alphacogant-installed.XXXXXX")"
+          uv venv --python "$GITHUB_WORKSPACE/.venv/bin/python" "$work/environment"
+          uv pip install --python "$work/environment/bin/python" "${wheel[0]}"
+          mkdir "$work/cwd"
+          cd "$work/cwd"
+          PATH="$work/environment/bin:$PATH" "$work/environment/bin/python" \
+            "$GITHUB_WORKSPACE/scripts/smoke_installed.py" --source-root "$GITHUB_WORKSPACE"
+      - name: Retain independently installed packages and source-bound digests
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: packages-python-${{ matrix.python }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
   cogant:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
-          python-version-file: ".python-version"
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # Node 24
       - run: uv sync --locked --extra dev --no-build-package numpy --no-build-package matplotlib --no-build-package pillow --no-build-package contourpy --no-build-package kiwisolver
+      - name: Verify the discovered development pin
+        run: |
+          uv run --locked python - <<'PY'
+          import sys
+          from pathlib import Path
+          pin = tuple(map(int, Path(".python-version").read_text().strip().split(".")))
+          assert sys.version_info[:len(pin)] == pin
+          print(sys.version)
+          PY
       - name: Checkout pinned COGANT without evaluation fixture submodules
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -92,3 +107,148 @@ jobs:
           assert cogant.__version__ == "0.7.0"
           raise SystemExit(pytest.main(["tests/test_cogant_integration.py", "-q"]))
           PYCODE
+  manuscript:
+    needs: [tests, cogant]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # Node 24
+      - name: Acquire checksum-pinned compatible document tools on the disposable runner
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-xetex texlive-latex-extra texlive-fonts-recommended qpdf poppler-utils
+          mkdir -p output/toolchain/pandoc output/toolchain/crossref
+          curl --fail --location --retry 2 \
+            https://github.com/jgm/pandoc/releases/download/3.13/pandoc-3.13-linux-amd64.tar.gz \
+            -o output/toolchain/pandoc.tar.gz
+          echo '38aa33b325a2bc96a4c39409631212db55702f564250bcdbead180b3bf646389  output/toolchain/pandoc.tar.gz' | sha256sum --check
+          tar -xzf output/toolchain/pandoc.tar.gz --strip-components=1 -C output/toolchain/pandoc
+          curl --fail --location --retry 2 \
+            https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.26a/pandoc-crossref-Linux-X64.tar.xz \
+            -o output/toolchain/crossref.tar.xz
+          echo 'e61fc62485bd432c0662c2508eb40a9e501d0f47a90736995793ad73e3c0c017  output/toolchain/crossref.tar.xz' | sha256sum --check
+          tar -xJf output/toolchain/crossref.tar.xz -C output/toolchain/crossref
+          echo "$GITHUB_WORKSPACE/output/toolchain/pandoc/bin" >> "$GITHUB_PATH"
+          echo "$GITHUB_WORKSPACE/output/toolchain/crossref" >> "$GITHUB_PATH"
+      - run: uv sync --locked --extra dev --no-build-package numpy --no-build-package matplotlib --no-build-package pillow --no-build-package contourpy --no-build-package kiwisolver
+      - name: Generate, render and repeat the real manuscript producers
+        shell: bash
+        run: |
+          epoch="$(git log -1 --format=%ct)"
+          uv run --locked python scripts/run_alphacogant_demo.py
+          uv run --locked python scripts/y_generate_figures.py
+          uv run --locked python scripts/z_generate_manuscript_variables.py
+          uv run --locked python scripts/z_generate_manuscript_variables.py --check
+          uv run --locked python scripts/render_manuscript.py \
+            --destination output/render-ci-first --source-date-epoch "$epoch"
+          uv run --locked python - <<'PY'
+          import json
+          from pathlib import Path
+          from alphacogant.tokens.manuscript_artifacts import sha256, stable_artifact_paths
+          paths = stable_artifact_paths(Path("output")) + sorted(Path("output/manuscript").glob("*.md"))
+          Path("output/repro-before.json").write_text(json.dumps({p.as_posix(): sha256(p) for p in paths}))
+          PY
+          uv run --locked python scripts/run_alphacogant_demo.py
+          uv run --locked python scripts/y_generate_figures.py
+          uv run --locked python scripts/z_generate_manuscript_variables.py
+          uv run --locked python scripts/z_generate_manuscript_variables.py --check
+          uv run --locked python scripts/render_manuscript.py \
+            --destination output/render-ci-repeat --source-date-epoch "$epoch"
+          mkdir output/render-ci-first/pages output/render-ci-repeat/pages
+          pdftoppm -scale-to 1600 -png output/render-ci-first/alphacogant.pdf output/render-ci-first/pages/page
+          pdftoppm -scale-to 1600 -png output/render-ci-repeat/alphacogant.pdf output/render-ci-repeat/pages/page
+      - name: Compare actual generated bytes and PDF page pixels; retain inspection sheets
+        run: |
+          uv run --locked python - <<'PY'
+          import json
+          from pathlib import Path
+          from PIL import Image, ImageChops, ImageDraw
+          from alphacogant.tokens.manuscript_artifacts import sha256, stable_artifact_paths
+          paths = stable_artifact_paths(Path("output")) + sorted(Path("output/manuscript").glob("*.md"))
+          before = json.loads(Path("output/repro-before.json").read_text())
+          assert before == {p.as_posix(): sha256(p) for p in paths}
+          first = sorted(Path("output/render-ci-first/pages").glob("page-*.png"))
+          repeat = sorted(Path("output/render-ci-repeat/pages").glob("page-*.png"))
+          assert len(first) == len(repeat) and first
+          for left, right in zip(first, repeat, strict=True):
+              with Image.open(left) as a, Image.open(right) as b:
+                  assert a.size == b.size
+                  assert ImageChops.difference(a.convert("RGB"), b.convert("RGB")).getbbox() is None
+          for offset in range(0, len(first), 4):
+              sheet = Image.new("RGB", (1120, 1620), "white")
+              draw = ImageDraw.Draw(sheet)
+              for position, path in enumerate(first[offset:offset + 4]):
+                  with Image.open(path) as page:
+                      page.thumbnail((550, 780))
+                      x, y = (position % 2) * 560, (position // 2) * 810
+                      sheet.paste(page, (x, y + 22))
+                      draw.text((x + 8, y + 4), path.stem, fill="black")
+              sheet.save(f"output/render-contact-{offset // 4 + 1}.png")
+          pdf_a = Path("output/render-ci-first/alphacogant.pdf")
+          pdf_b = Path("output/render-ci-repeat/alphacogant.pdf")
+          Path("output/reproducibility.json").write_text(json.dumps({
+              "generated_artifact_count": len(before), "generated_bytes_equal": True,
+              "pdf_pages": len(first), "pdf_pixels_equal": True,
+              "pdf_bytes_equal": sha256(pdf_a) == sha256(pdf_b),
+              "human_inspection": "required; machine checks do not establish publication readiness"
+          }, indent=2))
+          PY
+      - name: Refute successful publication of an unresolved real citation
+        run: |
+          uv run --locked python - <<'PY'
+          import json
+          import os
+          import shutil
+          import subprocess
+          import sys
+          from pathlib import Path
+          receipt = json.loads(Path("output/render-ci-first/render.json").read_text())
+          fixture = Path("output/render-negative").resolve()
+          for entry in receipt["inputs"]:
+              target = fixture / entry["path"]
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(entry["path"], target)
+          generator = fixture / "scripts/z_generate_manuscript_variables.py"
+          shutil.copyfile("scripts/z_generate_manuscript_variables.py", generator)
+          chapter = fixture / "docs/manuscript/09_limitations.md"
+          chapter.write_text(chapter.read_text() + "\nUnresolved fixture [@missing_render_reference].\n")
+          environment = dict(os.environ, PYTHONDONTWRITEBYTECODE="1",
+                             MPLCONFIGDIR=str(fixture / "output/.cache/matplotlib"))
+          subprocess.run([sys.executable, str(generator)], cwd=fixture, env=environment,
+                         stdin=subprocess.DEVNULL, check=True, timeout=180)
+          child = subprocess.run([
+              sys.executable, str(fixture / "scripts/render_manuscript.py"),
+              "--destination", "output/rejected", "--source-date-epoch",
+              str(receipt["source_date_epoch"]),
+          ], cwd=fixture, env=environment, stdin=subprocess.DEVNULL,
+             capture_output=True, text=True, timeout=300)
+          print(child.stdout)
+          print(child.stderr)
+          assert child.returncode == 2 and "missing_render_reference" in child.stderr
+          assert not (fixture / "output/rejected/render.json").exists()
+          report = Path("output/reproducibility.json")
+          data = json.loads(report.read_text())
+          data["undefined_citation_rejected"] = True
+          report.write_text(json.dumps(data, indent=2))
+          PY
+      - name: Retain render receipts, diagnostics, pages, figures and reproducibility evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: manuscript-proof
+          path: |
+            output/render-ci-first/
+            output/render-ci-repeat/
+            output/render-contact-*.png
+            output/reproducibility.json
+            output/figures/*.png
+            output/figures/figure_registry.json
+            output/manuscript_variables.json
+          if-no-files-found: error
+          compression-level: 0

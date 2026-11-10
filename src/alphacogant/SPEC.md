@@ -1,9 +1,10 @@
 # AlphaCOGANT core — implementation spec
 
-A small, deterministic, **NumPy-only** Active Inference engine that realizes the
-GNN model in `models/alphafund_ewm.md`: the AlphaFund five-channel Economic World
-Model as a partially-observed Active Inference agent. No mocks; all tests use real
-arrays and real computation; fixed seeds. Target ≥90% coverage on `src/`.
+A small, deterministic **NumPy numerical core** realizing the GNN model in
+`models/alphafund_ewm.md`: the five-channel Economic World Model as a
+partially-observed Active Inference agent. Plotting/render helpers use the declared
+Matplotlib/PyYAML dependencies; no external template is required. Tests use real
+arrays/computation and explicit seeds; target ≥90% coverage on `src/`.
 
 ## Channels (the corporation tuple Ξ_t)
 
@@ -24,11 +25,14 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
 ### `model/generative_model.py`
 - `EconomicWorldModel` dataclass holding `A_R (3,2,2,2)`, `A_L (3,2,2)`,
   `B` dict of `{channel: (2,2,6)}`, `C_R (3,)`, `C_L (3,)`, `D` dict `{channel:(2,)}`.
-- `default_model() -> EconomicWorldModel` returning the matrices in the GNN file
-  (load the same numeric values; normalize columns to valid distributions).
-- Validation: every A/B column is a normalized probability distribution
-  (`assert allclose(sum, 1)`), every D sums to 1. Raise `ValueError` on malformed.
-- `belief_prior() -> dict[channel, np.ndarray]` from D.
+- `default_model() -> EconomicWorldModel` returns the authored GNN coefficients.
+  Constructor storage is NumPy float: integer/list inputs are converted without
+  renormalizing accepted coefficients or changing axes. B/D mappings are new;
+  compatible floating arrays/views stay shared with their original writeability.
+  Callers must preserve validated invariants after mutation.
+- Validation admits finite nonnegative probability columns/vectors normalized
+  within the implementation's floating tolerance; malformed data is rejected.
+- `belief_prior(model=None) -> dict[channel, np.ndarray]` returns detached D copies.
 - `infer_states(model, obs_R, obs_L, prior) -> dict[channel, np.ndarray]`: one
   single-sweep factorized update from a bucketed reward/loss observation.
   Coupled likelihoods induce posterior dependence, so this is not exact joint
@@ -75,12 +79,12 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   `sqrt(se(create)**2 + se(decay)**2)` is deliberately NOT used: pairing
   requires covariance. Current correlation and paired margin SE are generated
   from the same canonical samples rather than fixed historical literals.
-  Return signed `inf` only if the margin SE is exactly 0 and the margin mean is
-  nonzero; return 0 for n<2; raise if the arrays are non-empty but of unequal
-  length (unpaired input).
-  Scale-stable reductions prevent finite small/large samples from producing
-  spurious zero/infinite dispersion. Synthetic perturbation count controls
-  Monte Carlo SE, not empirical corporate confidence.
+  Genuine constant nonzero margins return signed `inf`; a single pair returns 0.
+  Empty or unequal arrays are rejected. Centered dispersion handles exact paired
+  subtraction; adaptive rational standardization protects inexact/overflowing
+  differences and rounded-zero results. Unrepresentable nonzero, nonconstant
+  statistics raise `ValueError`, not false zero-variance infinity or rounded zero.
+  Synthetic perturbation count controls Monte Carlo SE, not corporate confidence.
 - `bootstrap_t_rsi(model, belief, rng, n=500) -> dict` returning
   `{"t_rsi", "create_mean", "decay_mean", "create_se", "decay_se"}` from a
   deterministic-seeded bootstrap over per-channel belief perturbations.
@@ -153,6 +157,8 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
 - `summarize_trajectory(trajectory) -> dict`: compact summary for the manuscript
   (first/last funded channel, belief deltas, total pragmatic/epistemic value,
   exploration ratio, dominant action).
+  Simulation and summary reject unrepresentable cumulative pragmatic/epistemic
+  totals at the first failing cycle, even if individual scores remain finite.
 
 ### `stats/sensitivity.py`
 - `sweep_concentration(model, belief, *, concentrations, seed, n) -> dict`: bootstrap
@@ -176,6 +182,22 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   same belief perturbation feeds both rates, so the probability is an event-level
   complement to the standardized t-RSI distance.
 
+### `profiling.py`
+- Bounded fixed workloads retain raw clean wall samples, separate tracing/memory
+  passes, source/runtime bindings and deterministic result hashes.
+- Detected caller tracing/allocation/monitoring disables wall sampling with
+  explicit unavailable status, empty samples and null statistics; caller-owned
+  instrumentation is preserved. Disk fingerprints do not attest imported code.
+
+### `rendering.py` and `scripts/render_manuscript.py`
+- The library owns source/version/saved-artifact preflight, current authored
+  chapter selection, rendered HTML PNG/alt/anchor identity and emitted diagnostic
+  checks. It executes no processes and is not registered as an agent method.
+- The thin POSIX script orchestrates existing trusted Pandoc/crossref/XeLaTeX/qpdf
+  into a fresh bundle below `output/`, retains diagnostics and writes `render.json`
+  only after success. It installs nothing and does not certify visual/scientific
+  publication readiness or provide an OS sandbox.
+
 ## Tests (`tests/`, no mocks, fixed seeds)
 - `test_generative_model.py`: matrices valid distributions; `infer_states` moves
   belief toward `strong` after a high-reward + low-loss observation.
@@ -186,10 +208,12 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   pairing-aware (same marginal means, tighter paired margins → larger |t-RSI|);
   certificate fires iff `t_rsi >= delta`; bootstrap deterministic under fixed
   seed (two runs identical).
-- `test_cogant_bridge.py`: richer firm structure → stronger channel priors;
-  `model_to_gnn_summary` mentions all five channels and "ExpectedFreeEnergy".
-- `test_manuscript_variables.py`: every token is a non-empty string; a curated set
-  of expected token keys is present (mirror the template's gate).
+- `test_cogant_bridge.py`: independently authored firm descriptions change priors;
+  numeric GNN/axis reconstruction belongs to `test_gnn_numeric.py`.
+- `test_manuscript_variables.py`: seeded live-model token values, explicit-source
+  counts and unavailable-source rejection.
+- `test_rendering*.py`: real PNG/anchor identities, source/version/content drift,
+  preserved occupied/symlink destinations and stale injected-chapter exclusion.
 
 ## Invariants (hard)
 - Active Inference sign convention: EFE `G` is minimized; value `= -G`. Document it

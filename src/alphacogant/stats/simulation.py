@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from math import isfinite
 
 import numpy as np
 
@@ -65,6 +66,16 @@ def _belief_p_strong(belief: Mapping[str, np.ndarray]) -> dict[str, float]:
     return {channel: float(belief[channel][1]) for channel in CHANNELS}
 
 
+def _add_aggregate(total: float, value: float, name: str, cycle: int) -> float:
+    total += value
+    if not isfinite(total):
+        raise ValueError(
+            f"Trajectory cumulative {name} is not representable as a finite float "
+            f"at cycle {cycle + 1}."
+        )
+    return total
+
+
 def simulate_trajectory(
     model: EconomicWorldModel,
     initial_belief: Mapping[str, np.ndarray],
@@ -89,6 +100,12 @@ def simulate_trajectory(
         Parameters; ``"stochastic"`` samples from the policy posterior.
     seed
         Required when ``policy="stochastic"``; ignored otherwise.
+
+    Raises
+    ------
+    ValueError
+        If a cumulative pragmatic or epistemic total is not representable as
+        a finite float, even when individual cycle scores are finite.
     """
     positive_integer(horizon, "horizon")
     if policy not in {"greedy", "hold", "fund_theta", "stochastic"}:
@@ -108,6 +125,7 @@ def simulate_trajectory(
     action_history: list[int] = []
     cumulative_pragmatic: list[float] = []
     running_sum = 0.0
+    running_epistemic = 0.0
 
     for cycle_idx in range(horizon):
         for channel in CHANNELS:
@@ -130,7 +148,10 @@ def simulate_trajectory(
 
         action_history.append(action)
         chosen = efe_results[action]
-        running_sum += chosen.pragmatic
+        running_sum = _add_aggregate(running_sum, chosen.pragmatic, "pragmatic", cycle_idx)
+        running_epistemic = _add_aggregate(
+            running_epistemic, chosen.epistemic, "epistemic", cycle_idx
+        )
 
         record = CycleRecord(
             cycle=cycle_idx,
@@ -165,6 +186,15 @@ def summarize_trajectory(trajectory: TrajectoryResult) -> dict[str, str]:
     action_counts = trajectory.action_counts()
     # Exploration ratio: fraction of cycles spent on epistemic channels (S, Z)
     epistemic_cycles = action_counts.get("fund_S", 0) + action_counts.get("fund_Z", 0)
+    total_pragmatic = 0.0
+    total_epistemic = 0.0
+    for index, record in enumerate(trajectory.cycles):
+        total_pragmatic = _add_aggregate(
+            total_pragmatic, record.efe_pragmatic, "pragmatic", index
+        )
+        total_epistemic = _add_aggregate(
+            total_epistemic, record.efe_epistemic, "epistemic", index
+        )
     return {
         "horizon": str(trajectory.horizon),
         "first_funded": first.action_name,
@@ -173,8 +203,8 @@ def summarize_trajectory(trajectory: TrajectoryResult) -> dict[str, str]:
         "last_p_strong_theta": f"{last.p_strong['Theta']:.4f}",
         "first_p_strong_I": f"{first.p_strong['I']:.4f}",
         "last_p_strong_I": f"{last.p_strong['I']:.4f}",
-        "total_pragmatic": f"{sum(r.efe_pragmatic for r in trajectory.cycles):.4f}",
-        "total_epistemic": f"{sum(r.efe_epistemic for r in trajectory.cycles):.4f}",
+        "total_pragmatic": f"{total_pragmatic:.4f}",
+        "total_epistemic": f"{total_epistemic:.4f}",
         "exploration_ratio": f"{epistemic_cycles / trajectory.horizon:.4f}",
         "dominant_action": max(action_counts, key=lambda k: action_counts[k]),
     }

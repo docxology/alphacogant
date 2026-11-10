@@ -17,11 +17,11 @@ from matplotlib.image import imsave
 
 from alphacogant.tokens.manuscript_artifacts import (
     PNG_MAGIC,
-    _saved_artifact_issues,
     artifact_manifest_issues,
     figure_registry_entries,
     inject,
     read_figure_registry,
+    saved_artifact_issues,
     sha256,
     stable_artifact_paths,
     used_tokens,
@@ -136,7 +136,7 @@ def test_saved_artifact_validation_rejects_tampering_without_rewriting(tmp_path,
     injected.write_text(inject(source.read_text(), variables))
     write_figure_registry(manuscript, variables, project_root=tmp_path)
     manifest_path = write_artifact_manifest(output, project_root=tmp_path)
-    assert _saved_artifact_issues(tmp_path, manuscript, variables) == []
+    assert saved_artifact_issues(tmp_path, manuscript, variables) == []
 
     if tamper == "variables":
         tokens.write_text('{"MEAN":"999"}')
@@ -153,7 +153,7 @@ def test_saved_artifact_validation_rejects_tampering_without_rewriting(tmp_path,
         path: (path.read_bytes(), path.stat().st_mtime_ns)
         for path in output.rglob("*") if path.is_file()
     }
-    assert _saved_artifact_issues(tmp_path, manuscript, variables)
+    assert saved_artifact_issues(tmp_path, manuscript, variables)
     assert {
         path: (path.read_bytes(), path.stat().st_mtime_ns) for path in before
     } == before

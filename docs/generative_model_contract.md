@@ -24,6 +24,13 @@ See the [manuscript references](manuscript/references.bib) for methodological co
 - Belief maps must include every channel and normalize before downstream use.
 - Invalid observation indices are rejected before inference.
 
+`EconomicWorldModel` converts valid integer/list coefficients to NumPy floating
+storage once, without renormalizing accepted values. Probability admission uses
+the implementation's floating tolerance; it is not an input-repair service.
+B/D mappings are copied, while compatible float arrays/views remain shared with
+their original writeability. Callers must preserve validated invariants after mutation.
+`belief_prior(model)` returns detached copies of that model's D vectors.
+
 ## Filter one observation pair with a single factorized sweep
 
 `infer_states()` performs one factorized filtering sweep. Each likelihood message

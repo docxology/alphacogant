@@ -27,6 +27,17 @@ def test_current_cogant_parses_all_coefficients_and_executes(model):
     assert len(trace.trace) == 3
     for name, expected in matrices.items():
         np.testing.assert_array_equal(getattr(trace.matrices, name), expected)
+    # One dense hidden factor makes current-observation Bayes exact. This
+    # independent NumPy oracle does not equate the two engines' policy objectives.
+    first = trace.trace[0]
+    expected_posterior = matrices["A"][0] * matrices["D"]
+    expected_posterior /= expected_posterior.sum()
+    np.testing.assert_allclose(first.prior, matrices["D"], rtol=1e-13, atol=1e-15)
+    np.testing.assert_allclose(first.posterior, expected_posterior, rtol=1e-13, atol=1e-15)
+    np.testing.assert_allclose(
+        first.predicted_belief, matrices["B"][:, :, first.action] @ expected_posterior,
+        rtol=1e-13, atol=1e-15,
+    )
     for record in trace.trace:
         assert len(record.posterior) == 32
         np.testing.assert_allclose(sum(record.posterior), 1.0, atol=1e-14)

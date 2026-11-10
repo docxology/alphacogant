@@ -36,6 +36,27 @@ def test_extreme_finite_policy_scores_are_stable(model, prior):
     np.testing.assert_array_equal(posterior, [1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 
+def test_small_precision_retains_mass_across_overflowing_score_gap(model, prior):
+    magnitude = float(2**1023)
+    values = dict(enumerate([magnitude, -magnitude, 0.0, 0.0, 0.0, 0.0]))
+    # gamma * M = 1, so the exact relative logits are 0, -2, -1, -1, -1, -1.
+    weights = np.exp([0.0, -2.0, -1.0, -1.0, -1.0, -1.0])
+    expected = weights / weights.sum()
+    with np.errstate(all="raise"):
+        posterior = policy_posterior(model, prior, gamma=2.0**-1023, values=values)
+    np.testing.assert_allclose(posterior, expected, rtol=1e-15, atol=0.0)
+
+
+@pytest.mark.parametrize("offset", [float(3 * 2**52), -float(3 * 2**52)])
+def test_small_precision_preserves_close_common_offset_score_gaps(model, prior, offset):
+    values = dict(enumerate(offset + np.array([0.0, 2.0, 4.0, 6.0, 8.0, 8.0])))
+    # Authored relative scores avoid the large common offset entirely.
+    weights = np.exp(np.array([-8.0, -6.0, -4.0, -2.0, 0.0, 0.0]) / 10.0)
+    expected = weights / weights.sum()
+    posterior = policy_posterior(model, prior, gamma=0.1, values=values)
+    np.testing.assert_allclose(posterior, expected, rtol=1e-15, atol=0.0)
+
+
 def test_overflow_is_rejected_by_scalar_batch_and_static_score_evaluators(prior):
     model = default_model(C_R=[1e308] * 3, C_L=[1e308] * 3)
     for evaluate in (

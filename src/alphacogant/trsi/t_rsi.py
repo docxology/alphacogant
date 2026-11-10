@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from fractions import Fraction
-from math import fsum, sqrt
+from math import fsum, isfinite, isqrt, ldexp, sqrt
 
 import numpy as np
 
@@ -172,6 +172,42 @@ def decay_rate(
     return _decay_from_trajectory(model, trajectory)
 
 
+def _exact_paired_t_rsi(create: np.ndarray, decay: np.ndarray) -> float:
+    """Standardize exact paired margins when ordinary arithmetic loses information."""
+    margins = [
+        Fraction.from_float(float(c)) - Fraction.from_float(float(d))
+        for c, d in zip(create, decay, strict=True)
+    ]
+    total = sum(margins, Fraction())
+    if total == 0:
+        return 0.0
+    n = len(margins)
+    variance_numerator = n * sum((margin * margin for margin in margins), Fraction()) - total**2
+    if variance_numerator == 0:
+        return float("inf") if total > 0 else float("-inf")
+    # t² = (n - 1) sum(m)² / (n sum(m²) - sum(m)²).
+    # Round sqrt(t²) directly on the binary64 grid. Rounding t² to float
+    # first can select the wrong neighbor even for exact rational two-pair t.
+    squared = (n - 1) * total**2 / variance_numerator
+    exponent = (squared.numerator.bit_length() - squared.denominator.bit_length()) // 2
+    if squared < Fraction(2) ** (2 * exponent):
+        exponent -= 1
+    # Binary64 has 53 significant bits and a smallest subnormal of 2**-1074.
+    spacing = max(exponent - 52, -1074)
+    scaled = squared / Fraction(2) ** (2 * spacing)
+    significand = isqrt(scaled.numerator // scaled.denominator)
+    midpoint = 4 * scaled.numerator - scaled.denominator * (2 * significand + 1) ** 2
+    if midpoint > 0 or (midpoint == 0 and significand % 2):
+        significand += 1
+    try:
+        magnitude = ldexp(float(significand), spacing)
+    except OverflowError as exc:
+        raise ValueError("Nonconstant paired t-RSI exceeds the finite float range.") from exc
+    if magnitude == 0.0:
+        raise ValueError("Nonzero paired t-RSI is too small to represent as a float.")
+    return magnitude if total > 0 else -magnitude
+
+
 def t_rsi(
     create_samples: Sequence[float] | np.ndarray,
     decay_samples: Sequence[float] | np.ndarray,
@@ -184,8 +220,10 @@ def t_rsi(
     standard error of the elementwise differences ``create - decay`` — the
     pairing-aware SE. Synthetic belief perturbations do not supply empirical
     calibration; the statistic's magnitude depends on the number of draws.
-    Common scaling preserves a dimensionless statistic without underflowing
-    squared deviations or overflowing a finite sample's subtraction.
+    Centered dispersion avoids underflowing squared deviations. Exact paired
+    arithmetic handles overflowing/inexact subtraction and degenerate rounded
+    results. Nonconstant statistics outside the nonzero finite float range
+    raise ``ValueError`` rather than reporting false zero or infinity.
     """
     create = _as_sample_array("create_samples", create_samples)
     decay = _as_sample_array("decay_samples", decay_samples)
@@ -201,19 +239,34 @@ def t_rsi(
     limit = np.finfo(float).max
     opposite_sign = np.signbit(create) != np.signbit(decay)
     if np.any(opposite_sign & (np.abs(create) > limit - np.abs(decay))):
-        # Only scale before subtraction when the true margin exceeds float64.
-        # Otherwise subtract first to retain tiny differences in paired data.
-        scale = max(float(np.max(np.abs(create))), float(np.max(np.abs(decay))))
-        margins = create / scale - decay / scale
-    else:
-        margins = create - decay
+        # Scale-first subtraction can erase paired variation or a cancellation
+        # residual; standardize the original float inputs exactly instead.
+        return _exact_paired_t_rsi(create, decay)
+    margins = create - decay
+    with np.errstate(over="ignore", under="ignore"):
+        # Error-free TwoDiff recovery: both round trips must hold before the
+        # rounded margins can be treated as exact differences of the inputs.
+        exact_subtraction = (
+            np.array_equal(create - margins, decay)
+            and np.array_equal(margins + decay, create)
+        )
+    if not exact_subtraction:
+        return _exact_paired_t_rsi(create, decay)
     scaled_std, scale, outer_scale = _scaled_sample_dispersion(margins)
     if scaled_std == 0.0:
         return 0.0 if margins[0] == 0.0 else float(np.sign(margins[0]) * np.inf)
-    # Sum original values in dispersion units, not rounded centered offsets:
-    # the latter can erase a small nonzero mean through cancellation.
-    scaled_mean = fsum(float(value) / outer_scale / scale for value in margins) / margins.size
-    return scaled_mean / (scaled_std / sqrt(margins.size))
+    # Sum before scaling: dividing each term first can erase a cancellation
+    # residual or manufacture one. A rounded zero is checked against exact data.
+    mean = _stable_mean(margins)
+    # A nonzero subnormal mean can lose a large fraction before normalization.
+    # Preserve its exact ratio rather than accepting a finite but wrong statistic.
+    if abs(mean) < np.finfo(float).tiny:
+        return _exact_paired_t_rsi(create, decay)
+    scaled_mean = mean / outer_scale / scale
+    statistic = scaled_mean / (scaled_std / sqrt(margins.size))
+    if statistic == 0.0 or not isfinite(statistic):
+        return _exact_paired_t_rsi(create, decay)
+    return statistic
 
 
 def paired_bootstrap_samples(

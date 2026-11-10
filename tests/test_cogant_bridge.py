@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from alphacogant.bridge.cogant_bridge import firm_structure_to_channels, model_to_gnn_summary
+from alphacogant.bridge.cogant_bridge import firm_structure_to_channels
 
 
 def test_richer_firm_structure_strengthens_channel_priors() -> None:
@@ -39,9 +39,3 @@ def test_firm_structure_validation_errors() -> None:
                 "aum": 1,
             }
         )
-
-
-def test_model_to_gnn_summary_mentions_all_channels_and_efe(model) -> None:
-    summary = model_to_gnn_summary(model)
-    for token in ("I", "S", "U", "Theta", "Z", "ExpectedFreeEnergy"):
-        assert token in summary

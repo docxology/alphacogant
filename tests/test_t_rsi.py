@@ -6,6 +6,8 @@ model-update or deployment admission.
 
 from __future__ import annotations
 
+from fractions import Fraction
+
 import numpy as np
 import pytest
 
@@ -149,6 +151,104 @@ def test_standardization_handles_overflowing_unscaled_margins():
     assert t_rsi([1e308, 1e-200, 2e-200], [1e308, 0.0, 0.0]) == pytest.approx(
         np.sqrt(3.0)
     )
+
+
+@pytest.mark.parametrize("sign", [-1.0, 1.0])
+def test_overflowing_close_margins_have_finite_signed_statistic(sign):
+    magnitude = float(2**1023)
+    below = np.nextafter(magnitude, 0.0)
+    # For two margins, t = (m1 + m2) / |m1 - m2|. Here their
+    # difference is 2**970, giving the exact signed value 2**55 - 1.
+    exact = int(sign) * Fraction(2**1025 - 2**970, 2**970)
+    with np.errstate(all="raise"):
+        statistic = t_rsi([sign * magnitude] * 2, [-sign * magnitude, -sign * below])
+    assert statistic == float(exact)
+    assert certificate(statistic, 2**56) is False
+    assert certificate(statistic, -2**56) is True
+
+
+@pytest.mark.parametrize("sign", [-1.0, 1.0])
+def test_overflowing_margins_preserve_small_cancellation_residual(sign):
+    magnitude = float(2**1023)
+    # Margins [2M, -2M, sign] give t = sign / sqrt(12M² + 1).
+    # The +1 cannot affect the representable result; forming M² would overflow.
+    expected = (sign / magnitude) / np.sqrt(12.0)
+    with np.errstate(all="raise"):
+        statistic = t_rsi([magnitude, -magnitude, sign], [-magnitude, magnitude, 0.0])
+    assert statistic == pytest.approx(expected, rel=1e-14, abs=0.0)
+    assert certificate(statistic, 0.0) is (sign > 0.0)
+
+
+@pytest.mark.parametrize("sign", [-1.0, 1.0])
+def test_overflowing_equal_margins_preserve_genuine_signed_infinity(sign):
+    magnitude = sign * float(2**1023)
+    assert t_rsi([magnitude, magnitude], [-magnitude, -magnitude]) == sign * float("inf")
+    assert t_rsi([magnitude, -magnitude], [-magnitude, magnitude]) == 0.0
+    assert t_rsi([magnitude], [-magnitude]) == 0.0
+
+
+@pytest.mark.parametrize("sign", [-1.0, 1.0])
+def test_unrepresentable_nonzero_overflow_cancellation_is_rejected(sign):
+    magnitude = float(2**1023)
+    residual = sign * np.nextafter(0.0, 1.0)
+    with pytest.raises(ValueError, match="too small to represent"):
+        t_rsi([magnitude, -magnitude, residual], [-magnitude, magnitude, 0.0])
+
+
+@pytest.mark.parametrize("sign", [-1.0, 1.0])
+def test_inexact_finite_subtraction_cannot_manufacture_constant_margins(sign):
+    create = [sign, sign]
+    decay = [sign * 2.0**-54, sign * 2.0**-55]
+    # Independent two-pair identity: t = (m1 + m2) / abs(m1 - m2).
+    exact = [
+        Fraction.from_float(c) - Fraction.from_float(d)
+        for c, d in zip(create, decay, strict=True)
+    ]
+    expected = float(sum(exact) / abs(exact[0] - exact[1]))
+    statistic = t_rsi(create, decay)
+    assert statistic == expected
+    assert certificate(statistic, 2**57) is False
+
+
+def test_inexact_subtraction_cannot_erase_negative_paired_mean():
+    statistic = t_rsi([1.0, -1.0], [2.0**-54, 0.0])
+    expected = float(-Fraction(1, 2**55 - 1))
+    assert statistic == expected
+    assert certificate(statistic, 0.0) is False
+
+
+def test_mean_scaling_retains_representable_cancellation_after_many_pairs():
+    from decimal import Decimal, localcontext
+
+    magnitude = float(2**1023)
+    create = np.zeros(1024)
+    create[:3] = [magnitude, -magnitude, 1e-13]
+    # Exact independent t² = (n-1)r² / (2nM² + (n-1)r²).
+    with localcontext() as context:
+        context.prec = 80
+        m, r = Decimal.from_float(magnitude), Decimal.from_float(1e-13)
+        squared = 1023 * r * r / (2048 * m * m + 1023 * r * r)
+        expected = float(squared.sqrt())
+    statistic = t_rsi(create, np.zeros(1024))
+    assert statistic == pytest.approx(expected, rel=0.0, abs=np.nextafter(0.0, 1.0))
+    assert statistic > 0.0
+
+
+def test_nonconstant_unrepresentable_paired_statistic_is_not_degenerate_infinity():
+    magnitude = float(2**1023)
+    tiny = np.nextafter(0.0, 1.0)
+    with pytest.raises(ValueError, match="finite float range"):
+        t_rsi([magnitude, magnitude], [-tiny, -2 * tiny])
+
+
+@pytest.mark.parametrize("sign", [-1.0, 1.0])
+def test_subnormal_mean_is_not_rounded_before_dimensionless_standardization(sign):
+    smallest = np.nextafter(0.0, 1.0)
+    # Exact two-pair t = (s + 2s) / abs(s - 2s) = 3, independent of units.
+    statistic = t_rsi([sign * smallest, sign * 2 * smallest], [0.0, 0.0])
+    assert statistic == sign * 3.0
+    assert certificate(statistic, 3.5) is False
+    assert certificate(statistic, -3.5) is True
 
 
 @pytest.mark.parametrize("offset", [float(3 * 2**52), -float(3 * 2**52)])

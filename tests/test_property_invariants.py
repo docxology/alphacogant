@@ -1,8 +1,7 @@
 """Property-based tests for Active Inference invariants.
 
-These tests exercise the mathematical properties that must hold for ANY
-valid model and belief combination, not just the default operating points.
-No mocks; all tests use real computation with randomly-generated valid models.
+These tests exercise invariant behavior across randomized beliefs and samples.
+No mocks; all tests use real computation.
 """
 
 from __future__ import annotations
@@ -16,30 +15,13 @@ from alphacogant.efe.free_energy import (
     policy_posterior,
 )
 from alphacogant.model.channels import ACTIONS, CHANNELS
-from alphacogant.model.generative_model import (
-    EconomicWorldModel,
-    validate_belief_map,
-)
+from alphacogant.model.generative_model import validate_belief_map
 from alphacogant.trsi.t_rsi import certificate, t_rsi
 
 
 def _random_belief(rng: np.random.Generator) -> dict[str, np.ndarray]:
     """Generate a random valid belief map."""
     return {channel: rng.dirichlet([5.0, 5.0]) for channel in CHANNELS}
-
-
-def _random_valid_model(rng: np.random.Generator) -> EconomicWorldModel:
-    """Generate a random valid EconomicWorldModel."""
-    # Random A_R: shape (3, 2, 2, 2), column-stochastic over axis 0
-    A_R = rng.dirichlet([5, 5, 5], size=(2, 2, 2)).transpose(3, 0, 1, 2)
-    # Random A_L: shape (3, 2, 2), column-stochastic over axis 0
-    A_L = rng.dirichlet([5, 5, 5], size=(2, 2)).transpose(2, 0, 1)
-    # Random B: each (2, 2, 6), column-stochastic over axis 0
-    B = {channel: rng.dirichlet([5, 5], size=(2, 6)).transpose(2, 0, 1) for channel in CHANNELS}
-    D = {channel: rng.dirichlet([5, 5]) for channel in CHANNELS}
-    C_R = rng.uniform(-3, 3, size=3)
-    C_L = rng.uniform(-3, 3, size=3)
-    return EconomicWorldModel(A_R=A_R, A_L=A_L, B=B, C_R=C_R, C_L=C_L, D=D)
 
 
 @pytest.mark.parametrize("execution_number", range(10))

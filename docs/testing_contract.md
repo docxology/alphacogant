@@ -11,29 +11,24 @@ coverage expectations and scope of the checks.
 
 The suite covers:
 
-- probability normalization and invalid matrices
-- inference and belief validation
-- Expected Free Energy invariants
-- policy posterior normalization
-- t-RSI comparator behavior
-- regime statistics
-- simulation trajectories
-- figure-script execution
-- manuscript token coverage
-- claim-boundary wording
-- docs hub structure
+- probability normalization, constructor storage and invalid matrices
+- independent informative filtering and complete joint-axis oracles
+- scalar/batch Expected Free Energy invariants and explicit RNG continuation
+- finite/extreme policy probabilities and paired rational statistic boundaries
+- regime statistics and representable signed trajectory prefix totals
+- real caller instrumentation preservation and truthful timing availability
+- figure-script execution and live manuscript token computations
+- saved-artifact tampering, rendered image/anchor identity and source preflight
 
-## Protect render-facing syntax and artifact contracts
+## Protect consumed content and actual rendered products
 
-`tests/test_manuscript_contract.py` protects render-facing syntax and claim
-boundaries. It rejects unlabeled display equations, raw LaTeX equation blocks,
-hardcoded section-sign references, and overclaims that the reduced model is
-identical to AlphaFund's proprietary system.
-
-`tests/test_scripts.py` protects the artifact manifest and token generation
-contracts.
-
-`tests/test_docs_contract.py` protects the modular docs hub.
+Manuscript checks cover unique section-reference targets and bibliography keys.
+They do not prove literal scientific claims or ban arbitrary source wording.
+`tests/test_scripts.py` and artifact tests exercise actual generation and saved
+consistency. Render-boundary tests use real files, PNGs and default-model
+computations, not mocked tool output. The separate manuscript workflow runs the
+real external renderers, checks generated-byte and PDF-pixel reproducibility,
+and retains actual pages/figures for mandatory human inspection.
 
 ## Interpret coverage as software evidence only
 

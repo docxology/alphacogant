@@ -5,12 +5,14 @@
 
 **An authored reduced Active Inference analogy for corporate self-improvement.**
 
-**Version 1.2.2 (2026-11-08).** Standalone NumPy research package with lossless
-finite GNN serialization, complete COGANT joint-matrix export, and replayable
-observation-conditioned inference, batched action scoring and a versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
-[pinned upstream contract](docs/upstream_compatibility.md). CI runs lint, the full
-test suite with ≥90% coverage, model parity, and installed-wheel checks on
-Python 3.11, 3.12, 3.14, and 3.15. The development interpreter is the one `.python-version` pins. The research scope is recorded in [`ISA.md`](ISA.md).
+**Version 1.3.0 (2026-11-09).** Standalone NumPy research package with lossless
+finite GNN serialization, complete COGANT joint-matrix export, replayable
+observation-conditioned inference, numerically guarded paired diagnostics and a
+versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
+[pinned upstream contract](docs/upstream_compatibility.md). CI exercises Python
+3.11–3.15, ≥90% coverage, installed-wheel console/package-data checks and a separate
+contained manuscript render/reproducibility job. The development pin is
+`.python-version`; historical commissioning scope is recorded in [`ISA.md`](ISA.md).
 
 The historical [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) frames
 recursive self-improvement (RSI) as a portfolio-optimization problem: realized
@@ -54,9 +56,11 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   stats/                      # trajectories, sensitivity, paired bootstrap profiles
   tokens/                     # every prose {{TOKEN}} is generated here
   viz/                        # shared plot style and color palettes
+  rendering.py                # source/artifact identity and rendered HTML content checks
 docs/manuscript/                   # the concept, fully written out (00–09 + refs)
-scripts/                      # thin orchestrators (demo, variable generation, figures)
+scripts/                      # thin demo, figure, token, render and release-check orchestrators
   y_generate_figures.py       # runs every manuscript figure script
+  render_manuscript.py        # fresh contained PDF/HTML bundle; external tools required
   figures/                    # registered manuscript figures, including graphical abstract
     fig_aif_dictionary.py     # AlphaFund ↔ Active Inference dictionary
     fig_certificate_sign_flip.py  # not-green-by-construction comparator
@@ -126,7 +130,7 @@ measurements, profiler limits and numerical compatibility.
 - [Documentation task hub](docs/README.md): one detailed owner per technical contract.
 - [Source-to-output map](docs/methods_and_artifacts.md): trace claims and figures to code.
 - [Regeneration and manuscript-release rendering](docs/rendering_and_validation.md):
-  serialized generation, consistency checks and actual page/figure inspection.
+  serialized generation, source-bound PDF/HTML bundles and actual page/figure inspection.
 
 The abstract ends with a registered landscape graphical abstract, generated as
 `cover_art.png` by `fig_cover_art.py`. It distinguishes the observation-conditioned

@@ -87,6 +87,10 @@ and bootstrap consumers, not just inference traces. Intentional t-RSI infinities
 are unaffected. Capability discovery describes the
 general numerical encoding.
 Joint-matrix export also rejects unrepresentable combined preference scores.
+Simulation also rejects unrepresentable cumulative pragmatic/epistemic totals
+at the first offending cycle, even if each individual score is finite.
+Profiling may return unavailable wall timing with empty samples and nullable
+statistics under caller instrumentation; see [performance](performance.md).
 
 ## Use CLI envelopes and publish files without partial writes
 
@@ -108,3 +112,7 @@ engine and numerical runtime when replaying archived traces; a different engine
 version or array kernel may fail exact verification. EFE batching can differ from
 scalar evaluation by roundoff while preserving the numerical model. See
 [performance](performance.md) and [bridge scope](cogant_bridge.md).
+
+The source-owned manuscript renderer is a separate trusted local script, not an
+agent method. It does not add file/process/network capabilities to API `1.0` or
+introduce task, backlog or dashboard state protocols.

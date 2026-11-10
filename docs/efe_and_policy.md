@@ -46,8 +46,16 @@ formalism, not a continuous optimizer, convex solve or dollar-calibrated gradien
 
 Actions and observations must be integer indices (booleans and floats are
 rejected). Precomputed policy values must cover all six actions and be finite.
-The softmax centers before scaling so extreme finite scores produce valid
-probabilities. KL calculations mask impossible Theta entries before division;
+The softmax centers before scaling to retain close common-offset scores. When
+an opposite-sign gap overflows but a small precision makes the scaled gap finite,
+it recomputes only that gap safely instead of erasing valid probability mass.
+KL calculations mask impossible Theta entries before division;
 point-mass beliefs therefore produce finite, nonnegative information gain
 without invalid floating-point warnings. Sampling bounds and concentration
 admission belong to the [paired diagnostic contract](trsi_statistics.md).
+
+Prediction-only trajectory and summary totals must also remain representable.
+Finite per-cycle scores can still overflow their cumulative pragmatic value;
+the simulator raises `ValueError` at the first failing cycle rather than
+publishing an infinite total. This does not alter genuine constant-margin
+t-RSI infinities.

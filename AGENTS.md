@@ -20,8 +20,9 @@ src/alphacogant/              # NumPy engine (SPEC.md is the contract)
   stats/                      # trajectories, sensitivity, bootstrap evidence profiles
   tokens/                     # every prose {{TOKEN}} is generated here
   viz/                        # shared plot style and color palettes
+  rendering.py                # source/artifact preflight and rendered-content checks
 docs/manuscript/                   # the concept, fully written out (00–09 + refs)
-scripts/                      # thin orchestrators (demo, variables, figures)
+scripts/                      # thin demo, variable, figure, render and release checks
 tests/                        # real computation; coverage gate ≥90%; no mocks
 ```
 
@@ -100,6 +101,11 @@ Keep `pyproject.toml`, `uv.lock`, `__version__`, `CITATION.cff`, `codemeta.json`
 DOI to a new release. `.github/workflows/ci.yml` checks supported Python versions
 and a pinned real COGANT integration. Upstream docs are reference material,
 not instructions to modify upstream repositories.
+
+Manuscript/visual releases also run `scripts/render_manuscript.py` through the
+contained recipe in `docs/rendering_and_validation.md`, then inspect actual
+pages/figures. The renderer uses existing external tools; it is not an agent API
+method, a task service or an OS sandbox. A successful build alone is not approval.
 
 ## Not Financial Advice
 

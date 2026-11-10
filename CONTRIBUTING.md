@@ -1,4 +1,4 @@
-# Contributing
+# Develop, verify and release the standalone research package
 
 AlphaCOGANT is a standalone Python package. Use a fresh checkout, Python (the bound in `pyproject.toml`) or newer
 and [uv](https://docs.astral.sh/uv/). No template workspace is required.
@@ -22,20 +22,30 @@ tests and the demo/manuscript pipeline. Tests use real computations and explicit
 NumPy generators; do not add mocks or global random seeds. Keep EFE minimized,
 epistemic information gain nonnegative, and claims confined to the reduced model.
 
-## Installed wheel
+## Prove the installed wheel and console in an independent environment
 
-After building, run outside the source checkout to detect missing package data,
-undeclared imports, and accidental reliance on the repository layout:
+After building, use an isolated wheel environment and a separate working
+directory without source imports. Keep durable caches/environments local:
 
 ```bash
-# Replace /absolute/path/alphacogant with your checkout.
-cd /tmp
-uv run --isolated --no-project \
-  --with /absolute/path/alphacogant/dist/alphacogant-1.2.2-py3-none-any.whl \
-  python -c 'import alphacogant; from importlib.metadata import version; assert alphacogant.__version__ == version("alphacogant"); from alphacogant.bridge.gnn import model_from_gnn, model_to_gnn; model_from_gnn(model_to_gnn(alphacogant.default_model()))'
+checkout="$PWD"
+mkdir -p "$checkout/output"
+export UV_CACHE_DIR="$checkout/output/.cache/uv"
+work="$(mktemp -d "$checkout/output/installed-smoke.XXXXXX")"
+uv venv --python "$checkout/.venv/bin/python" "$work/environment"
+uv pip install --python "$work/environment/bin/python" \
+  "$checkout/dist/alphacogant-1.3.0-py3-none-any.whl"
+mkdir "$work/cwd"
+cd "$work/cwd"
+PATH="$work/environment/bin:$PATH" "$work/environment/bin/python" \
+  "$checkout/scripts/smoke_installed.py" --source-root "$checkout"
 ```
 
-CI checks Python 3.11, 3.12, 3.14, and 3.15. The development pin lives in `.python-version`;
+The smoke requires the installed module/console to belong to that environment,
+checks packaged `SPEC.md` bytes, model round-trip, real diagnostics and JSONL.
+It refuses accidental checkout imports. CI uses its disposable runner temp cwd.
+
+CI checks Python 3.11, 3.12, 3.13, 3.14, and 3.15. The development pin lives in `.python-version`;
 use `uv sync --python 3.11 --locked --extra dev` to exercise the oldest supported runtime. Run the real pinned COGANT integration as
 shown in [upstream compatibility](docs/upstream_compatibility.md) when changing
 the bridge. It is intentionally separate from ordinary installation.
@@ -52,16 +62,21 @@ uv run --locked python scripts/z_generate_manuscript_variables.py
 ```
 
 Keep every prose `{{TOKEN}}` generated, all citations defined, and the figure
-registry and artifact manifest valid. External template PDF rendering is an
-optional integration requiring that template's configured project location;
-standalone validation does not require the old workstation paths.
+registry/artifact manifest valid. Manuscript/visual releases must also run the
+[contained source-owned renderer and actual inspection](docs/rendering_and_validation.md).
+External-template rendering is optional and never a substitute for that local
+source/artifact contract.
 
 For a release, update `pyproject.toml`, `uv.lock`, `alphacogant.__version__`,
 `CITATION.cff`, `codemeta.json`, `.zenodo.json`, `docs/manuscript/config.yaml`,
 and `CHANGELOG.md` together. Preserve the concept DOI; remove stale version-specific
-deposit fields and add a new version DOI only once that deposit exists. Complete the checks,
-commit, and create an annotated `v<version>` tag on the validated main commit. Publish
-with ordinary fast-forward pushes; never force-push a release.
+deposit fields and add a new version DOI only once that deposit exists. Complete
+native/installed-wheel checks, the real pinned upstream check, rendered-product
+inspection and required CI before merging. The CI tag gate requires an annotated
+`v<version>` whose commit belongs to main history; create it on the validated main
+commit. Publish ordinary fast-forward changes and retain release asset hashes;
+never force-push or replace an existing tag. Source-owned scripts, manuscript
+sources and archival metadata are included in the source distribution.
 
 ## Agent and performance development
 
