@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1 — 2026-11-10
+
+- Preserve central percentile confidence, rank and interpolation terms until
+  final endpoint rounding. Correct collapsed tiny-confidence intervals and
+  prematurely widened near-unit intervals without changing RNG draws or APIs.
+- Document the precision boundary of regime-comparison effect sizes computed
+  from stored binary64 moments; retain raw-sample Cohen's d and distinguish
+  summary rounding from evidence that the underlying clouds were constant.
+
 ## 1.3.0 — 2026-11-09
 
 - Add a contained, source-owned manuscript render producer with checked saved

@@ -5,8 +5,8 @@
 paper:
   title: "AlphaCOGANT: Recursive Corporate Self-Improvement as Active Inference"
   subtitle: "A fixed GNN–NumPy model of inference, action value and paired synthetic diagnostics"
-  version: "1.3.0"
-  date: "2026-11-09"
+  version: "1.3.1"
+  date: "2026-11-10"
 
 authors:
   - name: "Daniel Ari Friedman"

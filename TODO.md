@@ -1,7 +1,7 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Source version: **1.3.0**. Release state is authoritative at the
+Source version: **1.3.1**. Release state is authoritative at the
 [version tags/releases](https://github.com/docxology/alphacogant/releases), not this
 backlog or local version metadata. Historical completion rows retain their dates.
 

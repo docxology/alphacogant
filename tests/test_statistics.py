@@ -270,6 +270,32 @@ def test_bootstrap_ci_extreme_opposite_endpoints():
     assert ci.ci_upper / 1e308 == pytest.approx(0.8)
 
 
+@pytest.mark.parametrize(
+    "confidence",
+    [float(np.nextafter(0.0, 1.0)), 1e-18, float(np.nextafter(1.0, 0.0))],
+)
+def test_central_interval_preserves_admitted_confidence(confidence):
+    magnitude = 1e308
+    samples = np.array([-magnitude, magnitude])
+    # The central linear interval of two symmetric endpoints is exactly ±a*c.
+    expected = magnitude * confidence
+    interval = bootstrap_ci(samples, confidence=confidence)
+    assert (interval.ci_lower, interval.ci_upper) == (-expected, expected)
+    np.testing.assert_array_equal(samples, [-magnitude, magnitude])
+
+
+@pytest.mark.parametrize(
+    ("samples", "expected"),
+    [
+        ([100.0, -8.0, 1.0, 7.0, 4.0], (1.0, 7.0)),
+        ([-3.0, 0.0, 10.0], (-1.5, 5.0)),
+    ],
+)
+def test_central_interval_exact_and_fractional_order_statistic_ranks(samples, expected):
+    interval = bootstrap_ci(np.array(samples), confidence=0.5)
+    assert (interval.ci_lower, interval.ci_upper) == expected
+
+
 @pytest.mark.parametrize("offset", [float(3 * 2**52), -float(3 * 2**52)])
 def test_moments_and_effect_size_preserve_large_common_offset(offset):
     a = np.array([offset, offset + 4])

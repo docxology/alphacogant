@@ -53,6 +53,12 @@ the generated sample count. `break_even_profile` separately reports positive-mar
 event mass and paired margin percentiles; a majority-positive cloud can have a
 negative mean if its negative tail is larger.
 
+Central linear percentiles retain the supplied binary64 confidence, fractional
+sample ranks and endpoint interpolation exactly until the final endpoint rounding.
+This avoids silently replacing a small positive central interval with its median,
+or a near-unit interval with the sample extrema. Finite samples give finite
+endpoints, but their interval width or sample SD can exceed the float range.
+
 ## Report effect sizes with actual confidence levels and sample counts
 
 Cohen's d uses `(n_a-1)`/`(n_b-1)` weighted pooled sample variance. Groups must be
@@ -60,6 +66,14 @@ finite vectors with at least two entries. Identical constants yield zero;
 distinct constants yield signed infinity, not a claim of no effect. Tables and
 structured summaries retain each interval's actual confidence level and sample
 count, including mixed levels between regimes.
+
+`RegimeComparison.cohen_d_create` and `cohen_d_decay` use the stored binary64
+means, SDs and sample counts. They cannot recover information already rounded out
+of those summaries: magnitude or sign can disappear for subnormal values or
+closely separated large means. Constant-summary conventions do not prove that the
+original clouds were constant. Call `cohen_d(samples_a, samples_b)` on retained
+samples when that distinction matters. Manuscript effect-size tokens use the raw
+generated samples, not the rounded interval summaries.
 
 Methodological and historical sources are identified in the
 [manuscript bibliography](manuscript/references.bib) and

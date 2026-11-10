@@ -206,7 +206,7 @@ class RegimeStatistics:
 
 @dataclass(frozen=True)
 class RegimeComparison:
-    """Side-by-side comparison of two regimes."""
+    """Compare stored binary64 regime summaries, not the original sample clouds."""
 
     improving: RegimeStatistics
     coasting: RegimeStatistics
@@ -225,12 +225,12 @@ class RegimeComparison:
 
     @property
     def cohen_d_create(self) -> float:
-        """Cohen's d effect size for the create-rate difference between regimes."""
+        """Pooled d from stored create moments; rounding can erase a raw-sample effect."""
         return _cohen_d_from_intervals(self.improving.create_ci, self.coasting.create_ci)
 
     @property
     def cohen_d_decay(self) -> float:
-        """Cohen's d effect size for the decay-rate difference."""
+        """Pooled d from stored decay moments; use raw ``cohen_d`` when samples remain."""
         return _cohen_d_from_intervals(self.improving.decay_ci, self.coasting.decay_ci)
 
     def as_table(self) -> str:
@@ -281,23 +281,26 @@ class RegimeComparison:
 
 
 def _percentile_bounds(samples: np.ndarray, confidence: float) -> tuple[float, float]:
-    """Linear quantiles without scaling unrelated samples or overflowing a span."""
-    alpha = (1.0 - confidence) / 2.0
-    positions = np.array([alpha, 1.0 - alpha]) * (samples.size - 1)
-    lower = np.floor(positions).astype(int)
-    upper = np.ceil(positions).astype(int)
-    partitioned = np.partition(samples, np.concatenate((lower, upper)))
+    """Central linear quantiles with exact ranks and one final endpoint rounding."""
+    confidence_ratio = Fraction.from_float(float(confidence))
+    last = samples.size - 1
+    lower_position = last * (1 - confidence_ratio) / 2
+    positions = (lower_position, last - lower_position)
+    brackets = []
+    for position in positions:
+        left, remainder = divmod(position.numerator, position.denominator)
+        brackets.append((left, left + bool(remainder), remainder, position.denominator))
+    indices = sorted({index for left, right, _, _ in brackets for index in (left, right)})
+    partitioned = np.partition(samples, indices)
     bounds = []
-    for position, left, right in zip(positions, lower, upper, strict=True):
+    for left, right, remainder, denominator in brackets:
         lo, hi = float(partitioned[left]), float(partitioned[right])
-        weight = float(position - left)
-        if lo < 0.0 < hi and hi > np.finfo(float).max + lo:
-            value = (1.0 - weight) * lo + weight * hi
-        elif weight >= 0.5:
-            value = hi - (1.0 - weight) * (hi - lo)
-        else:
-            value = lo + weight * (hi - lo)
-        bounds.append(value)
+        if left == right or lo == hi:
+            bounds.append(lo)
+            continue
+        weight = Fraction(remainder, denominator)
+        exact_lo, exact_hi = Fraction.from_float(lo), Fraction.from_float(hi)
+        bounds.append(float(exact_lo + weight * (exact_hi - exact_lo)))
     return bounds[0], bounds[1]
 
 

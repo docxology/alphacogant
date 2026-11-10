@@ -112,8 +112,8 @@ def generate_variables(
 
     # Exactly one paired bootstrap per operating point; every t-RSI / CI /
     # Cohen's-d / break-even token is derived from these two deterministic
-    # sample sets. Fixed seeds keep the output byte-identical across runs — and
-    # identical to the statistics module's own entry points at the same seed.
+    # sample sets. Fixed seeds keep a specified recipe reproducible. Effect sizes
+    # use the raw clouds, before their interval-summary moments are rounded.
     improving_create, improving_decay = paired_bootstrap_samples(
         model,
         IMPROVING,
