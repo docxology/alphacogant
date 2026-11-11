@@ -5,7 +5,7 @@
 
 **An authored reduced Active Inference analogy for corporate self-improvement.**
 
-**Version 1.3.1 (2026-11-10).** Standalone NumPy research package with lossless
+**Version 1.3.2 (2026-11-11).** Standalone NumPy research package with lossless
 finite GNN serialization, complete COGANT joint-matrix export, replayable
 observation-conditioned inference, numerically guarded paired diagnostics and a
 versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the

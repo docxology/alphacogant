@@ -55,8 +55,10 @@ newline, matching the file-backed JSON budget. Source text retains its separate
 trace plus its source in a subsequent `inference.verify` request.
 JSON nesting is bounded at 64 levels; duplicate keys, NaN/Infinity literals and
 overflowing floating-point literals are rejected. Stdout contains responses only.
-Malformed GNN assignments and unrepresentable integer coefficients produce
-ordinary errors, so the next valid frame can still run.
+Malformed GNN assignments, unrepresentable integer coefficients and bounded
+numeric-parser complexity failures produce ordinary errors, so the next valid
+frame can still run. This is not a promise of recovery from genuine process-wide
+memory exhaustion or OS termination.
 
 | Method | Result |
 | --- | --- |

@@ -148,10 +148,12 @@ def test_jsonl_parser_and_computation_errors_leave_next_frame_runnable(model):
         "## InitialParameterization\n" + "X" * 100_000 + "\n",
     )
     huge_integer = source.replace("D_I={(0.6, 0.4)}", "D_I={(" + "9" * 401 + ", 0)}")
+    parser_stack = source.replace("D_I={(0.6, 0.4)}", "D_I={(" + "+" * 10_000 + "0.6, 0.4)}")
     overflow = model_to_gnn(default_model(C_R=[1e308] * 3, C_L=[1e308] * 3))
     requests = [
         {"id": "identifier", "method": "model.validate", "params": {"source": long_identifier}},
         {"id": "integer", "method": "model.validate", "params": {"source": huge_integer}},
+        {"id": "parser-stack", "method": "model.validate", "params": {"source": parser_stack}},
         {"id": "null", "method": "capabilities", "params": None},
         {"id": "overflow", "method": "inference.run", "params": {"source": overflow, "steps": 1}},
         {

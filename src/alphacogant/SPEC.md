@@ -49,6 +49,10 @@ Each is a 2-level factor `{weak=0, strong=1}`. Actions index `0..5` =
   - `epistemic` = expected information gain about the hidden `Theta` factor:
     `E_o[KL(q(Theta'|o,a) || q(Theta'|a))]`. Must be ≥0. The matrices are
     fixed; this is not parameter learning. Z has no likelihood/value effect.
+    Temporary Theta priors and reward/loss conditional columns are normalized
+    locally for information calculations, including admitted column-mass drift.
+    Stored coefficients and raw `predicted_belief` rollouts remain unchanged;
+    pragmatic scoring retains its existing coefficient-level calculation.
 - `efe_vector(model, belief) -> list[EFEResult]`: the decomposition for every
   action, validating the belief exactly once (hot path for simulation and
   policy scoring).

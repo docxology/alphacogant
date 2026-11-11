@@ -51,6 +51,10 @@ remains available as a differential reference. Internal bootstrap trajectories
 skip repeated admission checks but preserve normalization operations. Dirichlet
 parameters are hoisted outside the sample loop; sample/channel draw order and
 explicit generators remain unchanged. No mutable model-result cache is used.
+The shared information kernel normalizes temporary Theta priors and conditional
+reward/loss columns so admitted coefficient-sum roundoff cannot create spurious
+information or a negative-KL rejection. Model arrays, raw B-rollouts and pragmatic
+scoring are not renormalized; scalar and batch information use the same axes.
 
 Backend imports defer plotting until `alphacogant.plot_style` is accessed or a
 visualization module is imported. Existing top-level plotting access is retained.

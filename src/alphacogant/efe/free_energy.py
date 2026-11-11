@@ -95,6 +95,11 @@ def _epistemic_values(
     theta_prior: np.ndarray, reward_given_theta: np.ndarray, loss_given_theta: np.ndarray
 ) -> np.ndarray:
     """Broadcast the same masked KL calculation over optional leading batch axes."""
+    # Accepted coefficients retain tiny column-mass drift. Normalize only
+    # temporary probability distributions, not the model or raw B-rollouts.
+    theta_prior = theta_prior / theta_prior.sum(axis=-1, keepdims=True)
+    reward_given_theta = reward_given_theta / reward_given_theta.sum(axis=-2, keepdims=True)
+    loss_given_theta = loss_given_theta / loss_given_theta.sum(axis=-2, keepdims=True)
     joint = (
         theta_prior[..., None, None, :]
         * reward_given_theta[..., :, None, :]
