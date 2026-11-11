@@ -1,12 +1,12 @@
-"""AlphaCOGANT — the AlphaFund self-improving corporation as an Active Inference agent.
+"""AlphaCOGANT — a fixed, illustrative Active Inference analogy for AlphaFund.
 
 The five capital channels (Investments, Sensors, Actuators, Parameters, R&D) are
-hidden-state factors of a partially-observed generative model (the Economic World
-Model); capital allocation is the control vector; Expected Free Energy is the
-portfolio optimizer's marginal-return objective, decomposed into pragmatic value
-(expected log-equity / alpha-creation) and epistemic value (information gain on the
-EWM); t-RSI is a separately evaluated standardized create-vs-decay diagnostic,
-not an enforced action or software-commit gate.
+hidden-state factors of a partially observed generative model. Discrete allocation
+minimizes Expected Free Energy: signed expected authored preferences plus
+information gain about the hidden Theta factor, with the value negated.
+These are not measured log-equity gains or parameter learning. t-RSI separately
+standardizes paired synthetic create-minus-decay rates; it is not an enforced
+action, model-update or software-commit gate.
 
 Subpackage layout:
   model/    — channels, generative model, operating points
@@ -97,7 +97,7 @@ from alphacogant.trsi import (
     t_rsi,
 )
 
-__version__ = "1.3.1"
+__version__ = "1.3.2"
 
 __all__ = [
     # model

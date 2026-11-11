@@ -201,7 +201,9 @@ def model_from_gnn(text: str) -> EconomicWorldModel:
             ):
                 raise ValueError("only real numeric literals are allowed")
             array = np.asarray(ast.literal_eval(tree), dtype=float)
-        except (SyntaxError, TypeError, ValueError, OverflowError, RecursionError) as exc:
+        except (
+            SyntaxError, TypeError, ValueError, OverflowError, RecursionError, MemoryError
+        ) as exc:
             raise ValueError(f"Invalid numeric literal for {name}.") from exc
         if array.shape != PARAMETER_SHAPES[name]:
             raise ValueError(f"{name} must have shape {PARAMETER_SHAPES[name]}, got {array.shape}.")

@@ -29,6 +29,82 @@ def test_degenerate_theta_information_gain_has_no_invalid_arithmetic():
     assert information == 0.0
 
 
+def test_toleranced_transition_mass_has_zero_information_for_uninformative_observations():
+    from alphacogant.bridge.gnn import model_from_gnn, model_to_gnn
+    from alphacogant.model.channels import CHANNELS
+    from alphacogant.model.generative_model import EconomicWorldModel
+
+    base = default_model()
+    reward = np.zeros_like(base.A_R)
+    loss = np.zeros_like(base.A_L)
+    reward[0] = 1.0
+    loss[0] = 1.0
+    transitions = {c: b.copy() for c, b in base.B.items()}
+    offsets = np.array([-1, 0, 1, 1, 0, -1]) * 2.0**-29
+    transitions["Theta"][:] = 0.5 * (1.0 + offsets)[None, None, :]
+    prior = {c: np.array([0.5, 0.5]) for c in CHANNELS}
+    model = EconomicWorldModel(
+        reward, loss, transitions, np.zeros(3), np.zeros(3), prior
+    )
+    for candidate in (model, model_from_gnn(model_to_gnn(model))):
+        for action, batched in enumerate(efe_vector(candidate, prior)):
+            scalar = expected_free_energy(candidate, prior, action)
+            assert scalar.pragmatic == batched.pragmatic == 0.0
+            assert scalar.epistemic == pytest.approx(0.0, abs=1e-14)
+            assert batched.epistemic == pytest.approx(0.0, abs=1e-14)
+            assert scalar.total == -(scalar.pragmatic + scalar.epistemic)
+            assert batched.total == -(batched.pragmatic + batched.epistemic)
+            np.testing.assert_array_equal(
+                predicted_belief(candidate, prior, action)["Theta"],
+                np.full(2, 0.5 * (1.0 + offsets[action])),
+            )
+        np.testing.assert_array_equal(candidate.B["Theta"], transitions["Theta"])
+
+
+def test_toleranced_conditional_mass_matches_independent_categorical_information():
+    import math
+
+    from alphacogant.model.channels import CHANNELS
+    from alphacogant.model.generative_model import EconomicWorldModel
+
+    base = default_model()
+    delta = 2.0**-29
+    reward = np.zeros_like(base.A_R)
+    reward[0, :, :, 0] = 0.75 * (1.0 + delta)
+    reward[1, :, :, 0] = 0.25 * (1.0 + delta)
+    reward[0, :, :, 1] = 0.25 * (1.0 - delta)
+    reward[1, :, :, 1] = 0.75 * (1.0 - delta)
+    loss = np.zeros_like(base.A_L)
+    loss[0, :, 0] = 1.0 + delta
+    loss[0, :, 1] = 1.0
+    transitions = {c: b.copy() for c, b in base.B.items()}
+    transitions["Theta"] = np.repeat(np.eye(2)[:, :, None], 6, axis=2)
+    offsets = np.array([-1, 0, 1, 1, 0, -1]) * delta
+    for channel in ("I", "U", "S"):
+        transitions[channel][:] = 0.5 * (1.0 + offsets)[None, None, :]
+    prior = {c: np.array([0.5, 0.5]) for c in CHANNELS}
+    prior["Theta"] = np.array([0.25, 0.75])
+    model = EconomicWorldModel(
+        reward.copy(), loss.copy(), transitions, np.zeros(3), np.zeros(3), prior
+    )
+    # Independent two-state/two-outcome formula; no production KL helper.
+    likelihood = ((0.75, 0.25), (0.25, 0.75))
+    theta = (0.25, 0.75)
+    observations = (0.375, 0.625)
+    expected = math.fsum(
+        theta[state] * likelihood[outcome][state]
+        * math.log(likelihood[outcome][state] / observations[outcome])
+        for state in range(2) for outcome in range(2)
+    )
+    for action, batched in enumerate(efe_vector(model, prior)):
+        scalar = expected_free_energy(model, prior, action)
+        assert scalar.epistemic == pytest.approx(expected, rel=0.0, abs=1e-14)
+        assert batched.epistemic == pytest.approx(expected, rel=0.0, abs=1e-14)
+        assert scalar.pragmatic == batched.pragmatic == 0.0
+    np.testing.assert_array_equal(model.A_R, reward)
+    np.testing.assert_array_equal(model.A_L, loss)
+
+
 def test_extreme_finite_policy_scores_are_stable(model, prior):
     values = {0: 1e308, 1: -1e308, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0}
     with np.errstate(all="raise"):

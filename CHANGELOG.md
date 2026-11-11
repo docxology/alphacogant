@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.2 — 2026-11-11
+
+- Normalize temporary Theta priors and conditional observation columns in the
+  shared information kernel. Preserve admitted coefficients and raw predictions
+  while fixing false information or rejected scoring for toleranced column mass.
+- Return bounded GNN numeric-parser complexity failures as ordinary admission
+  errors, preserving subsequent JSONL frames instead of terminating the stream.
+- Add mixed-action mass, independent categorical-information and real JSONL
+  continuation regressions; retain public signatures, model values and RNG order.
+- Pin the development interpreter to CPython 3.15.2 while retaining the Python
+  3.11 package floor, supported-minor CI matrix and external dependency records.
+
 ## 1.3.1 — 2026-11-10
 
 - Preserve central percentile confidence, rank and interpolation terms until

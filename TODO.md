@@ -1,7 +1,7 @@
 # TODO — AlphaCOGANT backlog
 
 Canonical backlog. Single source of truth for open work. Add entries as one line + file path(s).
-Source version: **1.3.1**. Release state is authoritative at the
+Source version: **1.3.2**. Release state is authoritative at the
 [version tags/releases](https://github.com/docxology/alphacogant/releases), not this
 backlog or local version metadata. Historical completion rows retain their dates.
 
@@ -64,4 +64,4 @@ Historical round records below retain their as-of dates.
 
 ## Workflowz review — 2026-11-10
 
-- [ ] **WF-20261110-01 — P3 — Pin the development interpreter to CPython 3.15.2.** Replace the current `3.15` development selector at `.python-version:1` with `3.15.2`, while retaining the package floor `>=3.11` (`pyproject.toml:18`) and the 3.11–3.15 CI matrix (`.github/workflows/ci.yml:15-16`); the existing discovered-pin assertion (`.github/workflows/ci.yml:82-90`) must then bind the real COGANT job to 3.15.2. Outcome: fresh development and integration environments use one exact patch runtime rather than a moving 3.15 patch. Acceptance probe from repository root: `test "$(cat .python-version)" = "3.15.2" && uv run --locked python -c 'import platform; v = platform.python_version(); print(v); assert v == "3.15.2"'`; expected: prints `3.15.2` and exits 0, with no lockfile dependency resolution change. Dependency/constraint: uv must be able to supply CPython 3.15.2; no project dependency or deployment constraint requiring the older broad selector was found.
+- [x] **WF-20261110-01 — P3 — Pin the development interpreter to CPython 3.15.2.** Replace the current `3.15` development selector at `.python-version:1` with `3.15.2`, while retaining the package floor `>=3.11` (`pyproject.toml:18`) and the 3.11–3.15 CI matrix (`.github/workflows/ci.yml:15-16`); the existing discovered-pin assertion (`.github/workflows/ci.yml:82-90`) must then bind the real COGANT job to 3.15.2. Outcome: fresh development and integration environments use one exact patch runtime rather than a moving 3.15 patch. Acceptance probe from repository root: `test "$(cat .python-version)" = "3.15.2" && uv run --locked python -c 'import platform; v = platform.python_version(); print(v); assert v == "3.15.2"'`; expected: prints `3.15.2` and exits 0, with no lockfile dependency resolution change. Dependency/constraint: uv must be able to supply CPython 3.15.2; no project dependency or deployment constraint requiring the older broad selector was found. Completed 2026-11-11: the native probe printed `3.15.2` and exited 0; external dependency records, the package floor and CI matrix were unchanged.
