@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 660" width="1120" height="660" role="img" aria-labelledby="svg-title svg-desc">
+  <title id="svg-title">AlphaCOGANT Architecture Overview</title>
+  <desc id="svg-desc">AlphaCOGANT v1.3.2 five-channel Economic World Model, GNN/COGANT bridge, dual EFE control and paired t-RSI diagnostic routes, and reproducible manuscript pipeline.</desc>
+  <defs>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#475569"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#2563eb"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#0d9488"/></marker>
+    <marker id="arrow-indigo" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#4f46e5"/></marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#d97706"/></marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#059669"/></marker>
+    <marker id="arrow-rose" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#e11d48"/></marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#7c3aed"/></marker>
+  </defs>
+  <rect x="4" y="4" width="1112" height="652" rx="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="4" y="4" width="1112" height="68" rx="16" fill="#0f172a"/>
+  <rect x="4" y="56" width="1112" height="16" fill="#0f172a"/>
+  <line x1="4" y1="72" x2="1116" y2="72" stroke="#38bdf8" stroke-width="2.5"/>
+  <rect x="876" y="21" width="222" height="30" rx="15" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+  <text x="987.0" y="40.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" fill="#38bdf8" text-anchor="middle">Python 3.11–3.15 · ≥90% Cov</text>
+  <text x="26.0" y="32.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#f8fafc" text-anchor="start">AlphaCOGANT v1.3.2 — Five-Channel EWM, EFE Control &amp; COGANT Bridge</text>
+  <text x="26.0" y="54.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="500" fill="#cbd5e1" text-anchor="start">Standalone NumPy Active Inference analogy for recursive corporate self-improvement with lossless GNN &amp; COGANT 0.7.0 parity</text>
+  <rect x="20" y="88" width="346" height="516" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.4"/>
+  <rect x="20" y="88" width="346" height="32" rx="12" fill="#2563eb" fill-opacity="0.10"/>
+  <line x1="20" y1="120" x2="366" y2="120" stroke="#2563eb" stroke-opacity="0.35" stroke-width="1"/>
+  <rect x="231" y="94" width="125" height="20" rx="6" fill="#2563eb" fill-opacity="0.16" stroke="#2563eb" stroke-width="0.8"/>
+  <text x="293.5" y="108.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="700" fill="#2563eb" text-anchor="middle">model/ · bridge/</text>
+  <text x="34.0" y="109.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="start">1. World Model &amp; GNN Bridge</text>
+  <rect x="36" y="132" width="314" height="134" rx="8" fill="#f8fafc" stroke="#2563eb" stroke-width="1.3"/>
+  <rect x="36" y="132" width="5" height="134" rx="2.5" fill="#2563eb"/>
+  <text x="50.0" y="152.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="start">5-Channel Economic World Model</text>
+  <text x="50.0" y="170.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">alphafund_ewm.md → default_model()</text>
+  <text x="50.0" y="186.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">Hidden factors: (I, S, U, Θ, Z)</text>
+  <text x="50.0" y="203.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">  I: Info · S: Signals · U: Uncertainty</text>
+  <text x="50.0" y="219.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">  Θ: Epistemic param · Z: Capital regime</text>
+  <text x="50.0" y="236.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">Tensors P(o, s'|s, a) in (A, B, C, D)</text>
+  <path d="M 193.0 266.0 L 193.0 288.0" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrow-blue)"/>
+  <rect x="36" y="290" width="314" height="136" rx="8" fill="#f8fafc" stroke="#4f46e5" stroke-width="1.3"/>
+  <rect x="36" y="290" width="5" height="136" rx="2.5" fill="#4f46e5"/>
+  <text x="50.0" y="310.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="start">Lossless GNN &amp; COGANT 0.7.0 Bridge</text>
+  <text x="50.0" y="328.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">bridge/gnn.py: exact numeric round-trip</text>
+  <text x="50.0" y="344.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">model_from_gnn(model_to_gnn(model))</text>
+  <text x="50.0" y="361.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">bridge/cogant_bridge.py: factorized &amp;</text>
+  <text x="50.0" y="377.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">complete joint-matrix export verified in CI</text>
+  <text x="50.0" y="394.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">against pinned ActiveInferenceInstitute/COGANT</text>
+  <rect x="36" y="442" width="314" height="146" rx="10" fill="#0f172a" stroke="#38bdf8" stroke-width="1.3"/>
+  <text x="50.0" y="462.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#38bdf8" text-anchor="start">CLI &amp; JSONL Agent Surface (api.py)</text>
+  <text x="50.0" y="480.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#e2e8f0" text-anchor="start">• alphacogant validate alphafund_ewm.md</text>
+  <text x="50.0" y="496.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#e2e8f0" text-anchor="start">• alphacogant doctor --json</text>
+  <text x="50.0" y="513.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#e2e8f0" text-anchor="start">• alphacogant request (JSONL RPC stream)</text>
+  <text x="50.0" y="529.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#e2e8f0" text-anchor="start">• alphacogant profile (Py 3.15 bench)</text>
+  <rect x="388" y="88" width="364" height="516" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.4"/>
+  <rect x="388" y="88" width="364" height="32" rx="12" fill="#0d9488" fill-opacity="0.10"/>
+  <line x1="388" y1="120" x2="752" y2="120" stroke="#0d9488" stroke-opacity="0.35" stroke-width="1"/>
+  <rect x="657" y="94" width="85" height="20" rx="6" fill="#0d9488" fill-opacity="0.16" stroke="#0d9488" stroke-width="0.8"/>
+  <text x="699.5" y="108.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="700" fill="#0d9488" text-anchor="middle">efe · trsi</text>
+  <text x="402.0" y="109.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="start">2. EFE &amp; t-RSI Routes</text>
+  <rect x="404" y="132" width="332" height="152" rx="8" fill="#f8fafc" stroke="#0d9488" stroke-width="1.3"/>
+  <rect x="404" y="132" width="5" height="152" rx="2.5" fill="#0d9488"/>
+  <text x="418.0" y="152.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="start">Route A — Observation-Conditioned EFE</text>
+  <text x="418.0" y="170.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">inference.py + efe/free_energy.py</text>
+  <text x="418.0" y="186.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">1. Filter obs o_t → posterior q(s_t)</text>
+  <text x="418.0" y="203.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">2. Score discrete 1-step Expected Free Energy:</text>
+  <text x="418.0" y="219.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">   Pragmatic value (C reward/loss prefs)</text>
+  <text x="418.0" y="236.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">   + Epistemic info gain targeting channel Θ</text>
+  <text x="418.0" y="252.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">3. Select allocation a_t &amp; emit trace</text>
+  <rect x="404" y="302" width="332" height="152" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.3"/>
+  <rect x="404" y="302" width="5" height="152" rx="2.5" fill="#d97706"/>
+  <text x="418.0" y="322.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="start">Route B — Paired Synthetic Diagnostics</text>
+  <text x="418.0" y="340.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">trsi/t_rsi.py + stats/simulation.py</text>
+  <text x="418.0" y="356.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">Separate prediction-only counterfactuals:</text>
+  <text x="418.0" y="373.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">Greedy EFE policy vs. baseline Hold policy</text>
+  <text x="418.0" y="389.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">t-RSI = mean(Δ_paired) / SE(Δ_paired)</text>
+  <text x="418.0" y="406.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">Bootstrap CIs, effect sizes &amp; break-even</text>
+  <text x="418.0" y="422.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">(Diagnostic only — never gates allocation)</text>
+  <rect x="404" y="470" width="332" height="118" rx="10" fill="#0f172a" stroke="#fbbf24" stroke-width="1.3"/>
+  <text x="418.0" y="490.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#fbbf24" text-anchor="start">Scope &amp; Claim Boundary (ISA.md)</text>
+  <text x="418.0" y="508.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#e2e8f0" text-anchor="start">Reduced Active Inference analogy of RSI;</text>
+  <text x="418.0" y="524.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#e2e8f0" text-anchor="start">separates epistemic Θ gain from pragmatic</text>
+  <text x="418.0" y="541.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#e2e8f0" text-anchor="start">preferences without claiming empirical</text>
+  <text x="418.0" y="557.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#e2e8f0" text-anchor="start">equivalence to historical firm returns.</text>
+  <rect x="774" y="88" width="326" height="516" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.4"/>
+  <rect x="774" y="88" width="326" height="32" rx="12" fill="#059669" fill-opacity="0.10"/>
+  <line x1="774" y1="120" x2="1100" y2="120" stroke="#059669" stroke-opacity="0.35" stroke-width="1"/>
+  <rect x="992" y="94" width="98" height="20" rx="6" fill="#059669" fill-opacity="0.16" stroke="#059669" stroke-width="0.8"/>
+  <text x="1041.0" y="108.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="700" fill="#059669" text-anchor="middle">rendering.py</text>
+  <text x="788.0" y="109.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="start">3. Render &amp; Wheel Gate</text>
+  <rect x="790" y="132" width="294" height="132" rx="8" fill="#f8fafc" stroke="#059669" stroke-width="1.3"/>
+  <rect x="790" y="132" width="5" height="132" rx="2.5" fill="#059669"/>
+  <text x="804.0" y="152.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="start">Token &amp; Figure Registry Pipeline</text>
+  <text x="804.0" y="170.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">run_alphacogant_demo.py</text>
+  <text x="804.0" y="186.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">y_generate_figures → output/figures/</text>
+  <text x="804.0" y="203.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">z_generate_manuscript_variables.py:</text>
+  <text x="804.0" y="219.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">  • manuscript_variables.json</text>
+  <text x="804.0" y="236.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">  • figure_registry &amp; artifact_manifest</text>
+  <path d="M 937.0 264.0 L 937.0 286.0" fill="none" stroke="#059669" stroke-width="1.8" marker-end="url(#arrow-emerald)"/>
+  <rect x="790" y="288" width="294" height="148" rx="8" fill="#f8fafc" stroke="#0284c7" stroke-width="1.3"/>
+  <rect x="790" y="288" width="5" height="148" rx="2.5" fill="#0284c7"/>
+  <text x="804.0" y="308.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="start">Double-Render Pixel Parity (CI)</text>
+  <text x="804.0" y="326.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">scripts/render_manuscript.py</text>
+  <text x="804.0" y="342.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">Pandoc 3.13 + pandoc-crossref + XeLaTeX</text>
+  <text x="804.0" y="359.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">Renders twice under SOURCE_DATE_EPOCH;</text>
+  <text x="804.0" y="375.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">asserts 0 pixel diff across all PDF pages</text>
+  <text x="804.0" y="392.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">&amp; rejects undefined citations (rc=2)</text>
+  <rect x="790" y="452" width="294" height="136" rx="8" fill="#f8fafc" stroke="#7c3aed" stroke-width="1.3"/>
+  <rect x="790" y="452" width="5" height="136" rx="2.5" fill="#7c3aed"/>
+  <text x="804.0" y="472.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#0f172a" text-anchor="start">Isolated Wheel &amp; Identity Smoke</text>
+  <text x="804.0" y="490.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">check_release_identity (7-file sync)</text>
+  <text x="804.0" y="506.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">uv build → SHA256SUMS + clean venv</text>
+  <text x="804.0" y="523.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">scripts/smoke_installed.py verifies</text>
+  <text x="804.0" y="539.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.0" font-weight="500" fill="#334155" text-anchor="start">SPEC.md hash, GNN round-trip &amp; CLI</text>
+  <path d="M 366.0 208.0 L 388.0 208.0" fill="none" stroke="#0d9488" stroke-width="1.8" marker-end="url(#arrow-teal)"/>
+  <path d="M 752.0 208.0 L 774.0 208.0" fill="none" stroke="#059669" stroke-width="1.8" marker-end="url(#arrow-emerald)"/>
+  <rect x="16" y="622" width="1088" height="28" rx="8" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="28.0" y="640.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#1e293b" text-anchor="start">CI Jobs: tests (Python 3.11–3.15, ruff, pytest ≥90%, wheel smoke) · cogant (pinned 0.7.0) · manuscript (pixel parity)</text>
+  <text x="1092.0" y="640.0" font-family="ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace" font-size="11.0" font-weight="500" fill="#334155" text-anchor="end">DOI 10.5281/zenodo.20976824 · MIT</text>
+</svg>

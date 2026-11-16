@@ -14,6 +14,8 @@ versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
 contained manuscript render/reproducibility job. The development pin is
 `.python-version`; historical commissioning scope is recorded in [`ISA.md`](ISA.md).
 
+![AlphaCOGANT Architecture Overview](docs/assets/architecture-overview.svg)
+
 The historical [AlphaFund whitepaper](https://www.alphafund.com/whitepaper) frames
 recursive self-improvement (RSI) as a portfolio-optimization problem: realized
 economic gains finance better prediction and deployment. Its corporate assertions
