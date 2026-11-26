@@ -6,12 +6,12 @@ and [uv](https://docs.astral.sh/uv/). No template workspace is required.
 ```bash
 uv sync --locked --extra dev
 uv run --locked ruff check scripts src tests
-uv run --locked pytest tests/ --cov=alphacogant --cov-fail-under=90 -q
 uv run --locked alphacogant validate models/alphafund_ewm.md
 uv run --locked python scripts/run_alphacogant_demo.py
 uv run --locked python scripts/y_generate_figures.py
 uv run --locked python scripts/z_generate_manuscript_variables.py
 uv run --locked python scripts/z_generate_manuscript_variables.py --check
+uv run --locked pytest tests/ --cov=alphacogant --cov-fail-under=90 -q
 uv build
 ```
 
@@ -47,7 +47,7 @@ It refuses accidental checkout imports. CI uses its disposable runner temp cwd.
 
 CI checks Python 3.11, 3.12, 3.13, 3.14, and 3.15. The development pin lives in `.python-version`;
 use `uv sync --python 3.11 --locked --extra dev` to exercise the oldest supported runtime. Run the real pinned COGANT integration as
-shown in [upstream compatibility](docs/upstream_compatibility.md) when changing
+shown in [upstream compatibility](upstream_compatibility.md) when changing
 the bridge. It is intentionally separate from ordinary installation.
 
 ## Artifacts and releases
@@ -63,13 +63,13 @@ uv run --locked python scripts/z_generate_manuscript_variables.py
 
 Keep every prose `{{TOKEN}}` generated, all citations defined, and the figure
 registry/artifact manifest valid. Manuscript/visual releases must also run the
-[contained source-owned renderer and actual inspection](docs/rendering_and_validation.md).
+[contained source-owned renderer and actual inspection](rendering_and_validation.md).
 External-template rendering is optional and never a substitute for that local
 source/artifact contract.
 
 For a release, update `pyproject.toml`, `uv.lock`, `alphacogant.__version__`,
 `CITATION.cff`, `codemeta.json`, `.zenodo.json`, `docs/manuscript/config.yaml`,
-and `CHANGELOG.md` together. Preserve the concept DOI; remove stale version-specific
+and `docs/changelog.md` together. Preserve the concept DOI; remove stale version-specific
 deposit fields and add a new version DOI only once that deposit exists. Complete
 native/installed-wheel checks, the real pinned upstream check, rendered-product
 inspection and required CI before merging. The CI tag gate requires an annotated
@@ -83,6 +83,6 @@ sources and archival metadata are included in the source distribution.
 Use `alphacogant capabilities` for the current schema and `alphacogant doctor`
 for installed-runtime validation. Profile with `uv run --locked alphacogant profile`;
 keep timings separate from instrumentation and compare matched runtimes,
-NumPy versions, workloads, seeds and thread settings. Read [the profiling guide](docs/performance.md)
-and [agent API](docs/agent_api.md). Never gate CI on wall-time thresholds from a
+NumPy versions, workloads, seeds and thread settings. Read [the profiling guide](performance.md)
+and [agent API](agent_api.md). Never gate CI on wall-time thresholds from a
 shared runner; numerical parity, output provenance and workload bounds are gates.

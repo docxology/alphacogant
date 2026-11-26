@@ -83,7 +83,7 @@ The EFE annotations distinguish expected preference from Theta-information gain.
 Z has no likelihood or value edge. The visible dependency structure does not
 authenticate when caller-supplied observations became available.
 
-![Computational factor graph of the authored reduced model: {{NUM_CHANNELS}} hidden-state factors, reward likelihood $A_R$ coupling $I,U,\Theta$, loss likelihood $A_L$ coupling $S,\Theta$, and per-factor transitions $B_k$ under {{NUM_ACTIONS}} actions. EFE minimizes G = -(pragmatic + Theta-information gain). Z has no likelihood/value edge; conceptual R&D roles are not computational dependencies. Structure and coefficients come from `generative_model.default_model`.](../output/figures/gnn_factor_graph.png){#fig:factorgraph}
+![Computational factor graph of the authored reduced model: {{NUM_CHANNELS}} hidden-state factors, reward likelihood $A_R$ coupling $I,U,\Theta$, loss likelihood $A_L$ coupling $S,\Theta$, and per-factor transitions $B_k$ under {{NUM_ACTIONS}} actions. EFE minimizes G = -(pragmatic + Theta-information gain). Z has no likelihood/value edge; conceptual R&D roles are not computational dependencies. Structure and coefficients come from `generative_model.default_model`.](../../output/figures/gnn_factor_graph.png){#fig:factorgraph}
 
 The reduced encoding is legible and numerically validated. Neither this engine
 nor its interchange tests implement a continuous production portfolio controller

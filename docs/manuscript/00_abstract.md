@@ -40,7 +40,7 @@ AlphaFund's proprietary books.
 \clearpage
 ```
 
-![Graphical abstract of the reduced model: caller-supplied reward/loss observations pass through one factorized filtering sweep, one-step EFE scoring/selection and state prediction. Value = -G = pragmatic preference + Theta-information gain. A separate prediction-only greedy/hold diagnostic uses {{BOOTSTRAP_N}} paired synthetic draws, concentration {{BOOTSTRAP_CONCENTRATION}} and horizon {{PLANNING_HORIZON}}: mean margin {{BREAK_EVEN_MARGIN_MEAN}}, paired SE {{PAIRED_MARGIN_SE}}, t-RSI {{HEADLINE_T_RSI}} and positive-margin fraction {{BREAK_EVEN_PROB}} at IMPROVING. The scalar threshold does not gate allocation; A/B/C/D stay fixed, chronology is caller-owned, and no financial calibration or coefficient learning is implied.](../output/figures/cover_art.png){#fig:graphicalabstract}
+![Graphical abstract of the reduced model: caller-supplied reward/loss observations pass through one factorized filtering sweep, one-step EFE scoring/selection and state prediction. Value = -G = pragmatic preference + Theta-information gain. A separate prediction-only greedy/hold diagnostic uses {{BOOTSTRAP_N}} paired synthetic draws, concentration {{BOOTSTRAP_CONCENTRATION}} and horizon {{PLANNING_HORIZON}}: mean margin {{BREAK_EVEN_MARGIN_MEAN}}, paired SE {{PAIRED_MARGIN_SE}}, t-RSI {{HEADLINE_T_RSI}} and positive-margin fraction {{BREAK_EVEN_PROB}} at IMPROVING. The scalar threshold does not gate allocation; A/B/C/D stay fixed, chronology is caller-owned, and no financial calibration or coefficient learning is implied.](../../output/figures/cover_art.png){#fig:graphicalabstract}
 
 ```{=latex}
 \clearpage

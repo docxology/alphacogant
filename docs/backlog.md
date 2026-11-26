@@ -8,8 +8,8 @@ backlog or local version metadata. Historical completion rows retain their dates
 Historical 1.2.1 validation (2026-10-16): 352 passed, one optional upstream
 integration skipped in the base environment, 94.12% coverage. Historical alternate
 runtime and token comparisons are not current-floor or current-release proof.
-See [CHANGELOG.md](CHANGELOG.md), [agent API](docs/agent_api.md), and
-[profiling](docs/performance.md) for scope and repeatable commands.
+See [CHANGELOG.md](changelog.md), [agent API](agent_api.md), and
+[profiling](performance.md) for scope and repeatable commands.
 
 ## Completed implementation and native validation for 1.3.0
 
@@ -17,7 +17,7 @@ See [CHANGELOG.md](CHANGELOG.md), [agent API](docs/agent_api.md), and
 - [x] Prove contained render diagnostics, regenerated artifact/PDF reproducibility and actual visual inspection (`scripts/render_manuscript.py`, `.github/workflows/ci.yml`, `docs/manuscript/`).
 Publication is tracked by the release PR/checks and versioned release receipts,
 not a prospective completion checkbox here. Follow the
-[release gates](CONTRIBUTING.md#artifacts-and-releases) for green main, annotated
+[release gates](contributing.md#artifacts-and-releases) for green main, annotated
 tag, verified downloadable assets and attributable branch/lane cleanup.
 
 ## Completed for 1.2.1

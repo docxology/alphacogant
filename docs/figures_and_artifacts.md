@@ -8,7 +8,7 @@ The ordered generation command is owned by
 [rendering and validation](rendering_and_validation.md). Each script under
 `scripts/figures/` writes one PNG to `output/figures/`; the aggregate runner sets
 `MPLBACKEND=Agg` and runs them in deterministic order. The
-[script inventory](../scripts/README.md) maps filenames to producers and footer modes.
+[script inventory](scripts.md) maps filenames to producers and footer modes.
 
 `fig_cover_art.py` produces `cover_art.png`, the landscape graphical abstract
 registered from the end of `manuscript/00_abstract.md`. It distinguishes supplied

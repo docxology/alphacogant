@@ -120,7 +120,8 @@ def main() -> int:
         common = [tools["pandoc"], *(p.relative_to(root).as_posix() for p in context["chapters"]),
                   "--metadata-file=" + metadata_path.relative_to(root).as_posix(),
                   "--filter=" + tools["pandoc-crossref"], "--citeproc", "--number-sections",
-                  "--bibliography=docs/manuscript/references.bib", "--resource-path=docs:output"]
+                  "--bibliography=docs/manuscript/references.bib",
+                  "--resource-path=output/manuscript:docs/manuscript:docs:output"]
         commands = []
         for format_, options in (
             ("pdf", ["--pdf-engine=" + tools["xelatex"], "--pdf-engine-opt=-no-shell-escape",
