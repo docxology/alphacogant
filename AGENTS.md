@@ -87,14 +87,13 @@ See `docs/upstream_compatibility.md` for the independently tested upstream scope
 ## Repo
 
 This is the standalone public repository `docxology/alphacogant`. Work directly
-in the current checkout; no template checkout, symlink or parent environment is
-required. Generated `output/`, build artifacts and caches remain ignored.
+in the current checkout. The [optional template integration](docs/rendering_and_validation.md#optional-external-template-verification) uses a separate disposable checkout. Generated `output/`, build artifacts and caches remain ignored.
 
 ## Release and integration
 
 Install with `uv sync --locked --extra dev`; lint with
 `uv run --locked ruff check scripts src tests`. Run the full test/coverage command
-above, `uv build`, and the installed-wheel smoke check in `CONTRIBUTING.md`.
+above, `uv build`, and the installed-wheel smoke check in `docs/contributing.md`.
 Keep `pyproject.toml`, `uv.lock`, `__version__`, `CITATION.cff`, `codemeta.json`,
 `.zenodo.json` and manuscript config versions synchronized. Tag releases as
 `v<version>`; never assign an old version

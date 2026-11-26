@@ -53,7 +53,7 @@ experiments. Variance alone cannot reverse the sign of a mean divided by a
 nonnegative SE. No controlled ablation here identifies two-level coarseness as
 the cause of a particular sign.
 
-![Sensitivity diagnostics using the smaller sample recipe printed on the figure. Separate panels show dimensionless t-RSI against concentration and Theta freshness, and create/decay rate means against freshness. There is no t-RSI uncertainty band made from rate SEs. Concentration changes both center and dispersion. Computed by `sweep_concentration` and `sweep_theta_freshness`.](../output/figures/trsi_sensitivity.png){#fig:sensitivity}
+![Sensitivity diagnostics using the smaller sample recipe printed on the figure. Separate panels show dimensionless t-RSI against concentration and Theta freshness, and create/decay rate means against freshness. There is no t-RSI uncertainty band made from rate SEs. Concentration changes both center and dispersion. Computed by `sweep_concentration` and `sweep_theta_freshness`.](../../output/figures/trsi_sensitivity.png){#fig:sensitivity}
 
 The marginal create interval [{{CREATE_CI_LOWER}}, {{CREATE_CI_UPPER}}] and decay
 interval [{{DECAY_CI_LOWER}}, {{DECAY_CI_UPPER}}] summarize different rate clouds;
@@ -62,20 +62,20 @@ Cohen's d values {{COHEN_D_CREATE}} and {{COHEN_D_DECAY}} compare the canonical
 regime draws using pooled sample dispersion. They are descriptive effect sizes,
 not an independent validation of financial utility.
 
-![Regime comparison using the distinct sample recipe printed on the figure, not the canonical headline sample count. Left: central percentile intervals of synthetic create/decay rates. Right: one-step EFE decomposition of the selected action. Computed by `statistics.compare_regimes`.](../output/figures/regime_comparison.png){#fig:regimecomparison}
+![Regime comparison using the distinct sample recipe printed on the figure, not the canonical headline sample count. Left: central percentile intervals of synthetic create/decay rates. Right: one-step EFE decomposition of the selected action. Computed by `statistics.compare_regimes`.](../../output/figures/regime_comparison.png){#fig:regimecomparison}
 
 The canonical scatter uses the same per-regime seed and sample recipe as the
 manuscript diagnostics. Positive margin lies below the diagonal because x is
 create and y is decay. A mean's location and the fraction of points below the
 line need not agree when tail magnitudes differ.
 
-![Paired create-vs-decay scatter, {{BOOTSTRAP_N}} draws per regime at concentration {{BOOTSTRAP_CONCENTRATION}}. Each point is one synthetic belief perturbation; create > decay is below y=x. IMPROVING uses circles/X mean and COASTING triangles/P mean. Computed by `paired_bootstrap_samples`.](../output/figures/create_vs_decay_scatter.png){#fig:scatter}
+![Paired create-vs-decay scatter, {{BOOTSTRAP_N}} draws per regime at concentration {{BOOTSTRAP_CONCENTRATION}}. Each point is one synthetic belief perturbation; create > decay is below y=x. IMPROVING uses circles/X mean and COASTING triangles/P mean. Computed by `paired_bootstrap_samples`.](../../output/figures/create_vs_decay_scatter.png){#fig:scatter}
 
 Freshness profiles use a smaller, explicitly printed per-grid recipe and
 seed offsets. They are not the identical canonical sample set. Event mass and
 margin percentiles are separate diagnostics from a standardized mean.
 
-![Synthetic positive-margin fraction and paired-margin central percentile interval across Theta freshness. The per-grid sample count, seed policy, concentration and horizon are printed on the figure. Computed by `statistics.break_even_profile`.](../output/figures/break_even_probability.png){#fig:breakeven}
+![Synthetic positive-margin fraction and paired-margin central percentile interval across Theta freshness. The per-grid sample count, seed policy, concentration and horizon are printed on the figure. Computed by `statistics.break_even_profile`.](../../output/figures/break_even_probability.png){#fig:breakeven}
 
 ## Prediction-only trajectories do not demonstrate observed learning
 
@@ -86,7 +86,7 @@ Theta-belief change is {{TRAJ_THETA_DELTA}}. The reported exploration ratio
 Theta repair and is not divided only by funded cycles. No eventual switch to
 holding or exploitation is assumed.
 
-![Open-loop greedy belief trajectories from IMPROVING and a separate fresh-Theta initial belief. Curves and action annotations are the actual predicted states and selected actions; no observations, matrix refitting or eventual-hold claim is implied. Computed by `simulation.simulate_trajectory`.](../output/figures/belief_trajectory.png){#fig:trajectory}
+![Open-loop greedy belief trajectories from IMPROVING and a separate fresh-Theta initial belief. Curves and action annotations are the actual predicted states and selected actions; no observations, matrix refitting or eventual-hold claim is implied. Computed by `simulation.simulate_trajectory`.](../../output/figures/belief_trajectory.png){#fig:trajectory}
 
 ## Finite inputs, rounded summaries and representable diagnostics
 

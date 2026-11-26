@@ -30,7 +30,7 @@ key explains EFE, priors and the synthetic diagnostic across {{NUM_ACTIONS}}
 discrete actions. This is a structural schematic, not a numerical action-value
 comparison; executable support and limitations are described separately below.
 
-![Channel/state/dependency dictionary and decision-term key for {{NUM_CHANNELS}} factors and {{NUM_ACTIONS}} discrete actions. Reward depends on I/U/Theta and loss on S/Theta; Z has no likelihood edge. The conceptual corporate names do not imply coefficient learning, financial calibration or an enforced t-RSI admission gate. This schematic displays no numerical action-value examples.](../output/figures/aif_dictionary.png){#fig:dictionary}
+![Channel/state/dependency dictionary and decision-term key for {{NUM_CHANNELS}} factors and {{NUM_ACTIONS}} discrete actions. Reward depends on I/U/Theta and loss on S/Theta; Z has no likelihood edge. The conceptual corporate names do not imply coefficient learning, financial calibration or an enforced t-RSI admission gate. This schematic displays no numerical action-value examples.](../../output/figures/aif_dictionary.png){#fig:dictionary}
 
 ## Hidden corporate state motivates a generative-model-carrying agent
 

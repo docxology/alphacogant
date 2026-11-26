@@ -4,6 +4,14 @@ The [manuscript](manuscript/README.md) develops the conceptual argument and its
 synthetic evidence. These notes own the implementation and regeneration contracts;
 the tables below identify one detailed owner for each subject.
 
+## Get started
+
+- [Standalone setup and examples](quickstart.md)
+- [Script and output inventory](scripts.md)
+- [Contribution and release checks](contributing.md)
+- [Release history](changelog.md), [maintenance backlog](backlog.md), and
+  [historical commissioning notes](historical-commissioning.md)
+
 ## Read the argument and its limits
 
 1. [Manuscript reading order](manuscript/README.md): abstract and graphical abstract,

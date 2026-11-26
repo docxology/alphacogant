@@ -28,9 +28,9 @@ $\partial J_t/\partial a_t$ or a solved risk-adjusted shadow-price condition.
 A common unit in nats does not calibrate information gain into dollars
 [@friston2010freeenergy; @dacosta2020synthesis].
 
-![Negative-EFE action values over the {{PLANNING_HORIZON}}-cycle open-loop greedy trajectory from IMPROVING. Stars mark the actual one-step selections, not a multi-step optimal policy. Computed by `simulation.simulate_trajectory` and `free_energy.marginal_return_vector`.](../output/figures/marginal_return_heatmap.png){#fig:heatmap}
+![Negative-EFE action values over the {{PLANNING_HORIZON}}-cycle open-loop greedy trajectory from IMPROVING. Stars mark the actual one-step selections, not a multi-step optimal policy. Computed by `simulation.simulate_trajectory` and `free_energy.marginal_return_vector`.](../../output/figures/marginal_return_heatmap.png){#fig:heatmap}
 
-![Expected Free Energy decomposition per action at IMPROVING. Total G = -(pragmatic + epistemic); the greedy policy selects the lowest G. The two components are model scores, not financial measurements. Computed by `free_energy.expected_free_energy`.](../output/figures/efe_waterfall.png){#fig:waterfall}
+![Expected Free Energy decomposition per action at IMPROVING. Total G = -(pragmatic + epistemic); the greedy policy selects the lowest G. The two components are model scores, not financial measurements. Computed by `free_energy.expected_free_energy`.](../../output/figures/efe_waterfall.png){#fig:waterfall}
 
 At the neutral prior, the highest-scoring funding action is {{FUNDED_CHANNEL}},
 with pragmatic {{FUNDED_PRAGMATIC}} and epistemic {{FUNDED_EPISTEMIC}}.
@@ -78,7 +78,7 @@ fraction can coexist with a negative mean when negative margins are larger.
 Neither a mean's sign nor marginal intervals establish that every draw has the
 same ordering.
 
-![Synthetic Dirichlet-perturbation create and residual-decay densities at IMPROVING, using {{BOOTSTRAP_N}} draws. Means {{CREATE_RATE_MEAN}} and {{DECAY_RATE_MEAN}}, paired-margin SE {{PAIRED_MARGIN_SE}}, and t-RSI {{HEADLINE_T_RSI}} all use the same paired samples. Computed by `paired_bootstrap_samples` and `t_rsi`.](../output/figures/trsi_densities.png){#fig:trsi}
+![Synthetic Dirichlet-perturbation create and residual-decay densities at IMPROVING, using {{BOOTSTRAP_N}} draws. Means {{CREATE_RATE_MEAN}} and {{DECAY_RATE_MEAN}}, paired-margin SE {{PAIRED_MARGIN_SE}}, and t-RSI {{HEADLINE_T_RSI}} all use the same paired samples. Computed by `paired_bootstrap_samples` and `t_rsi`.](../../output/figures/trsi_densities.png){#fig:trsi}
 
 At the interior operating beliefs, the perturbation law is
 $\mathrm{Dirichlet}(\alpha b_k+1)$ per binary channel. The implementation floors
@@ -98,7 +98,7 @@ Fisher-information floor. Neither simulator calls it to admit actions or model
 updates. The matrices remain fixed. The motivating corporate certificate is
 therefore an analogy, not an implemented monotone-EFE-improvement guarantee.
 
-![Point-estimate create and residual-decay rates at the prior, IMPROVING and COASTING beliefs. Positive/negative margin labels refer only to raw create-minus-decay, not the t-RSI threshold predicate or deployment admission. Computed by `create_rate` and `decay_rate`.](../output/figures/certificate_sign_flip.png){#fig:certificate}
+![Point-estimate create and residual-decay rates at the prior, IMPROVING and COASTING beliefs. Positive/negative margin labels refer only to raw create-minus-decay, not the t-RSI threshold predicate or deployment admission. Computed by `create_rate` and `decay_rate`.](../../output/figures/certificate_sign_flip.png){#fig:certificate}
 
 The point-estimate comparator can order the rates either way; this is the
 negative control against a structurally always-positive margin. The perturbed

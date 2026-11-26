@@ -102,7 +102,7 @@ perception–action analogy [@kaelbling1998pomdp]. Here action scoring is one-st
 [@fig:loop] is a conceptual schematic; the open-loop trajectory simulator does
 not consume observations or refit coefficients [@friston2017process].
 
-![Conceptual corporate self-forecasting loop. The local engine computes one-step action values and a selected-action example. Observation acquisition, external execution and coefficient learning are conceptual handoffs here, not operations performed by this diagram or the open-loop trajectory simulator.](../output/figures/self_forecasting_loop.png){#fig:loop}
+![Conceptual corporate self-forecasting loop. The local engine computes one-step action values and a selected-action example. Observation acquisition, external execution and coefficient learning are conceptual handoffs here, not operations performed by this diagram or the open-loop trajectory simulator.](../../output/figures/self_forecasting_loop.png){#fig:loop}
 
 The remainder of the paper builds the dictionary ([@sec:dictionary]), gives the
 GNN-via-COGANT realization ([@sec:gnn]), works through generative-model inference

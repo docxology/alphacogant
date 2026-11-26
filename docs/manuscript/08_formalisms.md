@@ -115,7 +115,7 @@ $$ {#eq:marginal-return-vector}
 scores, not continuous derivatives. Its maximum includes `hold`; the separately
 reported best funding channel {{FUNDED_CHANNEL}} excludes `hold`.
 
-![Softmax action probabilities evaluated along the open-loop greedy trajectory. The trajectory's actual actions are greedy, not draws from these probabilities. Computed by `policy_posterior` and `simulate_trajectory`; no exploration-to-exploitation switch is assumed.](../output/figures/policy_posterior.png){#fig:policyposterior}
+![Softmax action probabilities evaluated along the open-loop greedy trajectory. The trajectory's actual actions are greedy, not draws from these probabilities. Computed by `policy_posterior` and `simulate_trajectory`; no exploration-to-exploitation switch is assumed.](../../output/figures/policy_posterior.png){#fig:policyposterior}
 
 **Definition D14 (Horizon rate timeline).** Both rates evaluate H post-action
 beliefs, so the final action outcome contributes. Creation is the mean greedy
@@ -138,7 +138,7 @@ funding action has pragmatic {{FUNDED_PRAGMATIC}} and epistemic
 {{FUNDED_EPISTEMIC}}. Role labels {{EPISTEMIC_CHANNELS}} do not create absent
 likelihood dependencies: Z has no effect on these scores.
 
-![One-step pragmatic and Theta-information values for each action at the two illustrative operating beliefs. Shapes and coefficients come from `default_model`; values are computed by `expected_free_energy`. Differences between regimes do not demonstrate endogenous learning.](../output/figures/value_by_regime.png){#fig:valueregimes}
+![One-step pragmatic and Theta-information values for each action at the two illustrative operating beliefs. Shapes and coefficients come from `default_model`; values are computed by `expected_free_energy`. Differences between regimes do not demonstrate endogenous learning.](../../output/figures/value_by_regime.png){#fig:valueregimes}
 
 **Definition D16 (Paired standardized diagnostic).** For synthetic paired rates,
 

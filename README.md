@@ -8,11 +8,11 @@
 **Version 1.3.2 (2026-11-11).** Standalone NumPy research package with lossless
 finite GNN serialization, complete COGANT joint-matrix export, replayable
 observation-conditioned inference, numerically guarded paired diagnostics and a
-versioned agent API. See [CHANGELOG.md](CHANGELOG.md) and the
+versioned agent API. See [CHANGELOG.md](docs/changelog.md) and the
 [pinned upstream contract](docs/upstream_compatibility.md). CI exercises Python
 3.11–3.15, ≥90% coverage, installed-wheel console/package-data checks and a separate
 contained manuscript render/reproducibility job. The development pin is
-`.python-version`; historical commissioning scope is recorded in [`ISA.md`](ISA.md).
+`.python-version`; historical commissioning scope is recorded in [`ISA.md`](docs/historical-commissioning.md).
 
 ![AlphaCOGANT Architecture Overview](docs/assets/architecture-overview.svg)
 
@@ -82,30 +82,13 @@ scripts/                      # thin demo, figure, token, render and release-che
     fig_cover_art.py          # registered landscape graphical abstract: cover_art.png
 ```
 
-## Install and exercise the standalone engine
+## Documentation
 
-```bash
-# From a fresh checkout; Python (the bound in `pyproject.toml`) or newer and uv are required.
-uv sync --locked --extra dev
-uv run --locked pytest tests/ --cov=alphacogant --cov-fail-under=90 -q
-uv run --locked alphacogant validate models/alphafund_ewm.md
-uv run --locked alphacogant export --cogant -o output/model.gnn.md
-uv run --locked alphacogant infer output/model.gnn.md --steps 8 -o output/trace.json
-uv run --locked alphacogant verify-trace output/model.gnn.md output/trace.json
-uv run --locked python scripts/run_alphacogant_demo.py
-uv run --locked python scripts/y_generate_figures.py
-uv run --locked python scripts/z_generate_manuscript_variables.py
-```
-
-Exports preserve existing files; use `--overwrite` to replace a generated file.
-`infer --observations observations.json` accepts a JSON array of `[reward, loss]`
-integer bucket pairs. Without observations it records a synthetic model rollout.
-The trace binds the exact source bytes, coefficients, filtering, EFE scores, and
-selected actions. The existing `simulate_trajectory` API records open-loop
-predictions; t-RSI is a separate paired synthetic diagnostic whose scalar threshold
-does not gate actions or updates. Chronological input integrity remains caller-owned.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for CI parity and
-wheel installation checks.
+Read the [documentation index](docs/README.md), follow the
+[standalone quickstart](docs/quickstart.md), or start with the
+[manuscript](docs/manuscript/README.md).
+See the [render and verification guide](docs/rendering_and_validation.md)
+to regenerate the synthetic evidence and publication editions.
 
 ## Backend and agent workflows
 

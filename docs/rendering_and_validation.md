@@ -1,8 +1,7 @@
 # Render source-checked PDF/HTML and inspect manuscript evidence
 
-AlphaCOGANT is standalone. Never run another repository's template stages as a
-local gate. Engine-only installation and use need no document toolchain.
-Manuscript/visual releases require the contained PDF/HTML rendering below and
+AlphaCOGANT's engine runs with the locked Python environment. For
+manuscript and visual releases, use the contained PDF/HTML rendering below and
 actual page/figure inspection. Rendering needs existing Pandoc 3.13+,
 compatible pandoc-crossref, XeLaTeX and qpdf on POSIX. The producer uses
 Matplotlib's bundled fonts; it installs no host tools or fonts. The numbered
@@ -18,11 +17,11 @@ From the repository root:
 ```bash
 uv sync --locked --extra dev
 uv run --locked ruff check scripts src tests
-uv run --locked pytest tests/ --cov=alphacogant --cov-fail-under=90 -q
 uv run --locked python scripts/run_alphacogant_demo.py
 uv run --locked python scripts/y_generate_figures.py
 uv run --locked python scripts/z_generate_manuscript_variables.py
 uv run --locked python scripts/z_generate_manuscript_variables.py --check
+uv run --locked pytest tests/ --cov=alphacogant --cov-fail-under=90 -q
 ```
 
 Generation writes current variables, registry, manifest and injected Markdown.
@@ -90,9 +89,42 @@ fixture and requires failure without a successful render receipt.
 - Historical corporate assertions remain attributed and unverified where the
   primary source is unavailable. A clean artifact manifest does not resolve that.
 
-## Optional external-template integration
+## Optional external-template verification
 
-A separately configured, authorized template workflow may add its own cover,
-bookends and publication-copy stages. Those are not local commands or standalone
-acceptance requirements. Do not modify the template or its environment for this
-project's release. Copied publication bytes, if used, need separate hash parity.
+Use a separate, disposable AlphaCOGANT checkout for this compatibility check.
+The shared validator writes its own reports under `output/`.
+The contained renderer above remains the standalone release workflow.
+
+From the AlphaCOGANT checkout:
+
+```bash
+project_source="$(pwd -P)"
+git clone https://github.com/docxology/template.git ../template-renderer
+renderer_root="$(cd ../template-renderer && pwd -P)"
+git -C "$renderer_root" checkout --detach 87704feae0a4490ef7dad9c931d268e8c30273c2
+(cd "$renderer_root" && uv sync --locked --no-dev)
+mkdir -p "$renderer_root/projects/working"
+git clone "$project_source" "$renderer_root/projects/working/alphacogant"
+cd "$renderer_root/projects/working/alphacogant"
+git checkout --detach
+uv sync --locked --extra dev
+uv run --locked python scripts/run_alphacogant_demo.py
+uv run --locked python scripts/y_generate_figures.py
+uv run --locked python scripts/z_generate_manuscript_variables.py
+uv run --locked python scripts/z_generate_manuscript_variables.py --check
+
+cd "$renderer_root"
+uv run --no-sync python scripts/pipeline/stage_03_render.py --project working/alphacogant
+uv run --no-sync python scripts/pipeline/stage_04_validate.py --project working/alphacogant
+```
+
+Use Pandoc 3.14 with pandoc-crossref 0.3.26 built against that Pandoc
+version, plus XeLaTeX and BibTeX. The external stages write
+`output/pdf/alphacogant_combined.pdf`, `output/web/index.html`,
+`output/reports/validation_report.json`, and
+`output/reports/rendered_provenance.json` in the working project.
+They use the manuscript's PDF and HTML configuration.
+
+See the pinned [project integration guide](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/projects/README.md#L208-L223),
+[manuscript resolver](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/infrastructure/core/project_paths.py#L59-L75),
+and [stage commands](https://github.com/docxology/template/blob/87704feae0a4490ef7dad9c931d268e8c30273c2/docs/RUN_GUIDE.md#L563-L574).

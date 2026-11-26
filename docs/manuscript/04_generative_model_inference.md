@@ -46,7 +46,7 @@ freshness mass bleeds away each cycle through the decay-leak probability
 {{B_THETA_LEAK_PROB}}, while under `fund_Theta` it is pulled back toward fresh — the
 mechanism that makes refit a first-order allocation rather than maintenance overhead [@westenhaver2026rsi].
 
-![The $B_\Theta$ alpha-decay law: belief in fresh parameters traced over {{PLANNING_HORIZON}} cycles under `hold` (freshness decays via leak probability {{B_THETA_LEAK_PROB}}) versus `fund_Theta` (freshness restored), with the transition read from `generative_model.default_model`.](../output/figures/theta_decay.png){#fig:thetadecay}
+![The $B_\Theta$ alpha-decay law: belief in fresh parameters traced over {{PLANNING_HORIZON}} cycles under `hold` (freshness decays via leak probability {{B_THETA_LEAK_PROB}}) versus `fund_Theta` (freshness restored), with the transition read from `generative_model.default_model`.](../../output/figures/theta_decay.png){#fig:thetadecay}
 
 ## Inspectable step ordering and caller-owned chronology
 
